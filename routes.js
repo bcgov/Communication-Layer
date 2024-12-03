@@ -92,9 +92,12 @@ router.post("/generate", generateTemplate);
 
 router.get("/getAllForms", async (request,response) => {
   try {
+    console.log(`FORM_SERVER_URL: ${FORM_SERVER_URL}`);
     const grant =
-    await keycloakForFormRepo.grantManager.obtainFromClientCredentials();       
+    await keycloakForFormRepo.grantManager.obtainFromClientCredentials(); 
+    console.log(`Access Token: ${grant.access_token.token}`);
     let endpointUrl = `${FORM_SERVER_URL}/api/forms-list`;  
+    console.log(`endpointUrl: ${endpointUrl}`);
 
     const forms = await axios.get(endpointUrl, {
       headers: {
