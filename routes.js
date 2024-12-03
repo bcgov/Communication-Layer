@@ -94,7 +94,7 @@ router.get("/getAllForms", async (request,response) => {
   try {
     const grant =
     await keycloakForFormRepo.grantManager.obtainFromClientCredentials();       
-    let endpointUrl = `http://localhost:3030/api/forms-list`;  
+    let endpointUrl = `${FORM_SERVER_URL}/api/forms-list`;  
 
     const forms = await axios.get(endpointUrl, {
       headers: {
