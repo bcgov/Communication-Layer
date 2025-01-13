@@ -1,9 +1,9 @@
 apiVersion: route.openshift.io/v1
 kind: Route
 metadata:
-  name: kiln
+  name: communication-layer
   labels:
-    app.kubernetes.io/name: kiln
+    app.kubernetes.io/name: communication-layer
 spec:
   to:
     kind: Service
