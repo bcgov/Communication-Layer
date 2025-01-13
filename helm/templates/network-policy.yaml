@@ -2,17 +2,18 @@ apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
   name: allow-from-openshift-ingress-communication-layer
-  labels:
-    app.kubernetes.io/name: communication-layer
-    app.kubernetes.io/managed-by: Helm
-  annotations:
-    meta.helm.sh/release-name: communication-layer
 spec:
+  podSelector:
+    matchLabels:
+      app: communication-layer
   ingress:
     - from:
         - namespaceSelector:
             matchLabels:
               network.openshift.io/policy-group: ingress
+      ports:
+        - protocol: TCP
+          port: 3030 
   podSelector: {}
   policyTypes:
     - Ingress
