@@ -1,0 +1,14 @@
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: kiln
+  labels:
+    app.kubernetes.io/name: kiln
+spec:
+  to:
+    kind: Service
+    name: communication-layer
+  port:
+    targetPort: 3030
+  tls:
+    termination: edge

@@ -1,0 +1,4 @@
+apiVersion: v2
+name: communication-layer
+description: A Helm chart for deploying communication layer
+version: 0.1.0

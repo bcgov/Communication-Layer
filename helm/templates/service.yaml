@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: kiln
+  labels:
+    app.kubernetes.io/name: communication-layer
+spec:
+  selector:
+    app.kubernetes.io/name: communication-layer
+  ports:
+    - protocol: TCP
+      port: {{ .Values.service.port }}
+      targetPort: 3030
