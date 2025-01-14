@@ -1,8 +1,10 @@
 const express = require("express");
 const axios = require("axios");
 const xmlparser = require("express-xml-bodyparser");
-const { keycloakForSiebel,keycloakForFormRepo} = require("./keycloak.js");
+const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const generateTemplate = require("./generateHandler");
+const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
+
 const getFormsFromFormTemplate = require("./formRepoHandler");
 const router = express.Router();
 
@@ -83,35 +85,40 @@ router.get("/xml", async (req, res) => {
 
 // Save data route
 router.post("/saveData", async (request, response) => {
-  console.log(request.body);  
+  console.log(request.body);
   response.status(200).json("{success!}");
 });
+
+// ICM save data route
+router.post("/saveICMData", saveICMdata);
+
+// ICM load data rout
+router.post("/loadICMData", loadICMdata);
 
 // Generate route
 router.post("/generate", generateTemplate);
 
-router.get("/getAllForms", async (request,response) => {
+router.get("/getAllForms", async (request, response) => {
   try {
-    console.log(`FORM_SERVER_URL: ${FORM_SERVER_URL}`);
     const grant =
-    await keycloakForFormRepo.grantManager.obtainFromClientCredentials(); 
-    console.log(`Access Token: ${grant.access_token.token}`);
-    let endpointUrl = `${FORM_SERVER_URL}/api/forms-list`;  
-    console.log(`endpointUrl: ${endpointUrl}`);
+      await keycloakForFormRepo.grantManager.obtainFromClientCredentials();
+    let endpointUrl = `http://localhost:3030/api/forms-list`;
 
     const forms = await axios.get(endpointUrl, {
       headers: {
         Authorization: `Bearer ${grant.access_token.token}`,
       },
-    });    
-    console.log("forms",forms);
+    });
+    console.log("forms", forms);
     response.json(forms.data);
-    
+
   } catch (err) {
-    console.error("API error: " + err.message);        
+    console.error("API error: " + err.message);
     response.status(500).send({ error: err.message });
   }
 
 });
 
+// clear the locked by flags in ICM for the form, used when form is closed
+router.post("/clearICMLockedFlag", clearICMLockedFlag);
 module.exports = router;
