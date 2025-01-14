@@ -19,7 +19,7 @@ spec:
           image: "{{ .Values.image.tag }}"
           envFrom:
             - configMapRef:
-                name: {{ .Values.secretName }}
+                name: {{ .Values.configMapName }}
           ports:
             - containerPort: 3030
           resources: {{- toYaml .Values.resources | nindent 12 }}
