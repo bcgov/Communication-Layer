@@ -4,7 +4,7 @@ const { keycloakForSiebel } = require("./keycloak.js");
 const axios = require("axios");
 
 async function populateDatabindings(formJson, params) {
-  console.error("Form JSON",formJSon);
+  console.error("Form JSON",formJson);
   //start code here
   try {
     // Extract dataSources from the form JSON
