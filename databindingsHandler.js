@@ -104,6 +104,7 @@ async function readJsonFormApi(datasource, pathParams) {
       await keycloakForSiebel.grantManager.obtainFromClientCredentials();
     const headers = {
       Authorization: `Bearer ${grant.access_token.token}`,
+      "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
     }
     if (type.toUpperCase() === 'GET') {
 
