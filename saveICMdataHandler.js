@@ -21,6 +21,7 @@ async function getICMAttachmentStatus(attachment_id) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
+            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
         }
         const params = {
             viewMode: "Catalog"
@@ -76,6 +77,7 @@ async function saveICMdata(req, res) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
+            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
         }
         const params = {
             viewMode: "Catalog"
@@ -120,6 +122,7 @@ async function loadICMdata(req, res) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
+            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
         }
         const params = {
             viewMode: "Catalog",
@@ -185,6 +188,8 @@ async function clearICMLockedFlag(req, res) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
+            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
+
         }
         const params = {
             viewMode: "Catalog"

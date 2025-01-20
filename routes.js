@@ -37,6 +37,7 @@ router.get("/api*", async (req, res) => {
     const newResp = await axios.get(endpointUrl, {
       headers: {
         Authorization: `Bearer ${grant.access_token.token}`,
+        "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
       },
     });
 
