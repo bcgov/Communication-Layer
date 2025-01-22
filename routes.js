@@ -4,6 +4,7 @@ const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const generateTemplate = require("./generateHandler");
 const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
+const {generatePDFFromHTML,generatePDFFromURL } = require("./generatePDFHandler");
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
 const router = express.Router();
@@ -121,4 +122,9 @@ router.get("/getAllForms", async (request, response) => {
 
 // clear the locked by flags in ICM for the form, used when form is closed
 router.post("/clearICMLockedFlag", clearICMLockedFlag);
+
+// Generate route
+router.post("/generatePDF", generatePDFFromHTML);
+router.post("/generatePDFFromURL", generatePDFFromURL);
+
 module.exports = router;
