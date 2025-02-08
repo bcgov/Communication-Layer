@@ -51,11 +51,11 @@ function bindDataToFields(formJson, fetchedData) {
   // Iterate through fields
   formJson.data.items.forEach(field => {
 
-    if (field.databindings) {
+    if (field.databindings != null) {
 
       const dataSourceName = field.databindings.source;
       const dataPath = field.databindings.path;
-      const fetchedSourceData = fetchedData[dataSourceName];
+      const fetchedSourceData = fetchedData[dataSourceName];      
 
       // Fetch the value from the fetched data
       if (fetchedSourceData) {
@@ -86,6 +86,24 @@ function bindDataToFields(formJson, fetchedData) {
           formData[field.id] = valueFromPath.length > 0 ? valueFromPath[0] : null;
         }
       }
+    } else if (field.type === 'group' && field.groupItems && !field.repeater) {
+      const transformedItem = {};
+      //get the databindings from individual filed from non-repeating group
+      field.groupItems.forEach(groupItem => {
+        groupItem.fields.forEach(groupField => {
+          if (groupField.databindings) {           
+            const dataSourceName = groupField.databindings.source;
+            const dataPath = groupField.databindings.path;
+            const fetchedSourceData = fetchedData[dataSourceName];
+            const fieldIdInGroup = `${field.id}-0-${groupField.id}`;
+            if (fetchedSourceData) {
+              const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);              
+              transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? valueFromPathForGroupField[0] : null; // Replace with actual value
+            }          
+          }
+        });
+      });
+      formData[field.id] = [transformedItem];
     }
   });
 
@@ -93,7 +111,7 @@ function bindDataToFields(formJson, fetchedData) {
 }
 
 async function readJsonFormApi(datasource, pathParams) {
-  console.log("readJsonFormApi>>pathParams", pathParams);
+  console.log("readJsonFormApi>>pathParams", pathParams);  
   const { name, type, host, endpoint, params, body } = datasource;
   //const url = `${endpoint}`;
   const url = buildUrlWithParams(host, endpoint, pathParams);
