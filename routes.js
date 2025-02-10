@@ -4,6 +4,7 @@ const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const generateTemplate = require("./generateHandler");
 const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
+const { getUsername } = require("./usernameHandler.js");
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
 const router = express.Router();
@@ -33,11 +34,12 @@ router.get("/api*", async (req, res) => {
     const destinationPath = RegExp("api/(.*)").exec(req.path)[1];
     let endpointUrl = `${ENDPOINT_URL}${destinationPath}`;
     endpointUrl += "?ViewMode=Catalog&workspace=dev_sadmin_bz";
+    const username = await getUsername(req.headers["token"]);
 
     const newResp = await axios.get(endpointUrl, {
       headers: {
         Authorization: `Bearer ${grant.access_token.token}`,
-        "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
+        "X-ICM-TrustedUsername": username,
       },
     });
 
