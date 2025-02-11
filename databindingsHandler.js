@@ -2,6 +2,7 @@ const fs = require('fs');
 const { JSONPath } = require('jsonpath-plus');
 const { keycloakForSiebel } = require("./keycloak.js");
 const axios = require("axios");
+const { getUsername } = require('./usernameHandler.js');
 
 async function populateDatabindings(formJson, params) {
   //start code here
@@ -113,6 +114,7 @@ function bindDataToFields(formJson, fetchedData) {
 async function readJsonFormApi(datasource, pathParams) {
   console.log("readJsonFormApi>>pathParams", pathParams);  
   const { name, type, host, endpoint, params, body } = datasource;
+  const username = await getUsername(pathParams["token"]);
   //const url = `${endpoint}`;
   const url = buildUrlWithParams(host, endpoint, pathParams);
   try {
@@ -121,7 +123,7 @@ async function readJsonFormApi(datasource, pathParams) {
       await keycloakForSiebel.grantManager.obtainFromClientCredentials();
     const headers = {
       Authorization: `Bearer ${grant.access_token.token}`,
-      "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
+      "X-ICM-TrustedUsername": username,
     }
     if (type.toUpperCase() === 'GET') {
 

@@ -3,6 +3,7 @@ const axios = require("axios");
 const databindingsHandler = require("./databindingsHandler.js");
 const buildUrlWithParams = databindingsHandler.buildUrlWithParams;
 const xml2js = require("xml2js");
+const { getUsername } = require("./usernameHandler.js");
 
 // utility function to fetch Attachment status (In Progress, Open...)
 //  and Locked By User field  
@@ -48,6 +49,7 @@ async function saveICMdata(req, res) {
     const params = req.body;
     const attachment_id = params["attachmentId"];
     console.log("attachment_id>>", attachment_id);
+    const username = await getUsername(params["token"]);
     if (!attachment_id) {
         return res
             .status(400)
@@ -77,7 +79,7 @@ async function saveICMdata(req, res) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
-            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
+            "X-ICM-TrustedUsername": username,
         }
         const params = {
             viewMode: "Catalog"
@@ -101,6 +103,7 @@ async function loadICMdata(req, res) {
     const params = req.body;
     const attachment_id = params["attachmentId"];
     const office_name = params["OfficeName"];
+    const username = await getUsername(params["token"]);
     console.log("attachment_id>>", attachment_id);
     if (!attachment_id) {
         return res
@@ -122,7 +125,7 @@ async function loadICMdata(req, res) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
-            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
+            "X-ICM-TrustedUsername": username,
         }
         const params = {
             viewMode: "Catalog",
@@ -149,6 +152,7 @@ async function loadICMdata(req, res) {
 async function clearICMLockedFlag(req, res) {
     const params = req.body;
     const attachment_id = params["attachmentId"];
+    const username = await getUsername(params["token"]);
     if (!attachment_id) {
         return res
             .status(400)
@@ -188,7 +192,7 @@ async function clearICMLockedFlag(req, res) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
-            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
+            "X-ICM-TrustedUsername": username,
 
         }
         const params = {
