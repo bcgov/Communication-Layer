@@ -4,11 +4,11 @@ const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const generateTemplate = require("./generateHandler");
 const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
-<<<<<<< HEAD
+
 const { getUsername } = require("./usernameHandler.js");
-=======
+
 const {generatePDFFromHTML,generatePDFFromURL } = require("./generatePDFHandler");
->>>>>>> 2189_PrintAlternative
+
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
 const router = express.Router();
@@ -130,7 +130,7 @@ router.get("/getAllForms", async (request, response) => {
 // clear the locked by flags in ICM for the form, used when form is closed
 router.post("/clearICMLockedFlag", clearICMLockedFlag);
 
-<<<<<<< HEAD
+
 router.post("/generatePDFFromJson", async (req, res) => {
   try {
       const { savedJson } = req.body;
@@ -149,10 +149,10 @@ router.post("/generatePDFFromJson", async (req, res) => {
       res.status(500).json({ error: "Internal Server Error: Failed to generate PDF" });
   }
 });
-=======
+
 // Generate route
 router.post("/generatePDF", generatePDFFromHTML);
 router.post("/generatePDFFromURL", generatePDFFromURL);
 
->>>>>>> 2189_PrintAlternative
+
 module.exports = router;
