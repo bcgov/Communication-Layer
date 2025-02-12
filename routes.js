@@ -12,6 +12,7 @@ const router = express.Router();
 const FORM_SERVER_URL = process.env.FORMSERVERURL;
 const ENDPOINT_URL = process.env.ENDPOINTURL;
 
+
 // Form Map
 const formMap = new Map();
 formMap.set("id1", "form1");
@@ -124,4 +125,23 @@ router.get("/getAllForms", async (request, response) => {
 
 // clear the locked by flags in ICM for the form, used when form is closed
 router.post("/clearICMLockedFlag", clearICMLockedFlag);
+
+router.post("/generatePDFFromJson", async (req, res) => {
+  try {
+      const { savedJson } = req.body;
+
+      if (!savedJson || typeof savedJson !== "object") {
+          return res.status(400).json({ error: "Invalid JSON format. Must be a valid object." });
+      }
+
+      const pdfBuffer = await generatePDF(savedJson);
+
+      res.setHeader("Content-Disposition", 'attachment; filename="generated.pdf"');
+      res.setHeader("Content-Type", "application/pdf");
+      res.send(pdfBuffer);
+  } catch (error) {
+      console.error("Error generating PDF:", error);
+      res.status(500).json({ error: "Internal Server Error: Failed to generate PDF" });
+  }
+});
 module.exports = router;

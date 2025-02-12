@@ -19,7 +19,8 @@
     "express-xml-bodyparser": "^0.3.0",
     "jsonpath": "^1.1.1",
     "jsonpath-plus": "^10.1.0",
-    "keycloak-connect": "^25.0.1"
+    "keycloak-connect": "^25.0.1",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
