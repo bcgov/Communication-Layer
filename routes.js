@@ -4,13 +4,18 @@ const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const generateTemplate = require("./generateHandler");
 const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
+
 const { getUsername } = require("./usernameHandler.js");
+
+const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON } = require("./generatePDFHandler");
+
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
 const router = express.Router();
 
 const FORM_SERVER_URL = process.env.FORMSERVERURL;
 const ENDPOINT_URL = process.env.ENDPOINTURL;
+
 
 // Form Map
 const formMap = new Map();
@@ -124,4 +129,13 @@ router.get("/getAllForms", async (request, response) => {
 
 // clear the locked by flags in ICM for the form, used when form is closed
 router.post("/clearICMLockedFlag", clearICMLockedFlag);
+
+
+router.post("/generatePDFFromJson", generatePDFFromJSON);
+
+// Generate route
+router.post("/generatePDF", generatePDFFromHTML);
+router.post("/generatePDFFromURL", generatePDFFromURL);
+
+
 module.exports = router;
