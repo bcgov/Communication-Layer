@@ -7,7 +7,7 @@ const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataH
 
 const { getUsername } = require("./usernameHandler.js");
 
-const {generatePDFFromHTML,generatePDFFromURL } = require("./generatePDFHandler");
+const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON } = require("./generatePDFHandler");
 
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
@@ -131,24 +131,7 @@ router.get("/getAllForms", async (request, response) => {
 router.post("/clearICMLockedFlag", clearICMLockedFlag);
 
 
-router.post("/generatePDFFromJson", async (req, res) => {
-  try {
-      const { savedJson } = req.body;
-
-      if (!savedJson || typeof savedJson !== "object") {
-          return res.status(400).json({ error: "Invalid JSON format. Must be a valid object." });
-      }
-
-      const pdfBuffer = await generatePDF(savedJson);
-
-      res.setHeader("Content-Disposition", 'attachment; filename="generated.pdf"');
-      res.setHeader("Content-Type", "application/pdf");
-      res.send(pdfBuffer);
-  } catch (error) {
-      console.error("Error generating PDF:", error);
-      res.status(500).json({ error: "Internal Server Error: Failed to generate PDF" });
-  }
-});
+router.post("/generatePDFFromJson", generatePDFFromJSON);
 
 // Generate route
 router.post("/generatePDF", generatePDFFromHTML);

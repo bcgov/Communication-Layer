@@ -4,11 +4,13 @@ const env = require("dotenv").config();
 const routes = require("./routes");
 const swaggerUi = require("swagger-ui-express");
 const swaggerDocument = require("./swagger.json");
+const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '50mb' }));
+app.use(bodyParser.json());
 
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
