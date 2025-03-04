@@ -1,0 +1,218 @@
+type: object
+required: 
+    - data
+    - form_definition
+    - metadata
+properties:
+  data:
+    type: object
+    additionalProperties:
+      anyOf:
+        - type: string
+        - type: boolean
+        - type: number
+        - type: object
+        - type: array
+        - type: "null"
+          items:
+            type: object
+            additionalProperties:
+              anyOf:
+                - type: string
+                - type: boolean
+                - type: number
+                - type: object
+                - type: "null"
+  form_definition:
+    type: object
+    required:
+        - id
+        - version
+        - ministry_id
+        - data
+    properties:
+      version:
+        anyOf:
+        - type: string        
+        - type: number        
+      ministry_id:
+        anyOf:
+        - type: string        
+        - type: number
+      id:
+        type: string
+      lastModified:
+        type: string
+      title:
+        type: string
+      readOnly:
+        type: boolean
+      form_id:
+        type: string
+      deployed_to:
+        anyOf:
+        - type: string        
+        - type: "null"
+      dataSources:
+        type: array
+        items:
+          type: object
+        default: []  
+      data:
+        type: object
+        required:
+            - items
+        properties:
+          items:
+            type: array
+            minItems: 1  # Ensures items array is not empty
+            items:
+              $ref: "#/definitions/Item"
+  metadata:
+    type: object
+
+definitions:
+  Item:
+    required:
+        - id
+        - type
+    type: object
+    properties:
+      type:
+        type: string
+      label:
+        anyOf:
+        - type: string
+        - type: "null"
+      placeholder:
+        anyOf:
+        - type: string
+        - type: "null"
+      id:
+        type: string
+      mask:
+        anyOf:
+        - type: string        
+        - type: "null"        
+      codeContext:
+        type: object
+        properties:
+          name:
+            type: string
+      header:
+        type: string
+      offText:
+        type: string
+      onText:
+        type: string
+      size:
+        type: string
+      listItems:
+        type: array
+        items:
+          type: object
+          properties:
+            value:
+              type: string
+            text:
+              type: string
+          required:
+            - text
+            - value     
+      groupItems:
+        type: array
+        items:
+          type: object
+          properties:
+            fields:
+              type: array
+              items:
+                $ref: "#/definitions/Item"
+      repeater:
+        type: boolean      
+      helperText:
+        anyOf:
+        - type: string
+        - type: "null"
+      value:
+        type: string
+      filenameStatus:
+        type: string
+      labelDescription:
+        type: string
+      initialRows:
+        type: string
+      initialColumns:
+        type: string
+      initialHeaderNames:
+        type: string
+      repeaterItemLabel:
+        type: string
+      validation:
+        type: array
+        items:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - required
+                - pattern
+                - minLength
+                - maxLength
+                - minDate
+                - maxDate
+                - minValue
+                - maxValue
+                - javascript
+            value:
+              anyOf:
+                - type: string
+                - type: number  
+                - type: boolean
+            errorMessage:
+              anyOf:
+                - type: string
+                - type: "null"
+          required:
+            - type
+            - value
+            - errorMessage      
+      conditions:
+        type: array
+        items:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - visibility
+                - readOnly
+                - calculatedValue
+                - saveOnSubmit
+            value:
+              type: string
+          required:
+            - type
+            - value
+          additionalProperties: false    
+      webStyles:
+        type: object
+        additionalProperties:
+          type: string
+      pdfStyles:
+        type: object
+        additionalProperties:
+          type: string
+      databindings:
+        type: object
+        properties:
+          path:
+            type: string
+          source:
+            type: string
+        required:
+          - path
+          - source
+        additionalProperties: false
+
