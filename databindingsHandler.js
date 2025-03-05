@@ -8,7 +8,7 @@ async function populateDatabindings(formJson, params) {
   //start code here
   try {
     // Extract dataSources from the form JSON
-    const dataSources = formJson.datasources;
+    const dataSources = formJson.dataSources;
 
     // Fetch data from all sources
     const apiData = await fetchDataFromSources(dataSources, params);
