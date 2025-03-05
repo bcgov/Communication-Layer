@@ -7,7 +7,7 @@ const { getUsername } = require("./usernameHandler.js");
 
 // utility function to fetch Attachment status (In Progress, Open...)
 //  and Locked By User field  
-async function getICMAttachmentStatus(attachment_id) {
+async function getICMAttachmentStatus(attachment_id, username) {
     let return_data = {};
     return_data["Status"] = "";
     return_data["Locked by User"] = "";
@@ -22,7 +22,7 @@ async function getICMAttachmentStatus(attachment_id) {
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
             Authorization: `Bearer ${grant.access_token.token}`,
-            "X-ICM-TrustedUsername": process.env.TRUSTED_USERNAME,
+            "X-ICM-TrustedUsername": username,
         }
         const params = {
             viewMode: "Catalog"
@@ -50,12 +50,17 @@ async function saveICMdata(req, res) {
     const attachment_id = params["attachmentId"];
     console.log("attachment_id>>", attachment_id);
     const username = await getUsername(params["token"]);
+    if (!username || !isNaN(username)) {
+        return res
+            .status(401)
+            .send({ error: "Username is not valid" });
+    }
     if (!attachment_id) {
         return res
             .status(400)
             .send({ error: "Attachment Id is  required" });
     }
-    let form_metadata = await getICMAttachmentStatus(attachment_id);
+    let form_metadata = await getICMAttachmentStatus(attachment_id, username);
 
     if (!form_metadata) {
         return null;
@@ -104,13 +109,18 @@ async function loadICMdata(req, res) {
     const attachment_id = params["attachmentId"];
     const office_name = params["OfficeName"];
     const username = await getUsername(params["token"]);
+    if (!username || !isNaN(username)) {
+        return res
+            .status(401)
+            .send({ error: "Username is not valid" });
+    }
     console.log("attachment_id>>", attachment_id);
     if (!attachment_id) {
         return res
             .status(400)
             .send({ error: "Attachment Id is  required" });
     }
-    let icm_metadata = await getICMAttachmentStatus(attachment_id);
+    let icm_metadata = await getICMAttachmentStatus(attachment_id, username);
     let icm_status = icm_metadata["Status"];
     console.log(icm_metadata);
     if (!icm_status || icm_status == "") {
@@ -153,6 +163,11 @@ async function clearICMLockedFlag(req, res) {
     const params = req.body;
     const attachment_id = params["attachmentId"];
     const username = await getUsername(params["token"]);
+    if (!username || !isNaN(username)) {
+        return res
+            .status(401)
+            .send({ error: "Username is not valid" });
+    }
     if (!attachment_id) {
         return res
             .status(400)
@@ -162,7 +177,7 @@ async function clearICMLockedFlag(req, res) {
         console.log("Clearing....");
 
         //check that attachment ID exists and that the form is locked
-        let icm_metadata = await getICMAttachmentStatus(attachment_id);
+        let icm_metadata = await getICMAttachmentStatus(attachment_id, username);
         let icm_status = icm_metadata["Status"];
         if (!icm_status || icm_status == "") {
             console.log("Bad status!");

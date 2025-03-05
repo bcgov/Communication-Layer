@@ -40,7 +40,11 @@ router.get("/api*", async (req, res) => {
     let endpointUrl = `${ENDPOINT_URL}${destinationPath}`;
     endpointUrl += "?ViewMode=Catalog&workspace=dev_sadmin_bz";
     const username = await getUsername(req.headers["token"]);
-
+    if (!username || !isNaN(username)) {
+      return res
+        .status(401)
+        .send({ error: "Username is not valid" });
+    }
     const newResp = await axios.get(endpointUrl, {
       headers: {
         Authorization: `Bearer ${grant.access_token.token}`,
