@@ -18,10 +18,7 @@ spec:
         - name: redis
           image: redis:latest
           ports:
-            - containerPort: 6379
-          envFrom:
-            - configMapRef:
-                name: redis-config
+            - containerPort: 6379          
           env:
             - name: REDIS_PASSWORD
               valueFrom:
