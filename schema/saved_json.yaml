@@ -1,0 +1,29 @@
+type: object
+required:
+  - data
+  - form_definition
+  - metadata
+properties:
+  data:
+    type: object
+    additionalProperties:
+      anyOf:
+        - type: string
+        - type: boolean
+        - type: number
+        - type: object
+        - type: array
+        - type: "null"
+          items:
+            type: object
+            additionalProperties:
+              anyOf:
+                - type: string
+                - type: boolean
+                - type: number
+                - type: object
+                - type: "null"
+  form_definition:
+    $ref: "form_definition_schema"
+  metadata:
+    type: object

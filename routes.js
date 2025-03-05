@@ -7,7 +7,7 @@ const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataH
 
 const { getUsername } = require("./usernameHandler.js");
 
-const { generatePDFFromHTML, generatePDFFromURL, generatePDFFromJSON } = require("./generatePDFHandler");
+const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
 
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
@@ -140,6 +140,7 @@ router.post("/generatePDFFromJson", generatePDFFromJSON);
 // Generate route
 router.post("/generatePDF", generatePDFFromHTML);
 router.post("/generatePDFFromURL", generatePDFFromURL);
+router.post("/loadSavedJson", loadSavedJson);
 
 
 module.exports = router;
