@@ -11,10 +11,14 @@ function loadSchema(schemaPath) {
 
 // Function to validate JSON data against a YAML schema
 function validateJson(jsonData) {
-    const schema = loadSchema("savedJsonSchema.yml");
+    const schema = loadSchema("schema/saved_json.yaml");
+    const formDefinitionSchema = loadSchema("schema/form_definition.yaml");
 
     const ajv = new Ajv({ allErrors: true });
     addFormats(ajv);
+
+    // Add the external schema
+    ajv.addSchema(formDefinitionSchema, "form_definition_schema");
 
     const validate = ajv.compile(schema);
     const valid = validate(jsonData);
