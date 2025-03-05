@@ -2,13 +2,19 @@ const { keycloakForFormRepo } = require("./keycloak.js");
 const axios = require("axios");
 const databindingsHandler = require("./databindingsHandler.js");
 const getFormFromFormTemplate = require("./formRepoHandler.js");
+const { getUsername } = require('./usernameHandler.js');
 const populateDatabindings = databindingsHandler.populateDatabindings;
 async function generateTemplate(req, res) {
 
   const params = req.body;
   const template_id = params["formId"];
   console.log("template_id>>", template_id);
-
+  const username = await getUsername(params["token"]);
+  if (!username || !isNaN(username)) {
+    return res
+      .status(401)
+      .send({ error: "Username is not valid" });
+  }
   if (!template_id) {
     return res
       .status(400)

@@ -56,7 +56,7 @@ function bindDataToFields(formJson, fetchedData) {
 
       const dataSourceName = field.databindings.source;
       const dataPath = field.databindings.path;
-      const fetchedSourceData = fetchedData[dataSourceName];      
+      const fetchedSourceData = fetchedData[dataSourceName];
 
       // Fetch the value from the fetched data
       if (fetchedSourceData) {
@@ -92,15 +92,15 @@ function bindDataToFields(formJson, fetchedData) {
       //get the databindings from individual filed from non-repeating group
       field.groupItems.forEach(groupItem => {
         groupItem.fields.forEach(groupField => {
-          if (groupField.databindings) {           
+          if (groupField.databindings) {
             const dataSourceName = groupField.databindings.source;
             const dataPath = groupField.databindings.path;
             const fetchedSourceData = fetchedData[dataSourceName];
             const fieldIdInGroup = `${field.id}-0-${groupField.id}`;
             if (fetchedSourceData) {
-              const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);              
+              const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);
               transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? valueFromPathForGroupField[0] : null; // Replace with actual value
-            }          
+            }
           }
         });
       });
@@ -112,9 +112,14 @@ function bindDataToFields(formJson, fetchedData) {
 }
 
 async function readJsonFormApi(datasource, pathParams) {
-  console.log("readJsonFormApi>>pathParams", pathParams);  
+  console.log("readJsonFormApi>>pathParams", pathParams);
   const { name, type, host, endpoint, params, body } = datasource;
   const username = await getUsername(pathParams["token"]);
+  if (!username || !isNaN(username)) {
+    return res
+      .status(401)
+      .send({ error: "Username is not valid" });
+  }
   //const url = `${endpoint}`;
   const url = buildUrlWithParams(host, endpoint, pathParams);
   try {
