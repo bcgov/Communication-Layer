@@ -23,6 +23,12 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Chromium
+RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
+
+# Set Puppeteer to use installed Chromium
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium    
+
 COPY package*.json ./
 
 RUN npm install
