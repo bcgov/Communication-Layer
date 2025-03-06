@@ -162,6 +162,7 @@ async function generatePDFFromURL(req, res) {
 async function getPDFFromURL(url) {
 
   console.log("Puppeteer path:", process.env.PUPPETEER_EXECUTABLE_PATH);
+  console.log("Puppeteer URL:", url);
   const browser = await puppeteer.launch({
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     args: [
