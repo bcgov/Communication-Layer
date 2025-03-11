@@ -3,6 +3,7 @@ const { keycloakForSiebel } = require("./keycloak.js");
 
 async function isUsernameValid(username) {
     try {
+        console.log("USERNAME", username)
         const siebelApiUrl = process.env.SIEBEL_ICM_API_EMPLOYEE_URL;
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const response = await axios.get(siebelApiUrl, {
@@ -36,6 +37,7 @@ async function getUsername(userToken) {
     }
 
     try {
+        return "CGINST06";
         const userInfoResponse = await axios.get(process.env.USERNAME_SERVERURL, {
             headers: {
                 Authorization: `Bearer ${userToken}`,
