@@ -37,12 +37,12 @@ async function getUsername(userToken) {
     }
 
     try {
-        return "CGINST06";
         const userInfoResponse = await axios.get(process.env.USERNAME_SERVERURL, {
             headers: {
                 Authorization: `Bearer ${userToken}`,
             },
         });
+        console.log("USERINFO", userInfoResponse.data);
         if (userInfoResponse.data && userInfoResponse.data.idir_username) {
             const username = userInfoResponse.data.idir_username;
 
