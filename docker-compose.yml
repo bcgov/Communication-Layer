@@ -16,7 +16,7 @@ services:
       dockerfile: dockerfile  # Path to your Node.js Dockerfile
     container_name: nodejs-backend
     ports:
-      - "3030:3030"  # Adjust to your Node.js port
+      - "3001:3001"  # Adjust to your Node.js port
     depends_on:
       - redis
     env_file:
