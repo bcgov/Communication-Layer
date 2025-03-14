@@ -31,7 +31,7 @@ router.get("/status", (req, res) => {
   res.send({ status: "running" });
 });
 
-// API forwarding route
+/*/ API forwarding route
 router.get("/api*", async (req, res) => {
   try {
     const grant =
@@ -57,7 +57,7 @@ router.get("/api*", async (req, res) => {
     console.error("API error: " + err.message);
     res.status(500).send({ error: err.message });
   }
-});
+});*/
 
 // XML form post route
 router.post("/form1", xmlparser(), async (req, res) => {
