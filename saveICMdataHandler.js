@@ -5,6 +5,7 @@ const buildUrlWithParams = databindingsHandler.buildUrlWithParams;
 const xml2js = require("xml2js");
 const { getUsername } = require("./usernameHandler.js");
 
+const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 // utility function to fetch Attachment status (In Progress, Open...)
 //  and Locked By User field  
 async function getICMAttachmentStatus(attachment_id, username) {
@@ -15,7 +16,8 @@ async function getICMAttachmentStatus(attachment_id, username) {
     if (!attachment_id || attachment_id == "") {
         return return_data;
     }
-    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+    //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
     try {
         let response;
         const grant =
@@ -77,7 +79,8 @@ async function saveICMdata(req, res) {
     let builder = new xml2js.Builder();
     saveJson["XML Hierarchy"] = builder.buildObject(saveData);
 
-    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+    //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
     try {
         let response;
         const grant =
@@ -128,7 +131,7 @@ async function loadICMdata(req, res) {
         return null;
     }
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT FormFoundry Upsert/DT Form Instance Orbeon Revise/'+attachment_id+'/','');
-    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
     try {
         let response;
         const grant =
@@ -201,7 +204,8 @@ async function clearICMLockedFlag(req, res) {
         saveJson["Locked By Id"] = "";
         saveJson["Token"] = "";
 
-        let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+        //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+        let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
         let response;
         const grant =
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
