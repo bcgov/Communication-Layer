@@ -49,64 +49,74 @@ async function fetchDataFromSources(dataSources, params) {
 function bindDataToFields(formJson, fetchedData) {
   const formData = {};
 
-  // Iterate through fields
-  formJson.data.items.forEach(field => {
+  const processItemsForDatabinding = (items) => {
+    items.forEach(field => {
 
-    if (field.databindings != null) {
-
-      const dataSourceName = field.databindings.source;
-      const dataPath = field.databindings.path;
-      const fetchedSourceData = fetchedData[dataSourceName];
-
-      // Fetch the value from the fetched data
-      if (fetchedSourceData) {
-        const valueFromPath = JSONPath(dataPath, fetchedSourceData);
-        // If the field is a group, handle groupItems
-        if (field.type === 'group' && field.groupItems) {
-          // Create an array to store groupData objects for each item in valueFromPath
-          const groupDataArray = valueFromPath.map((pathObj, index) => {
-            const groupData = {};
-
-            // For each item in valueFromPath, iterate over the group fields
-            field.groupItems.forEach(groupItem => {
-              groupItem.fields.forEach(groupField => {
-                if (groupField.databindings) {
-                  const fieldBindings = groupField.databindings.path;
-                  const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
-                  // Assign data from pathObj or an empty string if not available
-                  groupData[fieldIdInGroup] = pathObj[fieldBindings] || '';
-                }
+      if(field.type === 'container' && field.containerItems) {
+        processItemsForDatabinding(field.containerItems);
+      } else if (field.databindings != null) {
+  
+        const dataSourceName = field.databindings.source;
+        const dataPath = field.databindings.path;
+        const fetchedSourceData = fetchedData[dataSourceName];
+  
+        // Fetch the value from the fetched data
+        if (fetchedSourceData) {
+          const valueFromPath = JSONPath(dataPath, fetchedSourceData);
+          // If the field is a group, handle groupItems
+          if (field.type === 'group' && field.groupItems) {
+            // Create an array to store groupData objects for each item in valueFromPath
+            const groupDataArray = valueFromPath.map((pathObj, index) => {
+              const groupData = {};
+  
+              // For each item in valueFromPath, iterate over the group fields
+              field.groupItems.forEach(groupItem => {
+                groupItem.fields.forEach(groupField => {
+                  if (groupField.databindings) {
+                    const fieldBindings = groupField.databindings.path;
+                    const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
+                    // Assign data from pathObj or an empty string if not available
+                    groupData[fieldIdInGroup] = pathObj[fieldBindings] || '';
+                  }
+                });
               });
+              return groupData;
             });
-            return groupData;
-          });
-
-          // Assign the groupDataArray to formData for this field's ID
-          formData[field.id] = groupDataArray;
-        } else {
-          formData[field.id] = valueFromPath.length > 0 ? valueFromPath[0] : null;
-        }
-      }
-    } else if (field.type === 'group' && field.groupItems && !field.repeater) {
-      const transformedItem = {};
-      //get the databindings from individual filed from non-repeating group
-      field.groupItems.forEach(groupItem => {
-        groupItem.fields.forEach(groupField => {
-          if (groupField.databindings) {
-            const dataSourceName = groupField.databindings.source;
-            const dataPath = groupField.databindings.path;
-            const fetchedSourceData = fetchedData[dataSourceName];
-            const fieldIdInGroup = `${field.id}-0-${groupField.id}`;
-            if (fetchedSourceData) {
-              const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);
-              transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? valueFromPathForGroupField[0] : null; // Replace with actual value
-            }
+  
+            // Assign the groupDataArray to formData for this field's ID
+            formData[field.id] = groupDataArray;
+          } else {
+            formData[field.id] = valueFromPath.length > 0 ? valueFromPath[0] : null;
           }
+        }
+      } else if (field.type === 'group' && field.groupItems && !field.repeater) {
+        const transformedItem = {};
+        //get the databindings from individual filed from non-repeating group
+        field.groupItems.forEach(groupItem => {
+          groupItem.fields.forEach(groupField => {
+            if (groupField.databindings) {
+              const dataSourceName = groupField.databindings.source;
+              const dataPath = groupField.databindings.path;
+              const fetchedSourceData = fetchedData[dataSourceName];
+              const fieldIdInGroup = `${field.id}-0-${groupField.id}`;
+              if (fetchedSourceData) {
+                const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);
+                transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? valueFromPathForGroupField[0] : null; // Replace with actual value
+              }
+            }
+          });
         });
-      });
-      formData[field.id] = [transformedItem];
-    }
-  });
+        formData[field.id] = [transformedItem];
+      }
+    });
+  }
+
+  if (formJson?.data?.items) {
+    processItemsForDatabinding(formJson.data.items);
+  }
+
+  // Iterate through fields
+  formJson.data.items.forEach
 
   return formData;
 }

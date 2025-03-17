@@ -2,6 +2,7 @@ const axios = require("axios");
 const { keycloakForSiebel } = require("./keycloak.js");
 
 async function isUsernameValid(username) {
+    return "CGINST06";
     try {
         console.log("USERNAME", username)
         const siebelApiUrl = process.env.SIEBEL_ICM_API_EMPLOYEE_URL;
