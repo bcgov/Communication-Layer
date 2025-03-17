@@ -162,7 +162,8 @@ async function readJsonFormApi(datasource, pathParams) {
 
 function buildUrlWithParams(host, endpoint, pathVariables) {
   const hostFromEnv = getHost(host);
-  let url = `${hostFromEnv}${endpoint}`;
+  const endpointFromEnv = getEndpoint(endpoint);
+  let url = `${hostFromEnv}${endpointFromEnv}`;
   // Replace any placeholder variables like @@attachmentId
   Object.keys(pathVariables).forEach(key => {
     const placeholder = `@@${key}`;
@@ -177,6 +178,10 @@ function getHost(host) {
   return process.env[host] || host;
 }
 
+function getEndpoint(endpoint){
+  // Use endpoint from environment variable if available, otherwise fall back to JSON
+  return process.env[endpoint] || endpoint;
+}
 function buildBodyWithParams(bodyFromJson, pathVariables) {
 
   let bodyString = JSON.stringify(bodyFromJson);
