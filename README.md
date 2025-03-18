@@ -47,13 +47,14 @@ touch common/data.xml
 ```
 npm run dev
 ```
+- Using docker
+
+```
+docker-compose up --build
+```
 
 ## Help
 
-- there are currently three endpoints:
-  - /status - will just return an OK message
-  - /api - will strip out the part of request after /api, append it to the ENDPOINTURL .env variable, authenticate with keycloak server and send a request, then forward the response back as JSON
-  - /xml - will pull a data file from /common/data.xml and return it as an XML file
 
 ## Authors
 
