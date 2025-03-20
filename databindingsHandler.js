@@ -3,6 +3,8 @@ const { JSONPath } = require('jsonpath-plus');
 const { keycloakForSiebel } = require("./keycloak.js");
 const axios = require("axios");
 const { getUsername } = require('./usernameHandler.js');
+const { parse, format } = require("date-fns");
+
 
 async function populateDatabindings(formJson, params) {
   //start code here
@@ -57,10 +59,11 @@ function bindDataToFields(formJson, fetchedData) {
       const dataSourceName = field.databindings.source;
       const dataPath = field.databindings.path;
       const fetchedSourceData = fetchedData[dataSourceName];
+      let valueFromPath = "";
 
       // Fetch the value from the fetched data
       if (fetchedSourceData) {
-        const valueFromPath = JSONPath(dataPath, fetchedSourceData);
+        valueFromPath = JSONPath(dataPath, fetchedSourceData);
         // If the field is a group, handle groupItems
         if (field.type === 'group' && field.groupItems) {
           // Create an array to store groupData objects for each item in valueFromPath
@@ -74,7 +77,7 @@ function bindDataToFields(formJson, fetchedData) {
                   const fieldBindings = groupField.databindings.path;
                   const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
                   // Assign data from pathObj or an empty string if not available
-                  groupData[fieldIdInGroup] = pathObj[fieldBindings] || '';
+                  groupData[fieldIdInGroup] = transformValueToBindIfNeeded(groupField,pathObj[fieldBindings]) || '';
                 }
               });
             });
@@ -84,7 +87,7 @@ function bindDataToFields(formJson, fetchedData) {
           // Assign the groupDataArray to formData for this field's ID
           formData[field.id] = groupDataArray;
         } else {
-          formData[field.id] = valueFromPath.length > 0 ? valueFromPath[0] : null;
+          formData[field.id] = valueFromPath.length > 0 ? transformValueToBindIfNeeded(field,valueFromPath[0]) : null;
         }
       }
     } else if (field.type === 'group' && field.groupItems && !field.repeater) {
@@ -99,7 +102,8 @@ function bindDataToFields(formJson, fetchedData) {
             const fieldIdInGroup = `${field.id}-0-${groupField.id}`;
             if (fetchedSourceData) {
               const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);
-              transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? valueFromPathForGroupField[0] : null; // Replace with actual value
+              //do date conversion here uisng a function - chceking the type as date and then checking format and applying
+              transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? transformValueToBindIfNeeded(groupField,valueFromPathForGroupField[0]) : null; // Replace with actual value
             }
           }
         });
@@ -184,6 +188,20 @@ function buildBodyWithParams(bodyFromJson, pathVariables) {
   return JSON.parse(bodyString);
 }
 
+function transformValueToBindIfNeeded(field,valueToBind) {
+  
+  try{
+    if( field && (field.type == "date" || field.type == "date-picker") && valueToBind) {      
+      const formatToBind = field.inputFormat ? field.inputFormat : "dd/MM/yyyy";
+      const parsedDate = parse(valueToBind,formatToBind, new Date());
+      const transformedValue =  format(parsedDate, "yyyy-MM-dd");      
+      return transformedValue;    
+    } 
+  } catch(error) {
+    console.error('Error processing date value:', error);    
+  }
+  return valueToBind;
+}
 
 module.exports.populateDatabindings = populateDatabindings;
 module.exports.buildUrlWithParams = buildUrlWithParams;
