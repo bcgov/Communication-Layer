@@ -192,7 +192,7 @@ function transformValueToBindIfNeeded(field,valueToBind) {
   
   try{
     if( field && (field.type == "date" || field.type == "date-picker") && valueToBind) {      
-      const formatToBind = field.inputFormat ? field.inputFormat : "dd/MM/yyyy";
+      const formatToBind = field.inputFormat ? field.inputFormat : "MM/dd/yyyy";
       const parsedDate = parse(valueToBind,formatToBind, new Date());
       const transformedValue =  format(parsedDate, "yyyy-MM-dd");      
       return transformedValue;    
