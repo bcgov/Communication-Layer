@@ -1,0 +1,124 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "PDF Generation API",
+    "description": "API to generate a PDF from Base64-encoded JSON input",
+    "version": "1.1.0"
+  },
+  "paths": {
+    "/generatePDFFromJson": {
+      "post": {
+        "summary": "Generate a PDF from Base64-encoded JSON data",
+        "description": "Takes a Base64-encoded JSON string as input and returns a Base64-encoded PDF in a structured JSON response.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "attachment": {
+                    "type": "string",
+                    "format": "base64",
+                    "description": "Base64-encoded JSON string containing document data",
+                    "example": "eyJrZXkiOiAiVmFsdWUifQ=="
+                  }
+                },
+                "required": ["attachment"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF successfully generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "errorMessage": {
+                      "type": "string",
+                      "example": "Success"
+                    },
+                    "pdf": {
+                      "type": "string",
+                      "format": "base64",
+                      "example": "JVBERi0xLjQKJ..."
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "integer"
+                    },
+                    "errorMessage": {
+                      "type": "string"
+                    },
+                    "pdf": {
+                      "type": "string",
+                      "example": null
+                    }
+                  }
+                },
+                "examples": {
+                  "Invalid Base64 Format": {
+                    "value": {
+                      "errorCode": 1,
+                      "errorMessage": "Invalid incoming JSON .No attachment found.",
+                      "pdf": null
+                    }
+                  },
+                  "Invalid JSON Structure": {
+                    "value": {
+                      "errorCode": 2,
+                      "errorMessage": "Invalid JSON after base 64 conversion. Must be a valid JSON object.",
+                      "pdf": null
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "integer",
+                      "example": 2
+                    },
+                    "errorMessage": {
+                      "type": "string",
+                      "example": "Internal Server Error: Failed to generate PDF"
+                    },
+                    "pdf": {
+                      "type": "string",
+                      "example": null
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

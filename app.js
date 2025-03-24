@@ -2,11 +2,21 @@ const express = require("express");
 const cors = require("cors");
 const env = require("dotenv").config();
 const routes = require("./routes");
+const swaggerUi = require("swagger-ui-express");
+const swaggerDocument = require("./swagger.json");
+const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(bodyParser.json());
+
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+
+// Serve Swagger UI at `/api-docs`
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const allowedOrigins = process.env.ALLOWEDORIGINS ? process.env.ALLOWEDORIGINS.split(',') : [];
 
@@ -15,6 +25,8 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.log("FAILED CORS CHECK FOR THE ORIGIN URL:", origin);
+      console.log("ALLOWED ORIGINS:", allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
