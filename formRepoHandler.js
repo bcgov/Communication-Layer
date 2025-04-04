@@ -1,9 +1,9 @@
 const { keycloakForFormRepo } = require("./keycloak.js");
 const axios = require("axios");
 
-async function getFormFromFormTemplate(formId) {
-  const FORMREPO_GETFORMURL = process.env.FORMREPO_GETFORMURL;
+async function getFormFromFormTemplate(formId) {  
   try {
+    const FORMREPO_GETFORMURL = process.env.FORMREPO_GETFORMURL;
     const grant =
       await keycloakForFormRepo.grantManager.obtainFromClientCredentials();
     let endpointUrl = `${FORMREPO_GETFORMURL}/${formId}`;

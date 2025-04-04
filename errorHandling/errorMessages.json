@@ -9,11 +9,12 @@
       "GENERIC_ERROR_MSG":"Close this window and try again in a few seconds",
       "FAILED_TO_UNLOCK_FORM":"Failed to unlock the form",
       "FORM_NOT_VALID":"There is a problem with the form you are trying to open. Try again later and report to support, if the issue is not solved",
-      "FORM_NOT_FOUND_IN_REQUEST":"The form is not found in the incoming request. Try again later and report to support, if the issue is not solved"
-    },    
+      "FORM_NOT_FOUND_IN_REQUEST":"The form is not found in the incoming request. Try again later and report to support, if the issue is not solved",
+      "GENERATE_ERROR_MSG":"Error generating the form .Close this window and try again in a few seconds"
+    },     
     "test": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
-      "SERVER_ERROR": "Something went wrong, please try again",
+      "SERVER_ERROR": "Close this window and try again in a few seconds",
       "INVALID_USER":"You are not allowed to access this form. Please login to ICM as an authorized user.",
       "FORM_NOT_FOUND":"The form template {templateId} cannot be loaded. Please contact support if the issue repeats",
       "ATTACHMENT_ID_REQUIRED":"Close this window and try again in a few seconds",
@@ -21,12 +22,12 @@
       "GENERIC_ERROR_MSG":"Close this window and try again in a few seconds",
       "FAILED_TO_UNLOCK_FORM":"Failed to unlock the form",
       "FORM_NOT_VALID":"There is a problem with the form you are trying to open. Try again later and report to support, if the issue is not solved",
-      "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved"
-      
+      "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved",
+      "GENERATE_ERROR_MSG":"Close this window and try again in a few seconds"      
     },
     "prod": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
-      "SERVER_ERROR": "Something went wrong, please try again",
+      "SERVER_ERROR": "Close this window and try again in a few seconds",
       "INVALID_USER":"You are not allowed to access this form. Please login to ICM as an authorized user.",
       "FORM_NOT_FOUND":"The form template {templateId} cannot be loaded. Please contact support if the issue repeats",
       "ATTACHMENT_ID_REQUIRED":"Close this window and try again in a few seconds",
@@ -34,6 +35,7 @@
       "GENERIC_ERROR_MSG":"Close this window and try again in a few seconds",
       "FAILED_TO_UNLOCK_FORM":"Failed to unlock the form",
       "FORM_NOT_VALID":"There is a problem with the form you are trying to open. Try again later and report to support, if the issue is not solved",
-      "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved"
+      "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved",
+      "GENERATE_ERROR_MSG":"Close this window and try again in a few seconds"
     }
   }

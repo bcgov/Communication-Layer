@@ -7,40 +7,45 @@ const populateDatabindings = databindingsHandler.populateDatabindings;
 const { getErrorMessage } =  require("./errorHandling/errorHandler.js");
 
 async function generateTemplate(req, res) {
+  try {
+    const params = req.body;
+    const template_id = params["formId"];
+    console.log("template_id>>", template_id);
+    if (!template_id) {
+      return res
+        .status(400)
+        .send({ error: getErrorMessage("FORM_ID_REQUIRED") });
+    }
+    const username = await getUsername(params["token"]);
+    if (!username || !isNaN(username)) {    
+      return res
+        .status(401)
+        .send({ error: getErrorMessage("INVALID_USER")});
+    }  
 
-  const params = req.body;
-  const template_id = params["formId"];
-  console.log("template_id>>", template_id);
-  if (!template_id) {
+    const formJson = await constructFormJson(template_id, params);
+
+    if (formJson != null) {    
+      res.status(200).send({
+        save_data: formJson
+      });
+    }
+    else {    
+      res.status(400)
+        .send({ error: getErrorMessage("FORM_NOT_FOUND",{ templateId: template_id })});
+    }  
+  }catch(error) {
+    console.error(`Error generating the form:`, error);
     return res
-      .status(400)
-      .send({ error: getErrorMessage("FORM_ID_REQUIRED") });
+        .status(400)
+        .send({ error: getErrorMessage("GENERATE_ERROR_MSG") });
   }
-  const username = await getUsername(params["token"]);
-  if (!username || !isNaN(username)) {    
-    return res
-      .status(401)
-      .send({ error: getErrorMessage("INVALID_USER")});
-  }  
-
-  const formJson = await constructFormJson(template_id, params);
-
-  if (formJson != null) {    
-    res.status(200).send({
-      save_data: formJson
-    });
-  }
-  else {    
-    res.status(400)
-      .send({ error: getErrorMessage("FORM_NOT_FOUND",{ templateId: template_id })});
-  }  
 }
 
 async function constructFormJson(formId, params) {
 
   const formDefinition = await getFormFromFormTemplate(formId);
 
-  console.log("formDefinition in constructFormJson>>",formDefinition);
   if(!formDefinition || formDefinition === null) {
      return null;
   }

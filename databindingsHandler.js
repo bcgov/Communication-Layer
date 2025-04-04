@@ -34,15 +34,17 @@ async function populateDatabindings(formJson, params) {
 
 async function fetchDataFromSources(dataSources, params) {
   let data = {};
-  for (const source of dataSources) {
-    try {
+  if (dataSources !=null) {
+    for (const source of dataSources) {
+      try {
 
-      const response = await readJsonFormApi(source, params);
-      data[source.name] = response;
+        const response = await readJsonFormApi(source, params);
+        data[source.name] = response;
 
-    } catch (error) {
-      console.error(`Error fetching data from ${source.name}:`, error);
-      data[source.name] = null; // Handle missing data source
+      } catch (error) {
+        console.error(`Error fetching data from ${source.name}:`, error);
+        data[source.name] = null; // Handle missing data source
+      }
     }
   }
   return data;
@@ -124,9 +126,9 @@ async function readJsonFormApi(datasource, pathParams) {
       .status(401)
       .send({ error: "Username is not valid" });
   }
-  //const url = `${endpoint}`;
-  const url = buildUrlWithParams(host, endpoint, pathParams);
+  
   try {
+    const url = buildUrlWithParams(host, endpoint, pathParams);
     let response;
     const grant =
       await keycloakForSiebel.grantManager.obtainFromClientCredentials();
@@ -183,8 +185,7 @@ function buildBodyWithParams(bodyFromJson, pathVariables) {
   Object.keys(pathVariables).forEach(key => {
     const placeholder = `@@${key}`;
     bodyString = bodyString.replace(new RegExp(placeholder, 'g'), pathVariables[key]);
-  });
-  console.log("after body", bodyString);
+  });  
   return JSON.parse(bodyString);
 }
 
