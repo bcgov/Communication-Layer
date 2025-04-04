@@ -17,7 +17,7 @@ async function getFormFromFormTemplate(formId) {
     return formDefinition.data;
   } catch (err) {
     console.error("API error: " + err.message);
-    return "";
+    return null;
   }
 
 }

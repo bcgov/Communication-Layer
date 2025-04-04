@@ -4,12 +4,14 @@ const databindingsHandler = require("./databindingsHandler.js");
 const buildUrlWithParams = databindingsHandler.buildUrlWithParams;
 const xml2js = require("xml2js");
 const { getUsername } = require("./usernameHandler.js");
+const { getErrorMessage } =  require("./errorHandling/errorHandler.js"); 
+const {isJsonStringValid }= require("./validate.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 // utility function to fetch Attachment status (In Progress, Open...)
 //  and Locked By User field  
 async function getICMAttachmentStatus(attachment_id, username) {
-    let return_data = {};
+    let return_data = {}; 
     return_data["Status"] = "";
     return_data["Locked by User"] = "";
     return_data["DocFileName"] = "";
@@ -50,23 +52,40 @@ async function saveICMdata(req, res) {
 
     const params = req.body;
     const attachment_id = params["attachmentId"];
-    console.log("attachment_id>>", attachment_id);
+    const savedFormParam = params["savedForm"];
+    console.log("In saveICMdata attachment_id>>", attachment_id);
+    if (!attachment_id) {
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
+    }
+    if (!savedFormParam) {
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
+    }
     const username = await getUsername(params["token"]);
     if (!username || !isNaN(username)) {
         return res
             .status(401)
-            .send({ error: "Username is not valid" });
+            .send({ error: getErrorMessage("INVALID_USER") });
     }
-    if (!attachment_id) {
-        return res
-            .status(400)
-            .send({ error: "Attachment Id is  required" });
-    }
+    
     let form_metadata = await getICMAttachmentStatus(attachment_id, username);
 
     if (!form_metadata) {
-        return null;
-    }
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
+    }    
+    //saveForm validate before saving to ICM
+    const valid = isJsonStringValid(savedFormParam);
+    if (!valid) {
+        console.log('JSON is  not valid ');
+        return res
+        .status(400)
+        .send({ error: getErrorMessage("FORM_NOT_VALID") });
+    } 
 
     let saveJson = {};
     saveJson["Id"] = attachment_id;
@@ -74,8 +93,8 @@ async function saveICMdata(req, res) {
     saveJson["Status"] = "In Progress";
     saveJson["DocFileName"] = form_metadata["DocFileName"];
     saveJson["DocFileExt"] = "json";
-    saveJson["Doc Attachment Id"] = Buffer.from(params.savedForm).toString('base64');
-    let saveData = JSON.parse(params.savedForm)["data"];
+    saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
+    let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
     let builder = new xml2js.Builder();
     saveJson["XML Hierarchy"] = builder.buildObject(saveData);
 
@@ -111,24 +130,27 @@ async function loadICMdata(req, res) {
     const params = req.body;
     const attachment_id = params["attachmentId"];
     const office_name = params["OfficeName"];
-    const username = await getUsername(params["token"]);
-    if (!username || !isNaN(username)) {
-        return res
-            .status(401)
-            .send({ error: "Username is not valid" });
-    }
     console.log("attachment_id>>", attachment_id);
     if (!attachment_id) {
         return res
             .status(400)
-            .send({ error: "Attachment Id is  required" });
+            .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
+    const username = await getUsername(params["token"]);
+    if (!username || !isNaN(username)) {
+        return res
+            .status(401)
+            .send({ error: getErrorMessage("INVALID_USER")  });
+    }
+    
     let icm_metadata = await getICMAttachmentStatus(attachment_id, username);
     let icm_status = icm_metadata["Status"];
     console.log(icm_metadata);
     if (!icm_status || icm_status == "") {
-        console.log("Error fetching Form Instance Thin data for ", attachment_id);
-        return null;
+        console.log("Error fetching Form Instance Thin data for ", attachment_id);        
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
     }
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT FormFoundry Upsert/DT Form Instance Orbeon Revise/'+attachment_id+'/','');
     let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
@@ -149,6 +171,15 @@ async function loadICMdata(req, res) {
         }
         response = await axios.get(url, { params, headers });
         let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
+        //validate the returned data to be of the expected format 
+        const valid = isJsonStringValid(return_data);
+        if (!valid) {
+            console.log('JSON is  not valid ');
+            return res
+            .status(400)
+            .send({ error: getErrorMessage("FORM_NOT_VALID") });
+        } 
+        //validate ends here. Once validated continue to modify json based on status and send back.
         if (icm_status == "Complete") {
             let new_data = JSON.parse(return_data);
             new_data.form_definition.readOnly = true;
@@ -158,24 +189,27 @@ async function loadICMdata(req, res) {
     }
     catch (error) {
         console.error(`Error loading data from ICM:`, error);
-        return null; // Handle missing data source or error
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("GENERIC_ERROR_MSG") });
     }
 
 }
 async function clearICMLockedFlag(req, res) {
     const params = req.body;
     const attachment_id = params["attachmentId"];
+    if (!attachment_id) {
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
+    }
     const username = await getUsername(params["token"]);
     if (!username || !isNaN(username)) {
         return res
             .status(401)
-            .send({ error: "Username is not valid" });
+            .send({ error: getErrorMessage("INVALID_USER") });
     }
-    if (!attachment_id) {
-        return res
-            .status(400)
-            .send({ error: "Attachment Id is  required" });
-    }
+    
     try {
         console.log("Clearing....");
 
@@ -186,7 +220,7 @@ async function clearICMLockedFlag(req, res) {
             console.log("Bad status!");
             return res
                 .status(400)
-                .send({ error: "Attachment Id not found" });
+                .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
         }
         if (!icm_metadata["Locked by User"] || icm_metadata["Locked by User"] == "") {
             console.log("not locked?");
@@ -226,7 +260,7 @@ async function clearICMLockedFlag(req, res) {
 
     catch (error) {
         console.log("Error clearing the locked metadata");
-        return res.status(400).send({ error: "Failed to unlock the form" });
+        return res.status(400).send({ error: getErrorMessage("FAILED_TO_UNLOCK_FORM") });
     }
 
 }
