@@ -37,6 +37,7 @@ async function getUsername(userToken) {
     }
 
     try {
+
         const userInfoResponse = await axios.get(process.env.USERNAME_SERVERURL, {
             headers: {
                 Authorization: `Bearer ${userToken}`,
