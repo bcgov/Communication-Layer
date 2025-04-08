@@ -189,3 +189,7 @@ definitions:
           - path
           - source
         additionalProperties: false
+      containerItems:
+        type: array
+        items:
+          $ref: "#/definitions/Item"       
