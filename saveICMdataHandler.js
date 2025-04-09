@@ -14,6 +14,8 @@ async function getICMAttachmentStatus(attachment_id, username) {
     let return_data = {}; 
     return_data["Status"] = "";
     return_data["Locked by User"] = "";
+    return_data["Locked Flag"] = "";
+    return_data["Locked by Id"] = "";
     return_data["DocFileName"] = "";
     if (!attachment_id || attachment_id == "") {
         return return_data;
@@ -25,7 +27,7 @@ async function getICMAttachmentStatus(attachment_id, username) {
         const grant =
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
-            Authorization: `Bearer ${grant.access_token.token}`,
+            Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
         }
         const params = {
@@ -37,6 +39,8 @@ async function getICMAttachmentStatus(attachment_id, username) {
         response = await axios.get(url, { params, headers });
         return_data["Status"] = response.data["Status"];
         return_data["Locked by User"] = response.data["Locked by User"];
+        return_data["Locked Flag"] = response.data["Locked Flag"];
+        return_data["Locked by Id"]= response.data["Locked by Id"];
         return_data["DocFileName"] = response.data["DocFileName"];
         return return_data;
     }
@@ -105,7 +109,7 @@ async function saveICMdata(req, res) {
         const grant =
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
-            Authorization: `Bearer ${grant.access_token.token}`,
+            Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
         }
         const params = {
@@ -159,7 +163,7 @@ async function loadICMdata(req, res) {
         const grant =
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
-            Authorization: `Bearer ${grant.access_token.token}`,
+            Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
         }
         const params = {
@@ -222,7 +226,7 @@ async function clearICMLockedFlag(req, res) {
                 .status(400)
                 .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
         }
-        if (!icm_metadata["Locked by User"] || icm_metadata["Locked by User"] == "") {
+        if ( icm_metadata["Locked by Id"] == "") {
             console.log("not locked?");
             return res
                 .status(200)
@@ -234,8 +238,8 @@ async function clearICMLockedFlag(req, res) {
         //  and matches before any operation is permitted on an 'edit in progress form' workflow
         let saveJson = {};
         saveJson["Id"] = attachment_id;
-        saveJson["Locked by User"] = "";
-        saveJson["Locked By Id"] = "";
+        saveJson["Locked Flag"] = "N";
+        saveJson["Locked by Id"] = "";
         saveJson["Token"] = "";
 
         //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
@@ -244,7 +248,7 @@ async function clearICMLockedFlag(req, res) {
         const grant =
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
         const headers = {
-            Authorization: `Bearer ${grant.access_token.token}`,
+            Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
 
         }
