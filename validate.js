@@ -26,5 +26,37 @@ function validateJson(jsonData) {
     return { valid, errors: validate.errors };
 }
 
+function isJsonStringValid(jsonDataString) {
+    try {
+        const jsonData = JSON.parse(jsonDataString);  
+        return isJsonValid(jsonData)
+      }
+      catch (error) {
+        console.error("Error converting incoming json:", error);  
+        return false;
+      }      
+}
+
+function isJsonValid(jsonData) {
+    try {
+            //const jsonData = JSON.parse(jsonDataString);  
+            if(jsonData) {        
+                const { valid, errors } = validateJson(jsonData);  
+                if (valid) {
+                console.log('JSON is valid ✅');
+                } else {
+                console.error('Validation errors ❌:', errors);          
+                }
+                return valid;
+                }
+            return false;
+        }
+      catch (error) {
+        console.error("Error converting incoming json:", error);  
+        return false;
+      }
+}
+
+
 // Export the function so it can be used in other files
-module.exports = { validateJson };
+module.exports = { validateJson, isJsonStringValid ,isJsonValid };
