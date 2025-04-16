@@ -3,15 +3,15 @@ const axios = require("axios");
 const databindingsHandler = require("./databindingsHandler.js");
 const buildUrlWithParams = databindingsHandler.buildUrlWithParams;
 const xml2js = require("xml2js");
-const { getUsername } = require("./usernameHandler.js");
-const { getErrorMessage } =  require("./errorHandling/errorHandler.js"); 
-const {isJsonStringValid }= require("./validate.js");
+const { getUsername, isUsernameValid } = require("./usernameHandler.js");
+const { getErrorMessage } = require("./errorHandling/errorHandler.js");
+const { isJsonStringValid } = require("./validate.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 // utility function to fetch Attachment status (In Progress, Open...)
 //  and Locked By User field  
 async function getICMAttachmentStatus(attachment_id, username) {
-    let return_data = {}; 
+    let return_data = {};
     return_data["Status"] = "";
     return_data["Locked by User"] = "";
     return_data["Locked Flag"] = "";
@@ -40,7 +40,7 @@ async function getICMAttachmentStatus(attachment_id, username) {
         return_data["Status"] = response.data["Status"];
         return_data["Locked by User"] = response.data["Locked by User"];
         return_data["Locked Flag"] = response.data["Locked Flag"];
-        return_data["Locked by Id"]= response.data["Locked by Id"];
+        return_data["Locked by Id"] = response.data["Locked by Id"];
         return_data["DocFileName"] = response.data["DocFileName"];
         return return_data;
     }
@@ -68,28 +68,36 @@ async function saveICMdata(req, res) {
             .status(400)
             .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
     }
-    const username = await getUsername(params["token"]);
+    let username = null;
+
+    if (params["token"]) {
+        username = await getUsername(params["token"]);
+    } else if (params["username"]) {
+        const valid = await isUsernameValid(params["username"]);
+        username = valid ? params["username"] : null;
+    }
+
     if (!username || !isNaN(username)) {
         return res
             .status(401)
             .send({ error: getErrorMessage("INVALID_USER") });
     }
-    
+
     let form_metadata = await getICMAttachmentStatus(attachment_id, username);
 
     if (!form_metadata) {
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
-    }    
+    }
     //saveForm validate before saving to ICM
     const valid = isJsonStringValid(savedFormParam);
     if (!valid) {
         console.log('JSON is  not valid ');
         return res
-        .status(400)
-        .send({ error: getErrorMessage("FORM_NOT_VALID") });
-    } 
+            .status(400)
+            .send({ error: getErrorMessage("FORM_NOT_VALID") });
+    }
 
     let saveJson = {};
     saveJson["Id"] = attachment_id;
@@ -140,18 +148,26 @@ async function loadICMdata(req, res) {
             .status(400)
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
-    const username = await getUsername(params["token"]);
+    let username = null;
+
+    if (params["token"]) {
+        username = await getUsername(params["token"]);
+    } else if (params["username"]) {
+        const valid = await isUsernameValid(params["username"]);
+        username = valid ? params["username"] : null;
+    }
+
     if (!username || !isNaN(username)) {
         return res
             .status(401)
-            .send({ error: getErrorMessage("INVALID_USER")  });
+            .send({ error: getErrorMessage("INVALID_USER") });
     }
-    
+
     let icm_metadata = await getICMAttachmentStatus(attachment_id, username);
     let icm_status = icm_metadata["Status"];
     console.log(icm_metadata);
     if (!icm_status || icm_status == "") {
-        console.log("Error fetching Form Instance Thin data for ", attachment_id);        
+        console.log("Error fetching Form Instance Thin data for ", attachment_id);
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
@@ -180,9 +196,9 @@ async function loadICMdata(req, res) {
         if (!valid) {
             console.log('JSON is  not valid ');
             return res
-            .status(400)
-            .send({ error: getErrorMessage("FORM_NOT_VALID") });
-        } 
+                .status(400)
+                .send({ error: getErrorMessage("FORM_NOT_VALID") });
+        }
         //validate ends here. Once validated continue to modify json based on status and send back.
         if (icm_status == "Complete") {
             let new_data = JSON.parse(return_data);
@@ -207,13 +223,21 @@ async function clearICMLockedFlag(req, res) {
             .status(400)
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
-    const username = await getUsername(params["token"]);
+    let username = null;
+
+    if (params["token"]) {
+        username = await getUsername(params["token"]);
+    } else if (params["username"]) {
+        const valid = await isUsernameValid(params["username"]);
+        username = valid ? params["username"] : null;
+    }
+
     if (!username || !isNaN(username)) {
         return res
             .status(401)
             .send({ error: getErrorMessage("INVALID_USER") });
     }
-    
+
     try {
         console.log("Clearing....");
 
@@ -226,7 +250,7 @@ async function clearICMLockedFlag(req, res) {
                 .status(400)
                 .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
         }
-        if ( icm_metadata["Locked by Id"] == "") {
+        if (icm_metadata["Locked by Id"] == "") {
             console.log("not locked?");
             return res
                 .status(200)
