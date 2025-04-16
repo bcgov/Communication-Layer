@@ -2,7 +2,7 @@ const fs = require('fs');
 const { JSONPath } = require('jsonpath-plus');
 const { keycloakForSiebel } = require("./keycloak.js");
 const axios = require("axios");
-const { getUsername } = require('./usernameHandler.js');
+const { getUsername, isUsernameValid } = require('./usernameHandler.js');
 const { parse, format } = require("date-fns");
 
 
@@ -34,7 +34,7 @@ async function populateDatabindings(formJson, params) {
 
 async function fetchDataFromSources(dataSources, params) {
   let data = {};
-  if (dataSources !=null) {
+  if (dataSources != null) {
     for (const source of dataSources) {
       try {
 
@@ -56,15 +56,15 @@ function bindDataToFields(formJson, fetchedData) {
   const processItemsForDatabinding = (items) => {
     items.forEach(field => {
 
-      if(field.type === 'container' && field.containerItems) {
+      if (field.type === 'container' && field.containerItems) {
         processItemsForDatabinding(field.containerItems);
       } else if (field.databindings != null) {
-  
+
         const dataSourceName = field.databindings.source;
         const dataPath = field.databindings.path;
         const fetchedSourceData = fetchedData[dataSourceName];
         let valueFromPath = "";
-  
+
         // Fetch the value from the fetched data
         if (fetchedSourceData) {
           valueFromPath = JSONPath(dataPath, fetchedSourceData);
@@ -73,7 +73,7 @@ function bindDataToFields(formJson, fetchedData) {
             // Create an array to store groupData objects for each item in valueFromPath
             const groupDataArray = valueFromPath.map((pathObj, index) => {
               const groupData = {};
-  
+
               // For each item in valueFromPath, iterate over the group fields
               field.groupItems.forEach(groupItem => {
                 groupItem.fields.forEach(groupField => {
@@ -81,17 +81,17 @@ function bindDataToFields(formJson, fetchedData) {
                     const fieldBindings = groupField.databindings.path;
                     const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
                     // Assign data from pathObj or an empty string if not available
-                    groupData[fieldIdInGroup] = transformValueToBindIfNeeded(groupField,pathObj[fieldBindings]) || '';
+                    groupData[fieldIdInGroup] = transformValueToBindIfNeeded(groupField, pathObj[fieldBindings]) || '';
                   }
                 });
               });
               return groupData;
             });
-  
+
             // Assign the groupDataArray to formData for this field's ID
             formData[field.id] = groupDataArray;
           } else {
-            formData[field.id] = valueFromPath.length > 0 ? transformValueToBindIfNeeded(field,valueFromPath[0]) : null;
+            formData[field.id] = valueFromPath.length > 0 ? transformValueToBindIfNeeded(field, valueFromPath[0]) : null;
           }
         }
       } else if (field.type === 'group' && field.groupItems && !field.repeater) {
@@ -107,7 +107,7 @@ function bindDataToFields(formJson, fetchedData) {
               if (fetchedSourceData) {
                 const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);
                 //do date conversion here uisng a function - chceking the type as date and then checking format and applying
-              	transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? transformValueToBindIfNeeded(groupField,valueFromPathForGroupField[0]) : null; // Replace with actual value
+                transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? transformValueToBindIfNeeded(groupField, valueFromPathForGroupField[0]) : null; // Replace with actual value
               }
             }
           });
@@ -130,13 +130,22 @@ function bindDataToFields(formJson, fetchedData) {
 async function readJsonFormApi(datasource, pathParams) {
   console.log("readJsonFormApi>>pathParams", pathParams);
   const { name, type, host, endpoint, params, body } = datasource;
-  const username = await getUsername(pathParams["token"]);
+
+  let username = null;
+
+  if (pathParams["token"]) {
+    username = await getUsername(pathParams["token"]);
+  } else if (pathParams["username"]) {
+    const valid = await isUsernameValid(pathParams["username"]);
+    username = valid ? pathParams["username"] : null;
+  }
+
   if (!username || !isNaN(username)) {
     return res
       .status(401)
       .send({ error: "Username is not valid" });
   }
-  
+
   try {
     const url = buildUrlWithParams(host, endpoint, pathParams);
     let response;
@@ -184,7 +193,7 @@ function getHost(host) {
   return process.env[host] || host;
 }
 
-function getEndpoint(endpoint){
+function getEndpoint(endpoint) {
   // Use endpoint from environment variable if available, otherwise fall back to JSON
   return process.env[endpoint] || endpoint;
 }
@@ -195,21 +204,21 @@ function buildBodyWithParams(bodyFromJson, pathVariables) {
   Object.keys(pathVariables).forEach(key => {
     const placeholder = `@@${key}`;
     bodyString = bodyString.replace(new RegExp(placeholder, 'g'), pathVariables[key]);
-  });  
+  });
   return JSON.parse(bodyString);
 }
 
-function transformValueToBindIfNeeded(field,valueToBind) {
-  
-  try{
-    if( field && (field.type == "date" || field.type == "date-picker") && valueToBind) {      
+function transformValueToBindIfNeeded(field, valueToBind) {
+
+  try {
+    if (field && (field.type == "date" || field.type == "date-picker") && valueToBind) {
       const formatToBind = field.inputFormat ? field.inputFormat : "MM/dd/yyyy";
-      const parsedDate = parse(valueToBind,formatToBind, new Date());
-      const transformedValue =  format(parsedDate, "yyyy-MM-dd");      
-      return transformedValue;    
-    } 
-  } catch(error) {
-    console.error('Error processing date value:', error);    
+      const parsedDate = parse(valueToBind, formatToBind, new Date());
+      const transformedValue = format(parsedDate, "yyyy-MM-dd");
+      return transformedValue;
+    }
+  } catch (error) {
+    console.error('Error processing date value:', error);
   }
   return valueToBind;
 }

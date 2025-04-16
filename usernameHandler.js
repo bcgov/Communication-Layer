@@ -18,7 +18,7 @@ async function isUsernameValid(username) {
                 "X-ICM-TrustedUsername": username,
             },
         });
-        return response.data?.items?.["Login Name"] === username;
+        return response.data?.items?.["Login Name"]?.toUpperCase() === username.toUpperCase();
 
     } catch (error) {
         if (error.response) {
@@ -63,3 +63,4 @@ async function getUsername(userToken) {
 }
 
 module.exports.getUsername = getUsername;
+module.exports.isUsernameValid = isUsernameValid;
