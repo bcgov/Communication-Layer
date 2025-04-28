@@ -107,7 +107,9 @@ definitions:
           - type: string
           - type: "null"
       value:
-        type: string
+        anyOf:
+          - type: string
+          - type: "null"
       filenameStatus:
         type: string
       labelDescription:
@@ -187,3 +189,7 @@ definitions:
           - path
           - source
         additionalProperties: false
+      containerItems:
+        type: array
+        items:
+          $ref: "#/definitions/Item"       

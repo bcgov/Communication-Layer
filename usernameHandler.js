@@ -18,7 +18,7 @@ async function isUsernameValid(username) {
                 "X-ICM-TrustedUsername": username,
             },
         });
-        return response.data?.items?.["Login Name"] === username;
+        return response.data?.items?.["Login Name"]?.toUpperCase() === username.toUpperCase();
 
     } catch (error) {
         if (error.response) {
@@ -37,12 +37,12 @@ async function getUsername(userToken) {
     }
 
     try {
+
         const userInfoResponse = await axios.get(process.env.USERNAME_SERVERURL, {
             headers: {
                 Authorization: `Bearer ${userToken}`,
             },
         });
-        console.log("USERINFO", userInfoResponse.data);
         if (userInfoResponse.data && userInfoResponse.data.idir_username) {
             const username = userInfoResponse.data.idir_username;
 
@@ -63,3 +63,4 @@ async function getUsername(userToken) {
 }
 
 module.exports.getUsername = getUsername;
+module.exports.isUsernameValid = isUsernameValid;

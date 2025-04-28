@@ -2,34 +2,62 @@ const { keycloakForFormRepo } = require("./keycloak.js");
 const axios = require("axios");
 const databindingsHandler = require("./databindingsHandler.js");
 const getFormFromFormTemplate = require("./formRepoHandler.js");
-const { getUsername } = require('./usernameHandler.js');
+const { getUsername, isUsernameValid } = require('./usernameHandler.js');
 const populateDatabindings = databindingsHandler.populateDatabindings;
-async function generateTemplate(req, res) {
+const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 
-  const params = req.body;
-  const template_id = params["formId"];
-  console.log("template_id>>", template_id);
-  const username = await getUsername(params["token"]);
-  if (!username || !isNaN(username)) {
-    return res
-      .status(401)
-      .send({ error: "Username is not valid" });
-  }
-  if (!template_id) {
+async function generateTemplate(req, res) {
+  try {
+    const params = req.body;
+    const template_id = params["formId"];
+    console.log("template_id>>", template_id);
+    if (!template_id) {
+      return res
+        .status(400)
+        .send({ error: getErrorMessage("FORM_ID_REQUIRED") });
+    }
+    let username = null;
+
+    if (params["token"]) {
+      username = await getUsername(params["token"]);
+    } else if (params["username"]) {
+      const valid = await isUsernameValid(params["username"]);
+      username = valid ? params["username"] : null;
+    }
+
+    if (!username || !isNaN(username)) {
+      return res
+        .status(401)
+        .send({ error: getErrorMessage("INVALID_USER") });
+    }
+
+    const formJson = await constructFormJson(template_id, params);
+
+    if (formJson != null) {
+      res.status(200).send({
+        save_data: formJson
+      });
+    }
+    else {
+      res.status(400)
+        .send({ error: getErrorMessage("FORM_NOT_FOUND", { templateId: template_id }) });
+    }
+  } catch (error) {
+    console.error(`Error generating the form:`, error);
     return res
       .status(400)
-      .send({ error: "form Id is  required" });
+      .send({ error: getErrorMessage("GENERATE_ERROR_MSG") });
   }
-
-  const formJson = await constructFormJson(template_id, params);
-  res.status(200).send({
-    save_data: formJson
-  });
 }
 
 async function constructFormJson(formId, params) {
 
-  const formDefinition = await getFormFromFormTemplate(formId) || {};
+  const formDefinition = await getFormFromFormTemplate(formId);
+
+  if (!formDefinition || formDefinition === null) {
+    return null;
+  }
+
   const formData = await populateDatabindings(formDefinition, params);
 
   const fullJSON = {
