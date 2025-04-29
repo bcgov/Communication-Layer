@@ -6,8 +6,6 @@ async function isUsernameValid(username) {
         console.log("USERNAME", username)
         const siebelApiUrl = process.env.SIEBEL_ICM_API_EMPLOYEE_URL;
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
-        console.log("access:", grant);
-        console.log("Api url:", siebelApiUrl);
         const response = await axios.get(siebelApiUrl, {
             params: {
                 excludeEmptyFieldsInResponse: "true",
