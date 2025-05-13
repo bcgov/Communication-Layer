@@ -5,16 +5,23 @@ const getFormFromFormTemplate = require("./formRepoHandler.js");
 const { getUsername, isUsernameValid } = require('./usernameHandler.js');
 const populateDatabindings = databindingsHandler.populateDatabindings;
 const { getErrorMessage } = require("./errorHandling/errorHandler.js");
+const { getICMAttachmentStatus } = require("./saveICMdataHandler");
 
 async function generateTemplate(req, res) {
   try {
     const params = req.body;
     const template_id = params["formId"];
     console.log("template_id>>", template_id);
+    const attachment_Id = params["attachmentId"];    
     if (!template_id) {
       return res
         .status(400)
         .send({ error: getErrorMessage("FORM_ID_REQUIRED") });
+    }
+    if (!attachment_Id) {
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
     let username = null;
 
@@ -29,6 +36,16 @@ async function generateTemplate(req, res) {
       return res
         .status(401)
         .send({ error: getErrorMessage("INVALID_USER") });
+    }
+
+
+    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username);
+    let icm_status = icm_metadata["Status"];   
+    
+    if (icm_status == "Complete") {
+            return res
+        .status(401)
+        .send({ error: getErrorMessage("FORM_ALREADY_FINALIZED") });
     }
 
     const formJson = await constructFormJson(template_id, params);

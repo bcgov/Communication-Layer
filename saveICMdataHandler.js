@@ -295,3 +295,4 @@ async function clearICMLockedFlag(req, res) {
 module.exports.saveICMdata = saveICMdata;
 module.exports.loadICMdata = loadICMdata;
 module.exports.clearICMLockedFlag = clearICMLockedFlag;
+module.exports.getICMAttachmentStatus = getICMAttachmentStatus;
