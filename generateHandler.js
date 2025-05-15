@@ -6,6 +6,7 @@ const { getUsername, isUsernameValid } = require('./usernameHandler.js');
 const populateDatabindings = databindingsHandler.populateDatabindings;
 const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 const { getICMAttachmentStatus } = require("./saveICMdataHandler");
+const puppeteer = require('puppeteer');
 
 async function generateTemplate(req, res) {
   try {
@@ -31,6 +32,7 @@ async function generateTemplate(req, res) {
       const valid = await isUsernameValid(params["username"]);
       username = valid ? params["username"] : null;
     }
+    console.log("username>>",username);
 
     if (!username || !isNaN(username)) {
       return res
@@ -90,6 +92,67 @@ async function constructFormJson(formId, params) {
   return fullJSON;
 }
 
+async function generateFormFromAPI(req, res) {
+  const { attachmentId } = req.body;
+
+    // Validate attachment is present in incoming message
+    if (!attachmentId) {
+      return res.status(400).json({
+        errorCode: 1,
+        errorMessage: "Invalid JSON . No attachment found.",
+        pdf: null
+      });
+    }
+
+    console.log("generateFormFromAPI");
+  const browser = await puppeteer.launch({
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
+        //headless: false, // <--- SHOW browser window!
+        //slowMo: 50, // Optional: slows down actions for visibility
+        protocolTimeout: 120000, // <--- Set to 120 seconds
+        args: [
+          "--no-sandbox",
+          "--disable-setuid-sandbox",
+          "--disable-dev-shm-usage",
+          "--disable-gpu",
+          "--headless"
+          
+        ],
+      });
+  const page = await browser.newPage();
+  // Define the cookie
+  const cookie = {
+    name: 'username',
+    value: 'CGINST06', // <-- Your value here
+    domain: 'host.docker.internal', // <-- Must match the site you're visiting
+    path: '/',
+    httpOnly: false,
+    secure: false
+  };
+
+  const context = browser.defaultBrowserContext();
+  await context.addCookies([cookie]);
+
+  // Step 1: Navigate to the endpoint
+  await page.goto('http://host.docker.internal:8080/new?attachmentId=1-4ZYB8OE&formId=CF8787&CaseId=1-4ZYB34V&ContactId=1-4Z1UVQC',{
+  timeout: 200000,         // 60 seconds
+  waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
+}); // Replace with your actual URL
+console.log('Page loaded.');
+
+  // Step 2: Wait for the button to be available
+  await page.waitForSelector('#saveAndClose',{ timeout: 200000 }); // Use the actual selector
+  
+
+  // Step 3: Click the button
+  await page.click('#saveAndClose'); // Same selector as above
+
+  // Optional: Wait for any result/response after clicking
+  await page.waitForTimeout(200000); // or use `waitForSelector` for expected change
+
+  await browser.close();
+}
 
 
-module.exports = generateTemplate;
+
+module.exports = {generateTemplate , generateFormFromAPI };
