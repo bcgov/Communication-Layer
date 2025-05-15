@@ -57,7 +57,7 @@ async function saveICMdata(req, res) {
     const params = req.body;
     const attachment_id = params["attachmentId"];
     const savedFormParam = params["savedForm"];
-    console.log("In saveICMdata attachment_id>>", attachment_id);
+    console.log("In save ICM form>", attachment_id);
     if (!attachment_id) {
         return res
             .status(400)
@@ -76,7 +76,7 @@ async function saveICMdata(req, res) {
         const valid = await isUsernameValid(params["username"]);
         username = valid ? params["username"] : null;
     }
-
+    
     if (!username || !isNaN(username)) {
         return res
             .status(401)
@@ -89,6 +89,14 @@ async function saveICMdata(req, res) {
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
+    }
+
+    let icm_status = form_metadata["Status"];   
+    
+    if (icm_status == "Complete") {
+            return res
+        .status(401)
+        .send({ error: getErrorMessage("FORM_ALREADY_FINALIZED") });
     }
     //saveForm validate before saving to ICM
     const valid = isJsonStringValid(savedFormParam);
