@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: communication-layer
+  labels:
+    app.kubernetes.io/name: communication-layer
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: communication-layer
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: communication-layer
+    spec:
+      containers:
+        - name: communication-layer
+          image: "{{ .Values.image.tag }}"
+          envFrom:
+            - configMapRef:
+                name: {{ .Values.configMapName }}
+          ports:
+            - containerPort: 3030
+          resources: {{- toYaml .Values.resources | nindent 12 }}
+      restartPolicy: Always
+  strategy:
+    type: Recreate

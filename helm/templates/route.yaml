@@ -1,0 +1,14 @@
+# apiVersion: route.openshift.io/v1
+# kind: Route
+# metadata:
+#   name: communication-layer
+#   labels:
+#     app.kubernetes.io/name: communication-layer
+# spec:
+#   to:
+#     kind: Service
+#     name: communication-layer
+#   port:
+#     targetPort: 3030
+#   tls:
+#     termination: edge

@@ -1,13 +1,21 @@
 const express = require("express");
 const axios = require("axios");
 const xmlparser = require("express-xml-bodyparser");
-const { keycloakForSiebel,keycloakForFormRepo} = require("./keycloak.js");
+const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const generateTemplate = require("./generateHandler");
+const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
+
+const { getUsername } = require("./usernameHandler.js");
+
+const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
+
+
 const getFormsFromFormTemplate = require("./formRepoHandler");
 const router = express.Router();
 
 const FORM_SERVER_URL = process.env.FORMSERVERURL;
 const ENDPOINT_URL = process.env.ENDPOINTURL;
+
 
 // Form Map
 const formMap = new Map();
@@ -23,7 +31,7 @@ router.get("/status", (req, res) => {
   res.send({ status: "running" });
 });
 
-// API forwarding route
+/*/ API forwarding route
 router.get("/api*", async (req, res) => {
   try {
     const grant =
@@ -31,10 +39,16 @@ router.get("/api*", async (req, res) => {
     const destinationPath = RegExp("api/(.*)").exec(req.path)[1];
     let endpointUrl = `${ENDPOINT_URL}${destinationPath}`;
     endpointUrl += "?ViewMode=Catalog&workspace=dev_sadmin_bz";
-
+    const username = await getUsername(req.headers["token"]);
+    if (!username || !isNaN(username)) {
+      return res
+        .status(401)
+        .send({ error: "Username is not valid" });
+    }
     const newResp = await axios.get(endpointUrl, {
       headers: {
         Authorization: `Bearer ${grant.access_token.token}`,
+        "X-ICM-TrustedUsername": username,
       },
     });
 
@@ -43,7 +57,7 @@ router.get("/api*", async (req, res) => {
     console.error("API error: " + err.message);
     res.status(500).send({ error: err.message });
   }
-});
+});*/
 
 // XML form post route
 router.post("/form1", xmlparser(), async (req, res) => {
@@ -83,32 +97,50 @@ router.get("/xml", async (req, res) => {
 
 // Save data route
 router.post("/saveData", async (request, response) => {
-  console.log(request.body);  
+  console.log(request.body);
   response.status(200).json("{success!}");
 });
+
+// ICM save data route
+router.post("/saveICMData", saveICMdata);
+
+// ICM load data rout
+router.post("/loadICMData", loadICMdata);
 
 // Generate route
 router.post("/generate", generateTemplate);
 
-router.get("/getAllForms", async (request,response) => {
+router.get("/getAllForms", async (request, response) => {
   try {
     const grant =
-    await keycloakForFormRepo.grantManager.obtainFromClientCredentials();       
-    let endpointUrl = `http://localhost:3030/api/forms-list`;  
+      await keycloakForFormRepo.grantManager.obtainFromClientCredentials();
+    let endpointUrl = `http://localhost:3030/api/forms-list`;
 
     const forms = await axios.get(endpointUrl, {
       headers: {
         Authorization: `Bearer ${grant.access_token.token}`,
       },
-    });    
-    console.log("forms",forms);
+    });
+    console.log("forms", forms);
     response.json(forms.data);
-    
+
   } catch (err) {
-    console.error("API error: " + err.message);        
+    console.error("API error: " + err.message);
     response.status(500).send({ error: err.message });
   }
 
 });
+
+// clear the locked by flags in ICM for the form, used when form is closed
+router.post("/clearICMLockedFlag", clearICMLockedFlag);
+
+
+router.post("/generatePDFFromJson", generatePDFFromJSON);
+
+// Generate route
+router.post("/generatePDF", generatePDFFromHTML);
+router.post("/generatePDFFromURL", generatePDFFromURL);
+router.post("/loadSavedJson", loadSavedJson);
+
 
 module.exports = router;
