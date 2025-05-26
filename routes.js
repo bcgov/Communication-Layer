@@ -2,7 +2,7 @@ const express = require("express");
 const axios = require("axios");
 const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
-const generateTemplate = require("./generateHandler");
+const { generateTemplate,generateNewTemplate } = require("./generateHandler");
 const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
 
 const { getUsername } = require("./usernameHandler.js");
@@ -141,6 +141,7 @@ router.post("/generatePDFFromJson", generatePDFFromJSON);
 router.post("/generatePDF", generatePDFFromHTML);
 router.post("/generatePDFFromURL", generatePDFFromURL);
 router.post("/loadSavedJson", loadSavedJson);
+router.post("/generateNewTemplate", generateNewTemplate);
 
 
 module.exports = router;
