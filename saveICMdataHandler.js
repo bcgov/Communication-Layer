@@ -53,11 +53,11 @@ async function getICMAttachmentStatus(attachment_id, username) {
 //method to save the form (data, template and metadata) as a JSON file in ICM, and update form 
 //  instance metadata with In Progress status, filename and extracted form data as an XML hierarchy
 async function saveICMdata(req, res) {
-
+    try {
     const params = req.body;
     const attachment_id = params["attachmentId"];
     const savedFormParam = params["savedForm"];
-    console.log("In save ICM form>", attachment_id);
+    
     if (!attachment_id) {
         return res
             .status(400)
@@ -82,7 +82,7 @@ async function saveICMdata(req, res) {
             .status(401)
             .send({ error: getErrorMessage("INVALID_USER") });
     }
-
+   
     let form_metadata = await getICMAttachmentStatus(attachment_id, username);
 
     if (!form_metadata) {
@@ -116,8 +116,7 @@ async function saveICMdata(req, res) {
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
     let builder = new xml2js.Builder();
-    saveJson["XML Hierarchy"] = builder.buildObject(saveData);
-
+    saveJson["XML Hierarchy"] = builder.buildObject(saveData);         
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
     let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
     try {
@@ -135,13 +134,18 @@ async function saveICMdata(req, res) {
             params.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
         }
         response = await axios.put(url, saveJson, { params, headers });
+        
         return res.status(200).send({});
     }
     catch (error) {
         console.error(`Error updating ICM:`, error);
         return null; // Handle missing data source or error
     }
-
+    }
+    catch (error) {
+            console.error(`Error saving the form to ICM:`, error);
+            return null; // Handle missing data source or error
+    }
 }
 
 // method to load a JSON file from ICM, given the attachmentId
@@ -173,7 +177,7 @@ async function loadICMdata(req, res) {
 
     let icm_metadata = await getICMAttachmentStatus(attachment_id, username);
     let icm_status = icm_metadata["Status"];
-    console.log(icm_metadata);
+    
     if (!icm_status || icm_status == "") {
         console.log("Error fetching Form Instance Thin data for ", attachment_id);
         return res

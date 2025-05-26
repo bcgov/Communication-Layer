@@ -7,6 +7,7 @@ const populateDatabindings = databindingsHandler.populateDatabindings;
 const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 const { getICMAttachmentStatus } = require("./saveICMdataHandler");
 const puppeteer = require('puppeteer');
+const {storeData,retrieveData,deleteData} = require('./common/helperHandler');
 
 async function generateTemplate(req, res) {
   try {
@@ -31,15 +32,13 @@ async function generateTemplate(req, res) {
     } else if (params["username"]) {
       const valid = await isUsernameValid(params["username"]);
       username = valid ? params["username"] : null;
-    }
-    console.log("username>>",username);
+    }    
 
     if (!username || !isNaN(username)) {
       return res
         .status(401)
         .send({ error: getErrorMessage("INVALID_USER") });
     }
-
 
     let icm_metadata = await getICMAttachmentStatus(attachment_Id, username);
     let icm_status = icm_metadata["Status"];   
@@ -92,67 +91,146 @@ async function constructFormJson(formId, params) {
   return fullJSON;
 }
 
-async function generateFormFromAPI(req, res) {
-  const { attachmentId } = req.body;
 
-    // Validate attachment is present in incoming message
-    if (!attachmentId) {
-      return res.status(400).json({
-        errorCode: 1,
-        errorMessage: "Invalid JSON . No attachment found.",
-        pdf: null
-      });
+
+async function generateNewTemplate(req, res) {
+  try {
+    const params = req.body;
+    const template_id = params["formId"];
+    console.log("template_id>>", template_id);
+    const attachment_Id = params["attachmentId"];    
+    if (!template_id) {
+      return res
+        .status(400)
+        .send({ error: getErrorMessage("FORM_ID_REQUIRED") });
+    }
+    if (!attachment_Id) {
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
+    }
+    let username = null;
+
+    if (params["token"]) {
+      username = await getUsername(params["token"]);
+    } else if (params["username"]) {
+      const valid = await isUsernameValid(params["username"]);
+      username = valid ? params["username"] : null;
+    }    
+
+    if (!username || !isNaN(username)) {
+      return res
+        .status(401)
+        .send({ error: getErrorMessage("INVALID_USER") });
     }
 
-    console.log("generateFormFromAPI");
-  const browser = await puppeteer.launch({
-        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
-        //headless: false, // <--- SHOW browser window!
-        //slowMo: 50, // Optional: slows down actions for visibility
-        protocolTimeout: 120000, // <--- Set to 120 seconds
-        args: [
-          "--no-sandbox",
-          "--disable-setuid-sandbox",
-          "--disable-dev-shm-usage",
-          "--disable-gpu",
-          "--headless"
-          
-        ],
+
+    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username);
+    let icm_status = icm_metadata["Status"];   
+    
+    if (icm_status == "Complete") {
+            return res
+        .status(401)
+        .send({ error: getErrorMessage("FORM_ALREADY_FINALIZED") });
+    }
+
+    const formJson = await constructFormJson(template_id, params);
+
+    if (formJson != null) {
+
+      //params added to json so they can be used in SaveToICM functionality call
+      formJson.params ={
+        attachmentId: params["attachmentId"],
+        OfficeName:params["OfficeName"],
+        username:params["username"]
+      }     
+     
+      const saveDataForLater = JSON.stringify(formJson)
+      const id = await storeData(saveDataForLater);
+      const endPointForGenerate = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
+      const isGenerateSuccess = await performGenerateFunction(endPointForGenerate);
+      deleteData(id);
+
+      //if successfully generated send back response 
+      if(isGenerateSuccess) {
+         return res.status(200).send({
+        message: "Successfully generated the form"
       });
-  const page = await browser.newPage();
-  // Define the cookie
-  const cookie = {
-    name: 'username',
-    value: 'CGINST06', // <-- Your value here
-    domain: 'host.docker.internal', // <-- Must match the site you're visiting
-    path: '/',
-    httpOnly: false,
-    secure: false
-  };
+      } else {
+        return res
+      .status(400)
+      .send({ error: getErrorMessage("FORM_CANNOT_BE_GENERATED") });
+      }
+      
+      
+      //
+    }
+    else {
+      res.status(400)
+        .send({ error: getErrorMessage("FORM_NOT_FOUND", { templateId: template_id }) });
+    }
+  } catch (error) {
+    console.error(`Error generating the form:`, error);
+    return res
+      .status(400)
+      .send({ error: getErrorMessage("FORM_CANNOT_BE_GENERATED") });
+  }
+}
 
-  const context = browser.defaultBrowserContext();
-  await context.addCookies([cookie]);
+async function performGenerateFunction(url) {
+ 
+  try {
+  const browser = await puppeteer.launch({
+    executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+      "--headless",
+    ],
+  });
+  
 
-  // Step 1: Navigate to the endpoint
-  await page.goto('http://host.docker.internal:8080/new?attachmentId=1-4ZYB8OE&formId=CF8787&CaseId=1-4ZYB34V&ContactId=1-4Z1UVQC',{
-  timeout: 200000,         // 60 seconds
-  waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
-}); // Replace with your actual URL
-console.log('Page loaded.');
+    //const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+
+    // Set the HTML content of the page
+     await page.goto(url,{
+    timeout: 200000,         // 60 seconds
+    waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
+    }); // Replace with your actual URL
+    console.log('Page loaded.');
 
   // Step 2: Wait for the button to be available
-  await page.waitForSelector('#saveAndClose',{ timeout: 200000 }); // Use the actual selector
+  await page.waitForSelector('#generate',{ timeout: 200000 }); // Use the actual selector
   
 
   // Step 3: Click the button
-  await page.click('#saveAndClose'); // Same selector as above
+  await page.click('#generate'); // Same selector as above
 
-  // Optional: Wait for any result/response after clicking
-  await page.waitForTimeout(200000); // or use `waitForSelector` for expected change
+  
 
-  await browser.close();
+  await new Promise(res => setTimeout(res, 3000));
+
+  await page.waitForFunction(() => {
+      const modals = document.querySelectorAll('[role="dialog"]');
+      return Array.from(modals).some(modal =>
+        modal.textContent.includes('Success')
+      );
+    }, { timeout: 60000 });
+
+    console.log('✅ Success modal appeared.');
+    await browser.close();
+    return true; 
+
+  } catch (error) {
+    console.error('Error performing generate function:', error);    
+    return false;
+  }
+
 }
 
 
 
-module.exports = {generateTemplate , generateFormFromAPI };
+module.exports = {generateTemplate , generateNewTemplate };
