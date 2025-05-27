@@ -7,7 +7,7 @@ const populateDatabindings = databindingsHandler.populateDatabindings;
 const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 const { getICMAttachmentStatus } = require("./saveICMdataHandler");
 const puppeteer = require('puppeteer');
-const {storeData,retrieveData,deleteData} = require('./common/helperHandler');
+const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler.js');
 
 async function generateTemplate(req, res) {
   try {
