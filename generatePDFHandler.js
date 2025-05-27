@@ -2,7 +2,7 @@ const axios = require("axios");
 const puppeteer = require('puppeteer');
 const fs = require('fs');
 const { validateJson } = require('./validate');
-const {storeData,retrieveData,deleteData} = require('./common/helperHandler');
+const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler');
 
 async function generatePDFFromJSON(req, res) {
   try {
