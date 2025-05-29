@@ -157,13 +157,15 @@ async function readJsonFormApi(datasource, pathParams) {
     }
     if (type.toUpperCase() === 'GET') {
 
-      // For GET requests, add params directly in axios config            
-      response = await axios.get(url, { params, headers }
+      // For GET requests, add params directly in axios config      
+      const updatedParams = BuildParamsFromPathParams(params, pathParams);
+      response = await axios.get(url, { updatedParams, headers }
       );
     } else if (type.toUpperCase() === 'POST') {
       // For POST requests, pass params in the body if applicable
-      const bodyForPost = buildBodyWithParams(body, pathParams)
-      response = await axios.post(url, bodyForPost, { params, headers });
+      const updatedParams = BuildParamsFromPathParams(params, pathParams);
+      const bodyForPost = buildBodyWithParams(body, updatedParams);
+      response = await axios.post(url, bodyForPost, { updatedParams, headers });
     }
 
     // Store response data
@@ -186,6 +188,21 @@ function buildUrlWithParams(host, endpoint, pathVariables) {
   });
 
   return url;
+}
+
+function BuildParamsFromPathParams(params, pathParams) {
+  const updatedParams = {};
+
+  Object.keys(params).forEach(key => {
+    let updatedValue = params[key];
+    Object.keys(pathParams).forEach(pathKey => {
+      const placeholder = `@@${pathKey}`;
+      updatedValue = updatedValue.replace(new RegExp(placeholder, 'g'), pathParams[pathKey]);
+    });
+    updatedParams[key] = updatedValue;
+  });
+
+  return updatedParams;
 }
 
 function getHost(host) {

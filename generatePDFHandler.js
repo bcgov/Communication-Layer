@@ -1,9 +1,8 @@
 const axios = require("axios");
 const puppeteer = require('puppeteer');
 const fs = require('fs');
-const { randomUUID } = require('crypto');
-const client = require("./redisClient");
 const { validateJson } = require('./validate');
+const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler');
 
 async function generatePDFFromJSON(req, res) {
   try {
@@ -78,7 +77,7 @@ async function generatePDFFromJSON(req, res) {
 async function generatePDF(savedJson) {
 
   const id = await storeData(savedJson);
-  const endPointForPDF = process.env.PRINT_TO_PDF_KILN_URL + "?jsonId=" + id;
+  const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
   const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);
   deleteData(id);
   return pdfBufferFromURL;
@@ -232,28 +231,7 @@ async function loadSavedJson(req, res) {
   }
 }
 
-async function storeData(data) {
-  const id = randomUUID();//Math.random().toString(36).substr(2, 9);  
-  console.log("Storing on Redis");
-  await client.setEx(id, 120, data); // Expires in 120 seconds  
-  console.log("Redis Success!")
-  return id;
-}
 
-// Retrieve JSON
-async function retrieveData(id) {
-  const data = await client.get(id);
-  return data ? data : null;
-}
-
-async function deleteData(id) {
-  const result = await client.del(id);
-  if (result) {
-    console.log(`Deleted key: ${id}`);
-  } else {
-    console.log(`Key ${id} not found.`);
-  }
-}
 
 
 

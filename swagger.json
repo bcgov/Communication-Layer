@@ -1,7 +1,7 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "PDF Generation API",
+    "title": "FormFoundry API",
     "description": "API to generate a PDF from Base64-encoded JSON input",
     "version": "1.1.0"
   },
@@ -119,6 +119,71 @@
           }
         }
       }
-    }
+    },
+    "/generateNewTemplate": {
+      "post": {
+        "summary": "Generate savedJson and save to ICM",
+        "description": "Takes body with params , generates json and save to ICM. This method will give response whether is form is generated or not",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": {
+                  "type": ["string", "number", "boolean", "object", "array", "null"]
+                },
+                "example": {
+                  "attachmentId": "12334",
+                  "formId": "1234",
+                  "CaseId": "123",
+                  "username": "abc"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Form successfully generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "errorCode": {
+                      "type": "integer",
+                      "example": 0
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Successfully generated the form"
+                    }
+                  },
+                  "required": ["errorCode", "message"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request or generation failure",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string",
+                      "example": "The form cannot be generated."
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    } 
   }
 }

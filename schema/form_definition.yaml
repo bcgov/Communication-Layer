@@ -171,11 +171,15 @@ definitions:
             - value
           additionalProperties: false    
       webStyles:
-        type: object
+        anyOf:
+          - type: "null"
+          - type: object
         additionalProperties:
           type: string
       pdfStyles:
-        type: object
+        anyOf:
+          - type: "null"
+          - type: object
         additionalProperties:
           type: string
       databindings:
