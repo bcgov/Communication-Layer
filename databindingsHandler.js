@@ -264,7 +264,6 @@ function updateParams(params, pathParams = {}, allFetchedData = {}) {
           if (Array.isArray(valueArr) && valueArr.length > 0 && valueArr[0] != null) {
             const raw = valueArr[0];
             if (typeof raw === 'object' && raw !== null) {
-              // if it's an object, prefer raw.Id or raw.id (or fallback to JSON.stringify)
               safeValue = raw.Id ?? raw.id ?? JSON.stringify(raw);
             } else {
               safeValue = raw;
