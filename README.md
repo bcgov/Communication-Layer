@@ -18,7 +18,7 @@ This app is intended as a connector between forms and ICM. It uses a keycloak cl
 - Clone the Repo locally
 
 ```
-git clone https://github.com/bzimonjaSDPR/commlayer.git
+git clone https://github.com/bcgov/Communication-Layer.git
 ```
 
 - Install the Node Modules
@@ -40,9 +40,9 @@ mkdir common
 touch common/data.xml
 ```
 
-### Executing program
+### Executing program 
 
-- From the command line, start the server
+- From the command line, start the server (No longer valid,use docker step instead)
 
 ```
 npm run dev

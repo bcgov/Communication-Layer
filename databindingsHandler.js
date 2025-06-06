@@ -38,7 +38,8 @@ async function fetchDataFromSources(dataSources, params) {
     for (const source of dataSources) {
       try {
 
-        const response = await readJsonFormApi(source, params);
+        let updatedParams = updateParams(source.params || {}, params, data);
+        const response = await readJsonFormApi(source, { ...params, ...updatedParams });
         data[source.name] = response;
 
       } catch (error) {
@@ -156,18 +157,17 @@ async function readJsonFormApi(datasource, pathParams) {
       "X-ICM-TrustedUsername": username,
     }
     if (type.toUpperCase() === 'GET') {
-
-      // For GET requests, add params directly in axios config            
-      response = await axios.get(url, { params, headers }
+      // For GET requests, add params directly in axios config      
+      response = await axios.get(url, { params: pathParams, headers }
       );
     } else if (type.toUpperCase() === 'POST') {
       // For POST requests, pass params in the body if applicable
-      const bodyForPost = buildBodyWithParams(body, pathParams)
-      response = await axios.post(url, bodyForPost, { params, headers });
+      const bodyForPost = buildBodyWithParams(body, pathParams);
+      response = await axios.post(url, bodyForPost, { params: pathParams, headers });
     }
 
     // Store response data
-    return response.data;
+    return ensureObjectOrArray(response.data);
 
   } catch (error) {
     console.error(`Error fetching data from ${name}:`, error);
@@ -187,6 +187,7 @@ function buildUrlWithParams(host, endpoint, pathVariables) {
 
   return url;
 }
+
 
 function getHost(host) {
   // Use host from  environment variable if available, otherwise fall back to JSON
@@ -221,6 +222,62 @@ function transformValueToBindIfNeeded(field, valueToBind) {
     console.error('Error processing date value:', error);
   }
   return valueToBind;
+}
+
+function ensureObjectOrArray(val, itemKey = "items") {
+  if (!val) return null;
+  // Unwrap `items` if it exists
+  if (val[itemKey] !== undefined) {
+    if (Array.isArray(val[itemKey])) {
+      return val[itemKey][0] ?? null;
+    }
+    if (typeof val[itemKey] === "object" && val[itemKey] !== null) {
+      return val[itemKey];
+    }
+    return val[itemKey];
+  }
+  if (typeof val === "object" && val !== null) return val;
+  return null;
+}
+
+
+function updateParams(params, pathParams = {}, allFetchedData = {}) {
+  const updated = {};
+  for (const key of Object.keys(params)) {
+    let val = params[key];
+
+    // 1. Replace @@placeholders from pathParams
+    if (typeof val === 'string') {
+      Object.keys(pathParams).forEach(pathKey => {
+        const placeholder = `@@${pathKey}`;
+        val = val.replace(new RegExp(placeholder, 'g'), pathParams[pathKey]);
+      });
+    }
+
+    // 2. Replace all !!.[Source]=jsonpath in the string
+    if (typeof val === 'string') {
+      val = val.replace(/'!!\.\[([^\]]+)\]=(.+\])'/g, (match, sourceName, jsonPath) => {
+        const sourceData = allFetchedData[sourceName.trim()];
+          const valueArr = JSONPath({ path: jsonPath.trim(), json: sourceData || {} });
+
+          let safeValue = '';
+          if (Array.isArray(valueArr) && valueArr.length > 0 && valueArr[0] != null) {
+            const raw = valueArr[0];
+            if (typeof raw === 'object' && raw !== null) {
+              safeValue = raw.Id ?? raw.id ?? JSON.stringify(raw);
+            } else {
+              safeValue = raw;
+            }
+            safeValue = String(safeValue).replace(/'/g, "\\'");
+          }
+          return `'${safeValue}'`;
+        }
+      );
+    }
+
+    updated[key] = val;
+  }
+  return updated;
 }
 
 module.exports.populateDatabindings = populateDatabindings;

@@ -11,7 +11,8 @@
       "FORM_NOT_VALID":"There is a problem with the form you are trying to open. Try again later and report to support, if the issue is not solved",
       "FORM_NOT_FOUND_IN_REQUEST":"The form is not found in the incoming request. Try again later and report to support, if the issue is not solved",
       "GENERATE_ERROR_MSG":"Error generating the form .Close this window and try again in a few seconds",
-      "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized"
+      "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
+      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated."
     },     
     "test": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -25,7 +26,8 @@
       "FORM_NOT_VALID":"There is a problem with the form you are trying to open. Try again later and report to support, if the issue is not solved",
       "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved",
       "GENERATE_ERROR_MSG":"Close this window and try again in a few seconds",
-      "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized"     
+      "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
+      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated."     
     },
     "prod": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -39,6 +41,7 @@
       "FORM_NOT_VALID":"There is a problem with the form you are trying to open. Try again later and report to support, if the issue is not solved",
       "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved",
       "GENERATE_ERROR_MSG":"Close this window and try again in a few seconds",
-      "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized"
+      "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
+      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated."
     }
   }
