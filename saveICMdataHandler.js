@@ -17,6 +17,7 @@ async function getICMAttachmentStatus(attachment_id, username) {
     return_data["Locked Flag"] = "";
     return_data["Locked by Id"] = "";
     return_data["DocFileName"] = "";
+    return_data["Office Name"] = "";
     if (!attachment_id || attachment_id == "") {
         return return_data;
     }
@@ -42,6 +43,7 @@ async function getICMAttachmentStatus(attachment_id, username) {
         return_data["Locked Flag"] = response.data["Locked Flag"];
         return_data["Locked by Id"] = response.data["Locked by Id"];
         return_data["DocFileName"] = response.data["DocFileName"];
+        return_data["Office Name"] = response.data["Office Name"];
         return return_data;
     }
     catch (error) {
@@ -84,7 +86,6 @@ async function saveICMdata(req, res) {
     }
    
     let form_metadata = await getICMAttachmentStatus(attachment_id, username);
-
     if (!form_metadata) {
         return res
             .status(400)
@@ -109,9 +110,9 @@ async function saveICMdata(req, res) {
 
     let saveJson = {};
     saveJson["Id"] = attachment_id;
-    //saveJson["Office Name"] = office_name;
+    saveJson["Office Name"] = form_metadata["Office Name"];
     saveJson["Status"] = "In Progress";
-    saveJson["DocFileName"] = form_metadata["DocFileName"];
+    saveJson["DocFileName"] = attachment_id.replace(/^[^-]+-/, 'Form_');
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
