@@ -112,7 +112,7 @@ async function saveICMdata(req, res) {
     saveJson["Id"] = attachment_id;
     saveJson["Office Name"] = form_metadata["Office Name"];
     saveJson["Status"] = "In Progress";
-    saveJson["DocFileName"] = attachment_id.replace(/^[^-]+-/, 'Form_');
+    saveJson["DocFileName"] = (form_metadata["DocFileName"] && form_metadata["DocFileName"] !== "") ? form_metadata["DocFileName"] : attachment_id.replace(/^[^-]+-/, 'Form_');
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
@@ -135,7 +135,7 @@ async function saveICMdata(req, res) {
             params.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
         }
         response = await axios.put(url, saveJson, { params, headers });
-        
+
         return res.status(200).send({});
     }
     catch (error) {
