@@ -8,7 +8,7 @@ const { getUsername } = require("./usernameHandler.js");
 const renderRouter = require("./renderHandler");
 
 const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
-const generateStandaloneTemplate = require("./generateStandaloneHandler");
+const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
 
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
@@ -142,7 +142,7 @@ router.post("/generatePDFFromJson", generatePDFFromJSON);
 router.post("/generatePDF", generatePDFFromHTML);
 router.post("/generatePDFFromURL", generatePDFFromURL);
 router.post("/loadSavedJson", loadSavedJson);
-router.post("/generateStandalone", generateStandaloneTemplate);
+router.post("/generatePortalForm", generatePortalIntegratedTemplate);
 router.post("/generateNewTemplate", generateNewTemplate);
 router.use('/pdfRender', renderRouter);
 
