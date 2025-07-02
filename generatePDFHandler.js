@@ -7,6 +7,7 @@ const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler
 async function generatePDFFromJSON(req, res) {
   try {
     const { attachment } = req.body;
+    console.log("PDF Request:",req);
 
     // Validate attachment is present in incoming message
     if (!attachment) {
@@ -19,10 +20,11 @@ async function generatePDFFromJSON(req, res) {
 
     const savedJsonString = Buffer.from(attachment, 'base64').toString('utf-8');
     let savedJson;
+    console.log("Saved JSON String:",savedJsonString);
     try {
-
+      
       savedJson = JSON.parse(savedJsonString);
-
+      console.log("Saved Parsed JSON:",savedJson);
       const { valid, errors } = validateJson(savedJson);
 
       if (valid) {
@@ -78,6 +80,7 @@ async function generatePDF(savedJson) {
 
   const id = await storeData(savedJson);
   const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
+  console.log("PDF Endpoint:",endPointForPDF);
   const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);
   deleteData(id);
   return pdfBufferFromURL;
