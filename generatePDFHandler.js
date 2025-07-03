@@ -8,6 +8,7 @@ async function generatePDFFromJSON(req, res) {
   try {
     const { attachment } = req.body;
     console.log("PDF Request:",req);
+    console.log("PDF Request body:",req.body);
 
     // Validate attachment is present in incoming message
     if (!attachment) {
