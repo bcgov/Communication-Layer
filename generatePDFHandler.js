@@ -6,7 +6,8 @@ const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler
 
 async function generatePDFFromJSON(req, res) {
   try {
-    const { attachment } = req.body;
+    let attachment = req.body.attachment ?? req.body[0];
+
     console.log("PDF Request:",req);
     console.log("PDF Request body:",req.body);
 
