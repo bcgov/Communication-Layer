@@ -61,7 +61,8 @@ async function generatePDFFromJSON(req, res) {
     // Generate PDF buffer
     const pdfBuffer = await generatePDF(savedJsonString); //get the pdf from the savedJson
     const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-
+    console.log("PDF Base64:",pdfBase64);
+    
     res.status(200).json({
       errorCode: 0,
       errorMessage: "Success",
