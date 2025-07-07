@@ -8,10 +8,14 @@ const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 const { getICMAttachmentStatus } = require("./saveICMdataHandler");
 const puppeteer = require('puppeteer');
 const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler.js');
+const appCfg = require('./appConfig.js');
 
 async function generateTemplate(req, res) {
   try {
-    const params = req.body;
+    let params = req.body;
+    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const configOpt = appCfg[rawHost];
+    params = { ...params, ...configOpt };
     const template_id = params["formId"];
     console.log("template_id>>", template_id);
     const attachment_Id = params["attachmentId"];    
@@ -28,7 +32,7 @@ async function generateTemplate(req, res) {
     let username = null;
 
     if (params["token"]) {
-      username = await getUsername(params["token"]);
+      username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
       const valid = await isUsernameValid(params["username"]);
       username = valid ? params["username"] : null;
@@ -39,8 +43,8 @@ async function generateTemplate(req, res) {
         .status(401)
         .send({ error: getErrorMessage("INVALID_USER") });
     }
-
-    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username);
+    console.log("PARAMS",params);
+    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   
     
     if (icm_status == "Complete") {
@@ -96,6 +100,10 @@ async function constructFormJson(formId, params) {
 async function generateNewTemplate(req, res) {
   try {
     const params = req.body;
+    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const configOpt = appCfg[rawHost];
+    console.log("Config:",configOpt);
+    params = { ...params, ...configOpt };
     const template_id = params["formId"];
     console.log("template_id>>", template_id);
     const attachment_Id = params["attachmentId"];    
@@ -112,7 +120,7 @@ async function generateNewTemplate(req, res) {
     let username = null;
 
     if (params["token"]) {
-      username = await getUsername(params["token"]);
+      username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
       const valid = await isUsernameValid(params["username"]);
       username = valid ? params["username"] : null;
