@@ -43,7 +43,6 @@ async function generateTemplate(req, res) {
         .status(401)
         .send({ error: getErrorMessage("INVALID_USER") });
     }
-    console.log("PARAMS",params);
     let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   
     
