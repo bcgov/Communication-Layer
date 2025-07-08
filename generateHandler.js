@@ -16,6 +16,7 @@ async function generateTemplate(req, res) {
     console.log("Request",req);
     const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
     console.log("Raw host:",rawHost);
+    console.log("App configs",appCfg);
     const configOpt = appCfg[rawHost];
     console.log("Config options:",configOpt);
     params = { ...params, ...configOpt };
