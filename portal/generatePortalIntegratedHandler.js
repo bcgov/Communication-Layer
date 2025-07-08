@@ -3,26 +3,25 @@ const axios = require("axios");
 const getFormFromFormTemplate = require("../formRepoHandler.js");
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const appConfig = require('./appConfig.js');
+const {getParametersFromPortal ,  expireTokenInPortal} = require("./loadPortalDataHandler.js");
 
-async function generatePortalIntegratedTemplate(req, res) {
+async function generatePortalIntegratedTemplate(req, res) { 
   try {
     const params = req.body;
-    const token = params["id"];
-    console.log("token>>", token);
+    const token = params["id"];    
     if (!token ) {
       return res
         .status(400)
         .send({ error: 'No token found' });
     }  
-    
-    const portalId = params["portalId"];
-    console.log("portalId",portalId);
+    const userId = "test";
+    const portalId = params["portalId"];    
     const targetApp = appConfig[portalId];
     
     if(!targetApp) {
         return res.status(400).send({ error: 'Unknown app ID' });
     }     
-    const paramsFromPortal = await getParametersFromPortal(targetApp);    
+    const paramsFromPortal = await getParametersFromPortal(targetApp,token,userId);    
 
     if(!paramsFromPortal) {
         return res.status(400).send({ error: 'Parameters not found to generate form' });
@@ -32,6 +31,8 @@ async function generatePortalIntegratedTemplate(req, res) {
 
     if (formJson != null) {
       //expire token
+      const isTokenExpired = await expireTokenInPortal(targetApp,token,userId); 
+      console.log("isTokenExpired >> ",isTokenExpired);
       res.status(200).send({
         save_data: formJson
       });
@@ -48,18 +49,13 @@ async function generatePortalIntegratedTemplate(req, res) {
   }
 }
 
-async function constructFormJson(params) {
-
-  console.log("paramsFromPortal",params);
+async function constructFormJson(params) { 
 
   const formId = params["formId"];
-
   const formDefinition = await getFormFromFormTemplate(formId);
-
   if (!formDefinition || formDefinition === null) {
     return null;
-  }  
-
+  }
   const fullJSON = {
     data: {},
     form_definition: formDefinition || {}, // Providing default empty object if missing
@@ -69,56 +65,7 @@ async function constructFormJson(params) {
       version: "1.0.0", // Add any other metadata
     }
   };
-
   return fullJSON;
-}
-
-async function getParametersFromPortal(portal) {
-  //call another api from portal to get the params
-
-  let parametersForForm = "";
-
-  try {
-    const urlForValidateTokenAndGetParams= portal.baseUrl+ (portal.getParametersEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
-    console.log("urlForValidateTokenAndGetParams",urlForValidateTokenAndGetParams);
-    const response = await axios.post(`${urlForValidateTokenAndGetParams}`, req.body, {
-      headers: {
-        'Authorization': `Bearer ${portal.apiKey}`,
-      },
-    });
-
-    parametersForForm = response.data;
-  } catch (err) {
-    console.log( 'Failed to contact target app', err.message );
-    parametersForForm = {
-      formId:"CF0001"
-    }
-    return parametersForForm;
-  }
-  return parametersForForm;
-}
-
-async function expireTokenInPortal(portal) {
-  //call another api from portal to get the params
-
-  let isTokenExpired = false;
-
-  try {
-    const urlForExpiringToken = portal.baseUrl + (portal.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);;
-    console.log("urlForExpiringToken",urlForExpiringToken);
-    const response = await axios.post(`${urlForExpiringToken}`, req.body, {
-      headers: {
-        'Authorization': `Bearer ${portalApiKey}`,
-      },
-    });
-
-    isTokenExpired = response.data;
-  } catch (err) {
-    console.log( 'Failed to contact target app', err.message );
-    
-    return true;
-  }
-  return isTokenExpired;
 }
 
 module.exports = generatePortalIntegratedTemplate;
