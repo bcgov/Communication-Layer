@@ -35,8 +35,8 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
         const params = {
             viewMode: "Catalog"
         }
-        if (process.env.SIEBEL_ICM_API_WORKSPACE) {
-            params.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
+        if (params["icmWorkspace"]) {
+            params.workspace = (params["icmWorkspace"]);
         }
         response = await axios.get(url, { params, headers });
         return_data["Status"] = response.data["Status"];
@@ -135,8 +135,8 @@ async function saveICMdata(req, res) {
         const params = {
             viewMode: "Catalog"
         }
-        if (process.env.SIEBEL_ICM_API_WORKSPACE) {
-            params.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
+        if (params["icmWorkspace"]) {
+            params.workspace = (params["icmWorkspace"]);
         }
         response = await axios.put(url, saveJson, { params, headers });
 
@@ -204,8 +204,8 @@ async function loadICMdata(req, res) {
             viewMode: "Catalog",
             inlineattachment: true
         }
-        if (process.env.SIEBEL_ICM_API_WORKSPACE) {
-            params.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
+        if (params["icmWorkspace"]) {
+            params.workspace = (params["icmWorkspace"]);
         }
         response = await axios.get(url, { params, headers });
         let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
@@ -299,8 +299,8 @@ async function clearICMLockedFlag(req, res) {
         const query = {
             viewMode: "Catalog"
         }
-        if (process.env.SIEBEL_ICM_API_WORKSPACE) {
-            query.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
+        if (params["icmWorkspace"]) {
+            query.workspace = (params["icmWorkspace"]);
         }
         response = await axios.put(url, saveJson, { params: query, headers });
         return res.status(200).send({});
