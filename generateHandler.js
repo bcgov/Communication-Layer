@@ -13,9 +13,13 @@ const appCfg = require('./appConfig.js');
 async function generateTemplate(req, res) {
   try {
     let params = req.body;
+    console.log("Request",req);
     const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    console.log("Raw host:",rawHost);
     const configOpt = appCfg[rawHost];
+    console.log("Config options:",configOpt);
     params = { ...params, ...configOpt };
+    console.log("Params:",params);
     const template_id = params["formId"];
     console.log("template_id>>", template_id);
     const attachment_Id = params["attachmentId"];    
