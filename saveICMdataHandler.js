@@ -6,22 +6,24 @@ const xml2js = require("xml2js");
 const { getUsername, isUsernameValid } = require("./usernameHandler.js");
 const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 const { isJsonStringValid } = require("./validate.js");
+const appCfg = require('./appConfig.js');
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 // utility function to fetch Attachment status (In Progress, Open...)
 //  and Locked By User field  
-async function getICMAttachmentStatus(attachment_id, username) {
+async function getICMAttachmentStatus(attachment_id, username, params) {
     let return_data = {};
     return_data["Status"] = "";
     return_data["Locked by User"] = "";
     return_data["Locked Flag"] = "";
     return_data["Locked by Id"] = "";
     return_data["DocFileName"] = "";
+    return_data["Office Name"] = "";
     if (!attachment_id || attachment_id == "") {
         return return_data;
     }
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
-    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
+    let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
         let response;
         const grant =
@@ -42,6 +44,7 @@ async function getICMAttachmentStatus(attachment_id, username) {
         return_data["Locked Flag"] = response.data["Locked Flag"];
         return_data["Locked by Id"] = response.data["Locked by Id"];
         return_data["DocFileName"] = response.data["DocFileName"];
+        return_data["Office Name"] = response.data["Office Name"];
         return return_data;
     }
     catch (error) {
@@ -54,7 +57,10 @@ async function getICMAttachmentStatus(attachment_id, username) {
 //  instance metadata with In Progress status, filename and extracted form data as an XML hierarchy
 async function saveICMdata(req, res) {
     try {
-    const params = req.body;
+    let params = req.body;
+    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const configOpt = appCfg[rawHost];
+    params = { ...params,...configOpt  };   
     const attachment_id = params["attachmentId"];
     const savedFormParam = params["savedForm"];
     
@@ -71,7 +77,7 @@ async function saveICMdata(req, res) {
     let username = null;
 
     if (params["token"]) {
-        username = await getUsername(params["token"]);
+        username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
         const valid = await isUsernameValid(params["username"]);
         username = valid ? params["username"] : null;
@@ -82,8 +88,7 @@ async function saveICMdata(req, res) {
             .status(401)
             .send({ error: getErrorMessage("INVALID_USER") });
     }
-   
-    let form_metadata = await getICMAttachmentStatus(attachment_id, username);
+    let form_metadata = await getICMAttachmentStatus(attachment_id, username, params);
 
     if (!form_metadata) {
         return res
@@ -109,16 +114,16 @@ async function saveICMdata(req, res) {
 
     let saveJson = {};
     saveJson["Id"] = attachment_id;
-    //saveJson["Office Name"] = office_name;
+    saveJson["Office Name"] = form_metadata["Office Name"];
     saveJson["Status"] = "In Progress";
-    saveJson["DocFileName"] = form_metadata["DocFileName"];
+    saveJson["DocFileName"] = (form_metadata["DocFileName"] && form_metadata["DocFileName"] !== "") ? form_metadata["DocFileName"] : attachment_id.replace(/^[^-]+-/, 'Form_');
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
     let builder = new xml2js.Builder();
     saveJson["XML Hierarchy"] = builder.buildObject(saveData);         
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
-    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
+    let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
         let response;
         const grant =
@@ -134,7 +139,7 @@ async function saveICMdata(req, res) {
             params.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
         }
         response = await axios.put(url, saveJson, { params, headers });
-        
+
         return res.status(200).send({});
     }
     catch (error) {
@@ -151,7 +156,10 @@ async function saveICMdata(req, res) {
 // method to load a JSON file from ICM, given the attachmentId
 async function loadICMdata(req, res) {
 
-    const params = req.body;
+    let params = req.body;
+    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const configOpt = appCfg[rawHost];
+    params = { ...params,...configOpt  }; 
     const attachment_id = params["attachmentId"];
     const office_name = params["OfficeName"];
     console.log("attachment_id>>", attachment_id);
@@ -163,7 +171,7 @@ async function loadICMdata(req, res) {
     let username = null;
 
     if (params["token"]) {
-        username = await getUsername(params["token"]);
+        username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
         const valid = await isUsernameValid(params["username"]);
         username = valid ? params["username"] : null;
@@ -173,11 +181,9 @@ async function loadICMdata(req, res) {
         return res
             .status(401)
             .send({ error: getErrorMessage("INVALID_USER") });
-    }
-
-    let icm_metadata = await getICMAttachmentStatus(attachment_id, username);
-    let icm_status = icm_metadata["Status"];
-    
+    }  
+    let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params);
+    let icm_status = icm_metadata["Status"];   
     if (!icm_status || icm_status == "") {
         console.log("Error fetching Form Instance Thin data for ", attachment_id);
         return res
@@ -185,7 +191,7 @@ async function loadICMdata(req, res) {
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
     }
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT FormFoundry Upsert/DT Form Instance Orbeon Revise/'+attachment_id+'/','');
-    let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
+    let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
         let response;
         const grant =
@@ -228,7 +234,10 @@ async function loadICMdata(req, res) {
 
 }
 async function clearICMLockedFlag(req, res) {
-    const params = req.body;
+    let params = req.body;
+    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const configOpt = appCfg[rawHost];
+    params = { ...params,...configOpt  }; 
     const attachment_id = params["attachmentId"];
     if (!attachment_id) {
         return res
@@ -238,7 +247,7 @@ async function clearICMLockedFlag(req, res) {
     let username = null;
 
     if (params["token"]) {
-        username = await getUsername(params["token"]);
+        username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
         const valid = await isUsernameValid(params["username"]);
         username = valid ? params["username"] : null;
@@ -252,9 +261,8 @@ async function clearICMLockedFlag(req, res) {
 
     try {
         console.log("Clearing....");
-
         //check that attachment ID exists and that the form is locked
-        let icm_metadata = await getICMAttachmentStatus(attachment_id, username);
+        let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params);
         let icm_status = icm_metadata["Status"];
         if (!icm_status || icm_status == "") {
             console.log("Bad status!");
@@ -279,7 +287,7 @@ async function clearICMLockedFlag(req, res) {
         saveJson["Token"] = "";
 
         //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
-        let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', SIEBEL_ICM_API_FORMS_ENDPOINT + attachment_id + '/', '');
+        let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
         let response;
         const grant =
             await keycloakForSiebel.grantManager.obtainFromClientCredentials();
@@ -288,13 +296,13 @@ async function clearICMLockedFlag(req, res) {
             "X-ICM-TrustedUsername": username,
 
         }
-        const params = {
+        const query = {
             viewMode: "Catalog"
         }
         if (process.env.SIEBEL_ICM_API_WORKSPACE) {
-            params.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
+            query.workspace = process.env.SIEBEL_ICM_API_WORKSPACE;
         }
-        response = await axios.put(url, saveJson, { params, headers });
+        response = await axios.put(url, saveJson, { params: query, headers });
         return res.status(200).send({});
     }
 

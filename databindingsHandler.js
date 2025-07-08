@@ -130,14 +130,14 @@ function bindDataToFields(formJson, fetchedData) {
 
 async function readJsonFormApi(datasource, pathParams) {
   console.log("readJsonFormApi>>pathParams", pathParams);
-  const { name, type, host, endpoint, params, body } = datasource;
+  const { name, type, host, endpoint, body } = datasource;
 
   let username = null;
 
   if (pathParams["token"]) {
-    username = await getUsername(pathParams["token"]);
+    username = await getUsername(pathParams["token"],pathParams["employeeEndpoint"]);
   } else if (pathParams["username"]) {
-    const valid = await isUsernameValid(pathParams["username"]);
+    const valid = await isUsernameValid(pathParams["username"],pathParams["employeeEndpoint"]);
     username = valid ? pathParams["username"] : null;
   }
 
@@ -147,6 +147,12 @@ async function readJsonFormApi(datasource, pathParams) {
       .send({ error: "Username is not valid" });
   }
 
+  let apiHost = pathParams["apiHost"];
+  if (!apiHost || !isNaN(apiHost)) {
+    return res
+      .status(401)
+      .send({ error: "API host is not valid" });
+  }
   try {
     const url = buildUrlWithParams(host, endpoint, pathParams);
     let response;
@@ -176,7 +182,7 @@ async function readJsonFormApi(datasource, pathParams) {
 }
 
 function buildUrlWithParams(host, endpoint, pathVariables) {
-  const hostFromEnv = getHost(host);
+  const hostFromEnv = getHost(pathVariables,host);
   const endpointFromEnv = getEndpoint(endpoint);
   let url = `${hostFromEnv}${endpointFromEnv}`;
   // Replace any placeholder variables like @@attachmentId
@@ -189,9 +195,13 @@ function buildUrlWithParams(host, endpoint, pathVariables) {
 }
 
 
-function getHost(host) {
+function getHost(params, host) {
   // Use host from  environment variable if available, otherwise fall back to JSON
-  return process.env[host] || host;
+  try {
+    return params["apiHost"];
+  } catch {
+    return process.env[host];
+  }
 }
 
 function getEndpoint(endpoint) {
