@@ -32,13 +32,14 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
             Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
         }
-        const params = {
-            viewMode: "Catalog"
+        const query = {
+             viewMode: "Catalog"
         }
-        if (params["icmWorkspace"]) {
-            params.workspace = (params["icmWorkspace"]);
+        if (params.icmWorkspace != null) {
+            query.workspace = params.icmWorkspace;
         }
-        response = await axios.get(url, { params, headers });
+        response = await axios.get(url, { params: query, headers });
+        console.log("RESPONSE",response);
         return_data["Status"] = response.data["Status"];
         return_data["Locked by User"] = response.data["Locked by User"];
         return_data["Locked Flag"] = response.data["Locked Flag"];
@@ -132,14 +133,14 @@ async function saveICMdata(req, res) {
             Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
         }
-        const params = {
+        const query = {
             viewMode: "Catalog"
         }
-        if (params["icmWorkspace"]) {
-            params.workspace = (params["icmWorkspace"]);
+        if (params.icmWorkspace != null) {
+            query.workspace = params.icmWorkspace;
         }
-        response = await axios.put(url, saveJson, { params, headers });
-
+        response = await axios.put(url, saveJson, { params: query, headers });
+        console.log("SAVE RESPONSE:",response);
         return res.status(200).send({});
     }
     catch (error) {
@@ -200,14 +201,14 @@ async function loadICMdata(req, res) {
             Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
         }
-        const params = {
+        const query = {
             viewMode: "Catalog",
             inlineattachment: true
         }
-        if (params["icmWorkspace"]) {
-            params.workspace = (params["icmWorkspace"]);
+        if (params.icmWorkspace != null) {
+            query.workspace = params.icmWorkspace;
         }
-        response = await axios.get(url, { params, headers });
+        response = await axios.get(url, { params: query, headers });
         let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
         //validate the returned data to be of the expected format 
         const valid = isJsonStringValid(return_data);
@@ -299,8 +300,8 @@ async function clearICMLockedFlag(req, res) {
         const query = {
             viewMode: "Catalog"
         }
-        if (params["icmWorkspace"]) {
-            query.workspace = (params["icmWorkspace"]);
+        if (params.icmWorkspace != null) {
+            query.workspace = params.icmWorkspace;
         }
         response = await axios.put(url, saveJson, { params: query, headers });
         return res.status(200).send({});
