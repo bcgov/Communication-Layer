@@ -2,7 +2,7 @@ const { keycloakForFormRepo } = require("../keycloak.js");
 const axios = require("axios");
 const getFormFromFormTemplate = require("../formRepoHandler.js");
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
-const appConfig = require('./appConfig.js');
+const appConfig = require('../appConfig.js');
 const {getParametersFromPortal ,  expireTokenInPortal} = require("./loadPortalDataHandler.js");
 
 async function generatePortalIntegratedTemplate(req, res) { 
@@ -16,7 +16,10 @@ async function generatePortalIntegratedTemplate(req, res) {
     }  
     const userId = "test";
     const portalId = params["portalId"];    
-    const targetApp = appConfig[portalId];
+    //const targetApp = appConfig[portalId];
+
+    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const targetApp = appConfig[rawHost];
     
     if(!targetApp) {
         return res.status(400).send({ error: 'Unknown app ID' });
