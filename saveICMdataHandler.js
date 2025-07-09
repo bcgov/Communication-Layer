@@ -35,7 +35,7 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
         const query = {
              viewMode: "Catalog"
         }
-        if (params.icmWorkspace != null) {
+        if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.get(url, { params: query, headers });
@@ -136,7 +136,7 @@ async function saveICMdata(req, res) {
         const query = {
             viewMode: "Catalog"
         }
-        if (params.icmWorkspace != null) {
+        if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.put(url, saveJson, { params: query, headers });
@@ -205,7 +205,7 @@ async function loadICMdata(req, res) {
             viewMode: "Catalog",
             inlineattachment: true
         }
-        if (params.icmWorkspace != null) {
+        if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.get(url, { params: query, headers });
@@ -300,7 +300,7 @@ async function clearICMLockedFlag(req, res) {
         const query = {
             viewMode: "Catalog"
         }
-        if (params.icmWorkspace != null) {
+        if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.put(url, saveJson, { params: query, headers });
