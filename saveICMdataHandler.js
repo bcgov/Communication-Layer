@@ -39,6 +39,7 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.get(url, { params: query, headers });
+        console.log("RESPONSE",response);
         return_data["Status"] = response.data["Status"];
         return_data["Locked by User"] = response.data["Locked by User"];
         return_data["Locked Flag"] = response.data["Locked Flag"];
@@ -139,7 +140,7 @@ async function saveICMdata(req, res) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.put(url, saveJson, { params: query, headers });
-
+        console.log("SAVE RESPONSE:",response);
         return res.status(200).send({});
     }
     catch (error) {
