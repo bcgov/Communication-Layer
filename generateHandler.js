@@ -101,10 +101,8 @@ async function generateNewTemplate(req, res) {
     let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
-    console.log("Config:",configOpt);
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
-    console.log("template_id>>", template_id);
     const attachment_Id = params["attachmentId"];    
     if (!template_id) {
       return res
@@ -132,7 +130,7 @@ async function generateNewTemplate(req, res) {
     }
 
 
-    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username);
+    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   
     
     if (icm_status == "Complete") {
