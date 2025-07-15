@@ -14,10 +14,12 @@ async function generateTemplate(req, res) {
   try {
     let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
+    console.log("HOST",rawHost)
     const configOpt = appCfg[rawHost];
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
     console.log("template_id>>", template_id);
+    console.log("Parameters:",params)
     const attachment_Id = params["attachmentId"];    
     if (!template_id) {
       return res

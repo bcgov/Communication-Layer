@@ -3,7 +3,8 @@ const { keycloakForSiebel } = require("./keycloak.js");
 
 async function isUsernameValid(username,employeeURL) {
     try {
-        console.log("USERNAME", username)
+        console.log("USERNAME:", username)
+        console.log("USERNAME URL:",employeeURL)
         
         if(!employeeURL){
             console.error("No Employeee URL provided")
