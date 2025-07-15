@@ -103,7 +103,7 @@ async function constructFormJson(formId, params) {
 
 async function generateNewTemplate(req, res) {
   try {
-    const params = req.body;
+    let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     console.log("Config:",configOpt);
