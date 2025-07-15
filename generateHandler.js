@@ -13,14 +13,9 @@ const appCfg = require('./appConfig.js');
 async function generateTemplate(req, res) {
   try {
     let params = req.body;
-    console.log("Request",req);
     const rawHost = (req.get("X-Original-Server") || req.hostname);
-    console.log("Raw host:",rawHost);
-    console.log("App configs",appCfg);
     const configOpt = appCfg[rawHost];
-    console.log("Config options:",configOpt);
     params = { ...params, ...configOpt };
-    console.log("Params:",params);
     const template_id = params["formId"];
     console.log("template_id>>", template_id);
     const attachment_Id = params["attachmentId"];    
@@ -103,7 +98,7 @@ async function constructFormJson(formId, params) {
 
 async function generateNewTemplate(req, res) {
   try {
-    const params = req.body;
+    let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     console.log("Config:",configOpt);
