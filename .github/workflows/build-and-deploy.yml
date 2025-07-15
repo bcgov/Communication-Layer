@@ -35,6 +35,8 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+          type=ref,ref=${{ github.ref_name }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -68,8 +70,7 @@ jobs:
 
       - name: Deploy with Helm
         run: |
-          helm upgrade --install communication-layer ./helm --set image.tag=${{ needs.build_and_push.outputs.image_tag }}
-
+          helm upgrade --install communication-layer ./helm --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} --set image.tag=${{ needs.build_and_push.outputs.image_tag }}
       - name: Trigger OpenShift Rollout
         run: |
          oc rollout restart deployment/communication-layer    
