@@ -101,10 +101,8 @@ async function generateNewTemplate(req, res) {
     let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
-    console.log("Config:",configOpt);
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
-    console.log("template_id>>", template_id);
     const attachment_Id = params["attachmentId"];    
     if (!template_id) {
       return res
