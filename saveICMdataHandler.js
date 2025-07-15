@@ -79,7 +79,7 @@ async function saveICMdata(req, res) {
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"]);
+        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
         username = valid ? params["username"] : null;
     }
     
@@ -172,7 +172,7 @@ async function loadICMdata(req, res) {
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"]);
+        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
         username = valid ? params["username"] : null;
     }
 
@@ -248,7 +248,7 @@ async function clearICMLockedFlag(req, res) {
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"]);
+        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
         username = valid ? params["username"] : null;
     }
 
