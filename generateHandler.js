@@ -14,7 +14,7 @@ async function generateTemplate(req, res) {
   try {
     let params = req.body;
     console.log("Request",req);
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     console.log("Raw host:",rawHost);
     console.log("App configs",appCfg);
     const configOpt = appCfg[rawHost];
@@ -104,7 +104,7 @@ async function constructFormJson(formId, params) {
 async function generateNewTemplate(req, res) {
   try {
     const params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     console.log("Config:",configOpt);
     params = { ...params, ...configOpt };

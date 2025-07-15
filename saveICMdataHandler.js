@@ -39,7 +39,6 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.get(url, { params: query, headers });
-        console.log("RESPONSE",response);
         return_data["Status"] = response.data["Status"];
         return_data["Locked by User"] = response.data["Locked by User"];
         return_data["Locked Flag"] = response.data["Locked Flag"];
@@ -59,7 +58,7 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
 async function saveICMdata(req, res) {
     try {
     let params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     params = { ...params,...configOpt  };   
     const attachment_id = params["attachmentId"];
@@ -140,7 +139,6 @@ async function saveICMdata(req, res) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.put(url, saveJson, { params: query, headers });
-        console.log("SAVE RESPONSE:",response);
         return res.status(200).send({});
     }
     catch (error) {
@@ -158,7 +156,7 @@ async function saveICMdata(req, res) {
 async function loadICMdata(req, res) {
 
     let params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     params = { ...params,...configOpt  }; 
     const attachment_id = params["attachmentId"];
@@ -236,7 +234,7 @@ async function loadICMdata(req, res) {
 }
 async function clearICMLockedFlag(req, res) {
     let params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     params = { ...params,...configOpt  }; 
     const attachment_id = params["attachmentId"];

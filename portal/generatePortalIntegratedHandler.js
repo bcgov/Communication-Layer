@@ -18,7 +18,7 @@ async function generatePortalIntegratedTemplate(req, res) {
     const portalId = params["portalId"];    
     //const targetApp = appConfig[portalId];
 
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const targetApp = appConfig[rawHost];
     
     if(!targetApp) {

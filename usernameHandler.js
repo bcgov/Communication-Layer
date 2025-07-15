@@ -13,7 +13,7 @@ async function isUsernameValid(username,employeeURL) {
         const response = await axios.get(employeeURL, {
             params: {
                 excludeEmptyFieldsInResponse: "true",
-                searchspec: `([Login Name] LIKE '${username}')`,
+                searchspec: `([Login Name] LIKE '${username}') AND ('Employment Status' = 'Active')`,
                 PageSize: "1",
                 ViewMode: "Catalog",
             },
