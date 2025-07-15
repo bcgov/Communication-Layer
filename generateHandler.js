@@ -145,9 +145,7 @@ async function generateNewTemplate(req, res) {
 
       //params added to json so they can be used in SaveToICM functionality call
       formJson.params ={
-        attachmentId: params["attachmentId"],
-        OfficeName:params["OfficeName"],
-        username:params["username"]
+        ...params
       }     
      
       const saveDataForLater = JSON.stringify(formJson)
