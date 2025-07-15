@@ -132,7 +132,7 @@ async function generateNewTemplate(req, res) {
     }
 
 
-    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username);
+    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   
     
     if (icm_status == "Complete") {
