@@ -59,10 +59,17 @@ async function saveICMdata(req, res) {
     try {
     let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
-    const configOpt = appCfg[rawHost];
+    const configOpt = Object.values(appCfg).find(cfg => {
+        try {
+          return new URL(cfg.apiHost).hostname === rawHost;
+        } catch {
+          return false;
+        }
+      }) || {};
     params = { ...params,...configOpt  };   
     const attachment_id = params["attachmentId"];
     const savedFormParam = params["savedForm"];
+    console.log("Save to ICM final params:", params);
     
     if (!attachment_id) {
         return res
