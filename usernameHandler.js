@@ -3,10 +3,12 @@ const { keycloakForSiebel } = require("./keycloak.js");
 
 async function isUsernameValid(username,employeeURL) {
     try {
-        console.log("USERNAME", username)
+        console.log("Username:", username);
+        console.log("Username URL:",employeeURL);
         
         if(!employeeURL){
-            console.error("No Employeee URL provided")
+            console.error("No Employeee URL provided");
+            return false;
         }
         
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
