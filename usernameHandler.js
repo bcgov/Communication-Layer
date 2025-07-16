@@ -1,15 +1,20 @@
 const axios = require("axios");
 const { keycloakForSiebel } = require("./keycloak.js");
 
-async function isUsernameValid(username) {
+async function isUsernameValid(username,employeeURL) {
     try {
-        console.log("USERNAME", username)
-        const siebelApiUrl = process.env.SIEBEL_ICM_API_EMPLOYEE_URL;
+        console.log("Username:", username);
+        console.log("Username URL:",employeeURL);        
+        if(!employeeURL){
+            console.error("No Employeee URL provided");
+            return false;
+        }
+        
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
-        const response = await axios.get(siebelApiUrl, {
+        const response = await axios.get(employeeURL, {
             params: {
                 excludeEmptyFieldsInResponse: "true",
-                searchspec: `([Login Name] LIKE '${username}')`,
+                searchspec: `([Login Name] LIKE '${username}') AND ('Employment Status' = 'Active')`,
                 PageSize: "1",
                 ViewMode: "Catalog",
             },
@@ -30,7 +35,7 @@ async function isUsernameValid(username) {
     }
 }
 
-async function getUsername(userToken) {
+async function getUsername(userToken, employeeURL) {
     if (!userToken) {
         console.warn("No user token provided.");
         return null;
@@ -44,7 +49,7 @@ async function getUsername(userToken) {
             const username = tokens.idir_username;
 
             try {
-                const isValid = await isUsernameValid(username);
+                const isValid = await isUsernameValid(username,employeeURL);
                 return isValid ? username : null;
             } catch (error) {
                 return error.message;

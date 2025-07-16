@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   repository: ghcr.io/bcgov/communication-layer
-  tag: dev
+  tag: test
   pullPolicy: Always
 
 service:

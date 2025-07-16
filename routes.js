@@ -4,10 +4,11 @@ const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const { generateTemplate,generateNewTemplate } = require("./generateHandler");
 const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
-
 const { getUsername } = require("./usernameHandler.js");
+const renderRouter = require("./renderHandler");
 
 const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
+const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
 
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
@@ -141,7 +142,8 @@ router.post("/generatePDFFromJson", generatePDFFromJSON);
 router.post("/generatePDF", generatePDFFromHTML);
 router.post("/generatePDFFromURL", generatePDFFromURL);
 router.post("/loadSavedJson", loadSavedJson);
+router.post("/generatePortalForm", generatePortalIntegratedTemplate);
 router.post("/generateNewTemplate", generateNewTemplate);
-
+router.use('/pdfRender', renderRouter);
 
 module.exports = router;
