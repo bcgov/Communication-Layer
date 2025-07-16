@@ -8,8 +8,8 @@ async function generatePDFFromJSON(req, res) {
   try {
     let attachment = req.body.attachment ?? req.body[0];
 
-    console.log("PDF Request:",req);
-    console.log("PDF Request body:",req.body);
+    // console.log("PDF Request:",req);
+    // console.log("PDF Request body:",req.body);
 
     // Validate attachment is present in incoming message
     if (!attachment) {
@@ -22,7 +22,7 @@ async function generatePDFFromJSON(req, res) {
 
     const savedJsonString = Buffer.from(attachment, 'base64').toString('utf-8');
     let savedJson;
-    console.log("Saved JSON String:",savedJsonString);
+    // console.log("Saved JSON String:",savedJsonString);
     try {
       
       savedJson = JSON.parse(savedJsonString);
@@ -61,7 +61,7 @@ async function generatePDFFromJSON(req, res) {
     // Generate PDF buffer
     const pdfBuffer = await generatePDF(savedJsonString); //get the pdf from the savedJson
     const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-    console.log("PDF Base64:",pdfBase64);
+    // console.log("PDF Base64:",pdfBase64);
     
     res.status(200).json({
       errorCode: 0,
@@ -83,7 +83,7 @@ async function generatePDF(savedJson) {
 
   const id = await storeData(savedJson);
   const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
-  console.log("PDF Endpoint:",endPointForPDF);
+  // console.log("PDF Endpoint:",endPointForPDF);
   const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);
   deleteData(id);
   return pdfBufferFromURL;
@@ -166,8 +166,8 @@ async function generatePDFFromURL(req, res) {
 
 async function getPDFFromURL(url) {
 
-  console.log("Puppeteer path:", process.env.PUPPETEER_EXECUTABLE_PATH);
-  console.log("Puppeteer URL:", url);
+  // console.log("Puppeteer path:", process.env.PUPPETEER_EXECUTABLE_PATH);
+  // console.log("Puppeteer URL:", url);
   const browser = await puppeteer.launch({
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     args: [

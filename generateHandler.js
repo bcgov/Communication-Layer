@@ -147,7 +147,6 @@ async function generateNewTemplate(req, res) {
       formJson.params ={
         ...params
       }     
-      console.log("Form JSON:",formJson);
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
       const endPointForGenerate = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
