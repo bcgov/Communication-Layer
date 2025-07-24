@@ -24,7 +24,9 @@ async function generatePortalIntegratedTemplate(req, res) {
     if(!targetApp) {
         return res.status(400).send({ error: 'Unknown app ID' });
     }     
-    const paramsFromPortal = await getParametersFromPortal(targetApp,token,userId);    
+    const paramsFromPortal = await getParametersFromPortal(targetApp,token,userId);   
+    console.log("paramsFromPortal",paramsFromPortal);
+    
 
     if(!paramsFromPortal) {
         return res.status(400).send({ error: 'Parameters not found to generate form' });
@@ -70,5 +72,7 @@ async function constructFormJson(params) {
   };
   return fullJSON;
 }
+
+
 
 module.exports = generatePortalIntegratedTemplate;
