@@ -39,7 +39,6 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.get(url, { params: query, headers });
-        console.log("RESPONSE",response);
         return_data["Status"] = response.data["Status"];
         return_data["Locked by User"] = response.data["Locked by User"];
         return_data["Locked Flag"] = response.data["Locked Flag"];
@@ -59,8 +58,14 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
 async function saveICMdata(req, res) {
     try {
     let params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
-    const configOpt = appCfg[rawHost];
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
+    const configOpt = appCfg[rawHost] || Object.values(appCfg).find(cfg => {
+        try {
+          return new URL(cfg.apiHost).hostname === rawHost;
+        } catch {
+          return false;
+        }
+      }) || {};
     params = { ...params,...configOpt  };   
     const attachment_id = params["attachmentId"];
     const savedFormParam = params["savedForm"];
@@ -80,7 +85,7 @@ async function saveICMdata(req, res) {
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"]);
+        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
         username = valid ? params["username"] : null;
     }
     
@@ -140,7 +145,6 @@ async function saveICMdata(req, res) {
             query.workspace = params.icmWorkspace;
         }
         response = await axios.put(url, saveJson, { params: query, headers });
-        console.log("SAVE RESPONSE:",response);
         return res.status(200).send({});
     }
     catch (error) {
@@ -158,7 +162,7 @@ async function saveICMdata(req, res) {
 async function loadICMdata(req, res) {
 
     let params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     params = { ...params,...configOpt  }; 
     const attachment_id = params["attachmentId"];
@@ -174,7 +178,7 @@ async function loadICMdata(req, res) {
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"]);
+        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
         username = valid ? params["username"] : null;
     }
 
@@ -236,7 +240,7 @@ async function loadICMdata(req, res) {
 }
 async function clearICMLockedFlag(req, res) {
     let params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
     params = { ...params,...configOpt  }; 
     const attachment_id = params["attachmentId"];
@@ -250,7 +254,7 @@ async function clearICMLockedFlag(req, res) {
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"]);
+        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
         username = valid ? params["username"] : null;
     }
 

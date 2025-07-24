@@ -13,16 +13,13 @@ const appCfg = require('./appConfig.js');
 async function generateTemplate(req, res) {
   try {
     let params = req.body;
-    console.log("Request",req);
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
-    console.log("Raw host:",rawHost);
-    console.log("App configs",appCfg);
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
+    console.log("HOST",rawHost)
     const configOpt = appCfg[rawHost];
-    console.log("Config options:",configOpt);
     params = { ...params, ...configOpt };
-    console.log("Params:",params);
     const template_id = params["formId"];
     console.log("template_id>>", template_id);
+    console.log("Parameters:",params)
     const attachment_Id = params["attachmentId"];    
     if (!template_id) {
       return res
@@ -39,7 +36,7 @@ async function generateTemplate(req, res) {
     if (params["token"]) {
       username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-      const valid = await isUsernameValid(params["username"]);
+      const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
       username = valid ? params["username"] : null;
     }    
 
@@ -103,13 +100,11 @@ async function constructFormJson(formId, params) {
 
 async function generateNewTemplate(req, res) {
   try {
-    const params = req.body;
-    const rawHost = (req.get("X-Forwarded-Host") || req.hostname);
+    let params = req.body;
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
-    console.log("Config:",configOpt);
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
-    console.log("template_id>>", template_id);
     const attachment_Id = params["attachmentId"];    
     if (!template_id) {
       return res
@@ -126,7 +121,7 @@ async function generateNewTemplate(req, res) {
     if (params["token"]) {
       username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
-      const valid = await isUsernameValid(params["username"]);
+      const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
       username = valid ? params["username"] : null;
     }    
 
@@ -137,7 +132,7 @@ async function generateNewTemplate(req, res) {
     }
 
 
-    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username);
+    let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   
     
     if (icm_status == "Complete") {
@@ -152,11 +147,8 @@ async function generateNewTemplate(req, res) {
 
       //params added to json so they can be used in SaveToICM functionality call
       formJson.params ={
-        attachmentId: params["attachmentId"],
-        OfficeName:params["OfficeName"],
-        username:params["username"]
+        ...params
       }     
-     
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
       const endPointForGenerate = process.env.GENERATE_KILN_URL + "?jsonId=" + id;

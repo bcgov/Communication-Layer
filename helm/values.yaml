@@ -1,8 +1,8 @@
-replicaCount: 1
+replicaCount: 2
 
 image:
   repository: ghcr.io/bcgov/communication-layer
-  tag: dev
+  tag: latest
   pullPolicy: Always
 
 service:
