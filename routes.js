@@ -9,6 +9,7 @@ const renderRouter = require("./renderHandler");
 
 const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
 const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
+const submitForPortalAction = require("./portal/savePortalFormDataHandler.js");
 
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
@@ -145,5 +146,6 @@ router.post("/loadSavedJson", loadSavedJson);
 router.post("/generatePortalForm", generatePortalIntegratedTemplate);
 router.post("/generateNewTemplate", generateNewTemplate);
 router.use('/pdfRender', renderRouter);
+router.use('/submitForPortalAction', submitForPortalAction);
 
 module.exports = router;
