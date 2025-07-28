@@ -104,10 +104,8 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
         processItemsForDatabinding(field.containerItems);
 
       }  else if (field.databindings) {
-        // Use new array‑based bindings if present, otherwise wrap the legacy binding
-        const bindings = Array.isArray(field.databindings)
-        ? field.databindings
-        : [ field.databindings ];
+        // Use new array‑based bindings, otherwise wrap the legacy binding
+        const bindings = Array.isArray(field.databindings) ? field.databindings : [ field.databindings ];
         const raw = getBindingValue(bindings, fetchedData, params);
 
         if (field.type === 'group' && field.groupItems) {
