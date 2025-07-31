@@ -141,6 +141,18 @@ async function generateNewTemplate(req, res) {
         .send({ error: getErrorMessage("FORM_ALREADY_FINALIZED") });
     }
 
+    if (icm_metadata["Template"] !== template_id) {
+      return res
+          .status(400)
+          .send({ error: getErrorMessage("INVALID_FORM_ID") });
+    }
+
+    if (icm_metadata["Tool"]?.toLowerCase() !== "formfoundry") {
+      return res
+          .status(400)
+          .send({ error: getErrorMessage("INVALID_TOOL") });
+    }
+
     const formJson = await constructFormJson(template_id, params);
 
     if (formJson != null) {
