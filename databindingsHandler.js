@@ -97,65 +97,60 @@ function getBindingValue(bindings, fetchedData, params = {}) {
 function bindDataToFields(formJson, fetchedData, params = {}) {
   const formData = {};
 
-  const processItemsForDatabinding = (items) => {
+  //helper function to bind group
+  function bindRowsToGroup(field, rows) {
+    return rows.map((rowObj, index) => {
+      const row = {};
+      const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+      const localDatabindings = binding ? { ...fetchedData, [binding.source]: rowObj } : { ...fetchedData };
+
+      field.groupItems.forEach(groupItem =>
+        groupItem.fields.forEach(groupField => {
+          if (!groupField.databindings) return;
+          const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
+          const subVal = getBindingValue(groupField.databindings,localDatabindings,params);
+          row[fieldIdInGroup] = transformValueToBindIfNeeded(groupField, subVal) || '';
+        })
+      );
+      return row;
+    });
+  }
+
+  function processItemsForDatabinding(items) {
     items.forEach(field => {
-
+      // containers
       if (field.type === 'container' && field.containerItems) {
-        processItemsForDatabinding(field.containerItems);
-
-      }  else if (field.databindings) {
-        // Use new array‑based bindings, otherwise wrap the legacy binding
-        const bindings = Array.isArray(field.databindings) ? field.databindings : [ field.databindings ];
-        const raw = getBindingValue(bindings, fetchedData, params);
-
-        if (field.type === 'group' && field.groupItems) {
-          const groupDataArray = raw && Array.isArray(raw)
-            ? raw.map((pathObj, index) => {
-                const groupData = {};
-                field.groupItems.forEach(groupItem => {
-                  groupItem.fields.forEach(groupField => {
-                    if (groupField.databindings) {
-                      const gf = Array.isArray(groupField.databindings) ? groupField.databindings[0] : groupField.databindings;
-                      const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
-                      const subVal = JSONPath({ path: gf.path, json: pathObj })[0];
-                      groupData[fieldIdInGroup] = transformValueToBindIfNeeded(groupField, subVal) || '';
-                    }
-                  });
-                });
-                return groupData;
-              })
-            : [];
-          formData[field.id] = groupDataArray;
-
-        } else {
-          formData[field.id] = raw != null
-            ? transformValueToBindIfNeeded(field, raw)
-            : null;
-        }
+        return processItemsForDatabinding(field.containerItems);
       }
 
-      else if (field.type === 'group' && field.groupItems && !field.repeater) {
-        const transformedItem = {};
-        field.groupItems.forEach(groupItem => {
-          groupItem.fields.forEach(groupField => {
-            if (groupField.databindings) {
-                const gf = Array.isArray(groupField.databindings) ? groupField.databindings[0] : groupField.databindings;
-                const fetchedSourceData = fetchedData[gf.source] || {};
-                const vals = JSONPath({ path: gf.path, json: fetchedSourceData });
-                const id = `${field.id}-0-${groupField.id}`;
-                transformedItem[id] = vals.length > 0 ? transformValueToBindIfNeeded(groupField, vals[0]): null;
-              }
-          });
-        });
-        formData[field.id] = [transformedItem];
+      // groups 
+      if (field.type === 'group' && field.groupItems) {
+        if (field.repeater) {
+          // repeatable group
+          const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+          const rows = binding ? JSONPath({ path: binding.path, json: fetchedData }) || [] : [];
+          formData[field.id] = bindRowsToGroup(field, rows);
+        } else {
+          // single-instance group
+          const binding = Array.isArray(field.databindings) ? field.databindings[0]: field.databindings || null;
+          const rows = binding? (JSONPath({ path: binding.path, json: fetchedData }) || []).slice(0, 1) : [{}];
+          formData[field.id] = bindRowsToGroup(field, rows);
+        }
+        return;
+      }
+
+      //Single fields
+      if (field.databindings) {
+        const raw = getBindingValue(field.databindings, fetchedData, params);
+        formData[field.id] = raw != null ? transformValueToBindIfNeeded(field, raw) : null;
       }
     });
   };
 
-  if (formJson?.data?.items) {
+  if (Array.isArray(formJson?.data?.items)) {
     processItemsForDatabinding(formJson.data.items);
   }
-
+  // console.dir(formData, { depth: null, colors: true });
   return formData;
 }
 
