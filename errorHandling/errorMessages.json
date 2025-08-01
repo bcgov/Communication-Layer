@@ -14,7 +14,8 @@
       "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
       "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
       "INVALID_FORM_ID":"Invalid Form ID.",
-      "INVALID_TOOL":"Invalid Tool."
+      "INVALID_TOOL":"Invalid Tool.",
+      "INVALID_AREA":"Invalid Area."
     },     
     "test": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -31,7 +32,8 @@
       "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
       "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
       "INVALID_FORM_ID":"Invalid Form ID.",
-      "INVALID_TOOL":"Invalid Tool."
+      "INVALID_TOOL":"Invalid Tool.",
+      "INVALID_AREA":"Invalid Area."
     },
     "prod": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -48,6 +50,7 @@
       "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
       "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
       "INVALID_FORM_ID":"Invalid Form ID.",
-      "INVALID_TOOL":"Invalid Tool."
+      "INVALID_TOOL":"Invalid Tool.",
+      "INVALID_AREA":"Invalid Area."
     }
   }
