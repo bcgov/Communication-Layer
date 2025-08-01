@@ -7,11 +7,11 @@ required:
 properties:
   version:
     anyOf:
-      - type: string        
-      - type: number        
+      - type: string
+      - type: number
   ministry_id:
     anyOf:
-      - type: string        
+      - type: string
       - type: number
   id:
     type: string
@@ -25,13 +25,13 @@ properties:
     type: string
   deployed_to:
     anyOf:
-      - type: string        
+      - type: string
       - type: "null"
   dataSources:
     type: array
     items:
       type: object
-    default: []  
+    default: []
   data:
     type: object
     required:
@@ -64,8 +64,8 @@ definitions:
         type: string
       mask:
         anyOf:
-          - type: string        
-          - type: "null"        
+          - type: string
+          - type: "null"
       codeContext:
         type: object
         properties:
@@ -90,7 +90,7 @@ definitions:
               type: string
           required:
             - text
-            - value     
+            - value
       groupItems:
         type: array
         items:
@@ -101,7 +101,7 @@ definitions:
               items:
                 $ref: "#/definitions/Item"
       repeater:
-        type: boolean      
+        type: boolean
       helperText:
         anyOf:
           - type: string
@@ -142,7 +142,7 @@ definitions:
             value:
               anyOf:
                 - type: string
-                - type: number  
+                - type: number
                 - type: boolean
             errorMessage:
               anyOf:
@@ -151,7 +151,7 @@ definitions:
           required:
             - type
             - value
-            - errorMessage      
+            - errorMessage
       conditions:
         type: array
         items:
@@ -169,30 +169,48 @@ definitions:
           required:
             - type
             - value
-          additionalProperties: false    
+          additionalProperties: false
       webStyles:
         anyOf:
           - type: "null"
           - type: object
-        additionalProperties:
-          type: string
+            additionalProperties:
+              anyOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: object
+                - type: array
+                - type: "null"
       pdfStyles:
         anyOf:
           - type: "null"
           - type: object
-        additionalProperties:
-          type: string
+            additionalProperties:
+              anyOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: object
+                - type: array
+                - type: "null"
       databindings:
-        type: object
-        properties:
-          path:
-            type: string
-          source:
-            type: string
-        required:
-          - path
-          - source
-        additionalProperties: false
+        type: array
+        items:
+          type: object
+          properties:
+            path:
+              type: string
+            source:
+              type: string
+            order:
+              type: number
+            condition:
+              type: string
+          required:
+            - path
+            - source
+          additionalProperties: false
       containerItems:
         type: array
         items:
