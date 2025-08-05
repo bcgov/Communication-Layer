@@ -153,12 +153,20 @@ async function generateNewTemplate(req, res) {
           .send({ error: getErrorMessage("INVALID_TOOL") });
     }
 
-    let requestArea = params["area"];
-    let icmArea = icm_metadata["Categorie"];
-    if (requestArea && requestArea.toLowerCase() !== icmArea?.toLowerCase()) {
-      return res
-          .status(400)
-          .send({ error: getErrorMessage("INVALID_AREA") });
+    const requestArea = params.area?.toLowerCase();
+
+    if (requestArea) {
+      const icmArea = icm_metadata.Categorie?.toLowerCase();
+
+      const isServiceRequest = requestArea === "service request";
+
+      const isAreaValid =
+          (isServiceRequest && icmArea === "application") ||
+          (!isServiceRequest && requestArea === icmArea);
+
+      if (!isAreaValid) {
+        return res.status(400).send({ error: getErrorMessage("INVALID_AREA") });
+      }
     }
 
     const formJson = await constructFormJson(template_id, params);
