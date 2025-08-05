@@ -195,22 +195,41 @@ definitions:
                 - type: array
                 - type: "null"
       databindings:
-        type: array
-        items:
-          type: object
-          properties:
-            path:
-              type: string
-            source:
-              type: string
-            order:
-              type: number
-            condition:
-              type: string
-          required:
-            - path
-            - source
-          additionalProperties: false
+        oneOf:
+          - type: array
+            items:
+              type: object
+              properties:
+                path:
+                  type: string
+                source:
+                  type: string
+                order:
+                  type: number
+                condition:
+                  anyOf:
+                    - type: string
+                    - type: "null"
+              required:
+                - path
+                - source
+              additionalProperties: false
+          - type: object
+            properties:
+              path:
+                type: string
+              source:
+                type: string
+              order:
+                type: number
+              condition:
+                anyOf:
+                  - type: string
+                  - type: "null"
+            required:
+              - path
+              - source
+            additionalProperties: false
       containerItems:
         type: array
         items:
