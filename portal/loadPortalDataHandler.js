@@ -55,4 +55,33 @@ async function expireTokenInPortal(portal,token, userId) {
   return isTokenExpired;
 }
 
-module.exports = {getParametersFromPortal ,  expireTokenInPortal};
+async function getSavedFormFromPortal(portal,token, userId) {  
+  let parametersForForm = "";  
+
+  try {
+    const urlForValidateTokenAndGetJson= portal.apiHost+ (portal.getSavedJsonEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
+    console.log("urlForValidateTokenAndGetJson >>",urlForValidateTokenAndGetJson);
+    const response = await axios.post(`${urlForValidateTokenAndGetJson}`,
+      {
+        token,
+        userId
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    ); 
+    //TODO: verify the json against schema  or some other sanity checks
+    return response.data;
+    
+    
+  } catch (err) {
+    console.log( 'Failed to contact target app', err ); 
+
+    throw err;
+  }
+  
+}
+
+module.exports = {getParametersFromPortal ,  expireTokenInPortal, getSavedFormFromPortal };
