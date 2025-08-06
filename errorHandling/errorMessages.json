@@ -15,7 +15,12 @@
       "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
       "INVALID_FORM_ID":"Invalid Form ID.",
       "INVALID_TOOL":"Invalid Tool.",
-      "INVALID_AREA":"Invalid Area."
+      "INVALID_AREA":"Invalid Area.",
+      "PARAMS_NOT_FOUND":"Parameters not found to generate form",
+      "UNKNOWN_ORIGIN_SERVER":"Unknown Origin Server",
+      "NO_ACTION_FOUND":"No action found",
+      "UNKNOWN_ACTION":"Unknown action encountered",
+      "ERROR_IN_EXECUTING_ACTION":"Error in executing action type"
     },     
     "test": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -33,7 +38,12 @@
       "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
       "INVALID_FORM_ID":"Invalid Form ID.",
       "INVALID_TOOL":"Invalid Tool.",
-      "INVALID_AREA":"Invalid Area."
+      "INVALID_AREA":"Invalid Area.",
+      "PARAMS_NOT_FOUND":"Parameters not found to generate form",
+      "UNKNOWN_ORIGIN_SERVER":"Unknown Origin Server",
+      "NO_ACTION_FOUND":"No action found",
+      "UNKNOWN_ACTION":"Unknown action encountered",
+      "ERROR_IN_EXECUTING_ACTION":"Error in executing action type"    
     },
     "prod": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -51,6 +61,11 @@
       "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
       "INVALID_FORM_ID":"Invalid Form ID.",
       "INVALID_TOOL":"Invalid Tool.",
-      "INVALID_AREA":"Invalid Area."
+      "INVALID_AREA":"Invalid Area.",
+      "PARAMS_NOT_FOUND":"Parameters not found to generate form",
+      "UNKNOWN_ORIGIN_SERVER":"Unknown Origin Server",
+      "NO_ACTION_FOUND":"No action found",
+      "UNKNOWN_ACTION":"Unknown action encountered",
+      "ERROR_IN_EXECUTING_ACTION":"Error in executing action type"
     }
   }
