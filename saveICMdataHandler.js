@@ -19,6 +19,10 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
     return_data["Locked by Id"] = "";
     return_data["DocFileName"] = "";
     return_data["Office Name"] = "";
+    return_data["Template"] = "";
+    return_data["Tool"] = "";
+    return_data["Categorie"] = "";
+
     if (!attachment_id || attachment_id == "") {
         return return_data;
     }
@@ -45,6 +49,9 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
         return_data["Locked by Id"] = response.data["Locked by Id"];
         return_data["DocFileName"] = response.data["DocFileName"];
         return_data["Office Name"] = response.data["Office Name"];
+        return_data["Template"] = response.data["Template"];
+        return_data["Tool"] = response.data["Tool"];
+        return_data["Categorie"] = response.data["Categorie"];
         return return_data;
     }
     catch (error) {
