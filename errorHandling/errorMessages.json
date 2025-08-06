@@ -12,7 +12,15 @@
       "FORM_NOT_FOUND_IN_REQUEST":"The form is not found in the incoming request. Try again later and report to support, if the issue is not solved",
       "GENERATE_ERROR_MSG":"Error generating the form .Close this window and try again in a few seconds",
       "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
-      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated."
+      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
+      "INVALID_FORM_ID":"Invalid Form ID.",
+      "INVALID_TOOL":"Invalid Tool.",
+      "INVALID_AREA":"Invalid Area.",
+      "PARAMS_NOT_FOUND":"Parameters not found to generate form",
+      "UNKNOWN_ORIGIN_SERVER":"Unknown Origin Server",
+      "NO_ACTION_FOUND":"No action found",
+      "UNKNOWN_ACTION":"Unknown action encountered",
+      "ERROR_IN_EXECUTING_ACTION":"Error in executing action type"
     },     
     "test": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -27,7 +35,15 @@
       "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved",
       "GENERATE_ERROR_MSG":"Close this window and try again in a few seconds",
       "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
-      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated."     
+      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
+      "INVALID_FORM_ID":"Invalid Form ID.",
+      "INVALID_TOOL":"Invalid Tool.",
+      "INVALID_AREA":"Invalid Area.",
+      "PARAMS_NOT_FOUND":"Parameters not found to generate form",
+      "UNKNOWN_ORIGIN_SERVER":"Unknown Origin Server",
+      "NO_ACTION_FOUND":"No action found",
+      "UNKNOWN_ACTION":"Unknown action encountered",
+      "ERROR_IN_EXECUTING_ACTION":"Error in executing action type"    
     },
     "prod": {
       "FORM_ID_REQUIRED": "Close this window and try again in a few seconds",
@@ -42,6 +58,14 @@
       "FORM_NOT_FOUND_IN_REQUEST":"Try again later and report to support, if the issue is not solved",
       "GENERATE_ERROR_MSG":"Close this window and try again in a few seconds",
       "FORM_ALREADY_FINALIZED":"The form you are trying to generate is already finalized",
-      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated."
+      "FORM_CANNOT_BE_GENERATED":"The form cannot be generated.",
+      "INVALID_FORM_ID":"Invalid Form ID.",
+      "INVALID_TOOL":"Invalid Tool.",
+      "INVALID_AREA":"Invalid Area.",
+      "PARAMS_NOT_FOUND":"Parameters not found to generate form",
+      "UNKNOWN_ORIGIN_SERVER":"Unknown Origin Server",
+      "NO_ACTION_FOUND":"No action found",
+      "UNKNOWN_ACTION":"Unknown action encountered",
+      "ERROR_IN_EXECUTING_ACTION":"Error in executing action type"
     }
   }

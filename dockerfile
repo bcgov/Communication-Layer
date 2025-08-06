@@ -21,7 +21,8 @@ RUN apt-get update && apt-get install -y \
     libxrandr2 \
     libxrender1 \
     xdg-utils \
-    && rm -rf /var/lib/apt/lists/*
+    tini \
+  && rm -rf /var/lib/apt/lists/*
 
 # Install Chromium
 RUN apt-get update && apt-get install -y chromium && rm -rf /var/lib/apt/lists/*
@@ -34,6 +35,8 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
+
+ENTRYPOINT ["/usr/bin/tini", "--"]
 
 EXPOSE 3030
 

@@ -1,13 +1,11 @@
 const axios = require("axios");
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
-async function getParametersFromPortal(portal,token, userId) {
-  //call another api from portal to get the params
-    //TODO - add header for validation
+async function getParametersFromPortal(portal,token, userId) {  
   let parametersForForm = "";  
 
   try {
-    const urlForValidateTokenAndGetParams= portal.baseUrl+ (portal.getParametersEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
-    console.log("urlForValidateTokenAndGetParams",urlForValidateTokenAndGetParams);
+    const urlForValidateTokenAndGetParams= portal.apiHost+ (portal.getParametersEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
+    console.log("urlForValidateTokenAndGetParams >>",urlForValidateTokenAndGetParams);
     const response = await axios.post(`${urlForValidateTokenAndGetParams}`,
       {
         token,
@@ -18,14 +16,16 @@ async function getParametersFromPortal(portal,token, userId) {
           'Content-Type': 'application/json'
         }
       }
-    );
-
-    parametersForForm = response.data;
+    );    
+    return response.data;
+    
+    
   } catch (err) {
-    console.log( 'Failed to contact target app', err );    
-    return parametersForForm;
+    console.log( 'Failed to contact target app', err ); 
+
+    throw err;
   }
-  return parametersForForm;
+  
 }
 
 async function expireTokenInPortal(portal,token, userId) {
@@ -34,7 +34,7 @@ async function expireTokenInPortal(portal,token, userId) {
   let isTokenExpired = false;
 
   try {
-    const urlForExpiringToken = portal.baseUrl + (portal.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);;
+    const urlForExpiringToken = portal.apiHost + (portal.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);;
     console.log("urlForExpiringToken",urlForExpiringToken);
     const response = await axios.post(`${urlForExpiringToken}`,      
       {

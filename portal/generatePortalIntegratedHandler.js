@@ -8,34 +8,29 @@ const {getParametersFromPortal ,  expireTokenInPortal} = require("./loadPortalDa
 async function generatePortalIntegratedTemplate(req, res) { 
   try {
     const params = req.body;
-    const token = params["id"];    
+    const token = params["id"]; 
+    const userId = "test";   
     if (!token ) {
       return res
         .status(400)
         .send({ error: 'No token found' });
-    }  
-    const userId = "test";
-    const portalId = params["portalId"];    
-    //const targetApp = appConfig[portalId];
+    }   
 
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const targetApp = appConfig[rawHost];
     
     if(!targetApp) {
-        return res.status(400).send({ error: 'Unknown app ID' });
+        return res.status(400).send({ error: getErrorMessage("UNKNOWN_ORIGIN_SERVER") });
     }     
-    const paramsFromPortal = await getParametersFromPortal(targetApp,token,userId);    
+    const paramsFromPortal = await getParametersFromPortal(targetApp,token,userId);      
 
     if(!paramsFromPortal) {
-        return res.status(400).send({ error: 'Parameters not found to generate form' });
+        return res.status(400).send({ error: getErrorMessage("PARAMS_NOT_FOUND") });
     } 
-
     const formJson = await constructFormJson(paramsFromPortal);
 
     if (formJson != null) {
-      //expire token
-      const isTokenExpired = await expireTokenInPortal(targetApp,token,userId); 
-      console.log("isTokenExpired >> ",isTokenExpired);
+      
       res.status(200).send({
         save_data: formJson
       });
@@ -46,9 +41,10 @@ async function generatePortalIntegratedTemplate(req, res) {
     }
   } catch (error) {
     console.error(`Error generating the form:`, error);
+    
     return res
       .status(400)
-      .send({ error: getErrorMessage("GENERATE_ERROR_MSG") });
+      .send({ error: getErrorMessage("FORM_CANNOT_BE_GENERATED") });
   }
 }
 
@@ -70,5 +66,7 @@ async function constructFormJson(params) {
   };
   return fullJSON;
 }
+
+
 
 module.exports = generatePortalIntegratedTemplate;
