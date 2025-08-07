@@ -18,10 +18,10 @@ async function submitForPortalAction (req,res) {
         }) || {};
       
       for (const action of config.actions) {        
-        if (action.actionType === 'endpoint') {          
+        if (action.action_type === 'endpoint') {          
           await handleEndpointAction(tokenId,action, savedForm,portalConfig);
         } else {
-          console.warn('Unexpected action type:', action.type);
+          console.warn('Unexpected action type:', action.action_type);
           return res
               .status(400)
               .send({ error: getErrorMessage("UNKNOWN_ACTION") });
