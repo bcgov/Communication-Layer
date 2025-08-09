@@ -1,75 +1,92 @@
 const axios = require("axios");
 const { keycloakForSiebel } = require("./keycloak.js");
 
-function processICMJsonItem(item, index) {
-    console.log(">>> ICMJsonClob (raw):\n\n", item.ICMJsonClob);
-    console.log("--------------------------------------------------");
+function processIcmJsonClobData(jsonData) {
+    // Create a copy to avoid mutating the original instance
+    const processedData = JSON.parse(JSON.stringify(jsonData));
 
-    const trimmedClob = item.ICMJsonClob.trim();
-    if (!trimmedClob.startsWith('{') && !trimmedClob.startsWith('[')) {
-        console.log(`Item ${index + 1}: ICMJsonClob is not a valid JSON`);
-        return;
+    if (processedData.items && Array.isArray(processedData.items)) {
+        processedData.items = processedData.items.map(item => {
+            if (item.ICMJsonClob && typeof item.ICMJsonClob === 'string') {
+                try {
+                    item.ICMJsonClobParsed = JSON.parse(item.ICMJsonClob);
+                    delete item.ICMJsonClob;
+                } catch (error) {
+                    console.warn(`Failed to parse ICMJsonClob for item ${item.Id}: ${error.message}`);
+                    item.ICMJsonClobParsed = null;
+                }
+            }
+
+            return item;
+        });
+    }
+    else {
+        if (processedData.ICMJsonClob && typeof processedData.ICMJsonClob === 'string') {
+            try {
+                processedData.ICMJsonClobParsed = JSON.parse(processedData.ICMJsonClob);
+                delete processedData.ICMJsonClob;
+            } catch (error) {
+                console.warn(`Failed to parse ICMJsonClob for item ${processedData.Id}: ${error.message}`);
+                processedData.ICMJsonClobParsed = null;
+            }
+        }
+
+        return processedData;
     }
 
-    try {
-        const parsedClob = JSON.parse(item.ICMJsonClob);
-        console.log("ICMJsonClob (parsed):\n\n", JSON.stringify(parsedClob, null, 2));
-    } catch (parseError) {
-        console.log(`Item ${index + 1}: Failed to parse JSON: ${parseError.message}`);
-    }
+    return processedData;
 }
 
-async function getData() {
+async function fetchIcmJsonClobData(attachmentId) {
     try {
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
 
+        const username = process.env.SIEBEL_ICM_TRUSTED_USERNAME;
+
         const headers = {
             Authorization: `Bearer ${grant.id_token.token}`,
-            "X-ICM-TrustedUsername": "DMEIRELE",
+            "X-ICM-TrustedUsername": username,
             "Content-Type": "application/json"
         };
 
-        const url = "https://sieblabm.apps.gov.bc.ca/ffdy/v1.0/data/ICMJSONClobBO/ICMJSONClobBC"
+        const url = process.env.SIEBEL_ICM_BASE_URL;
 
         const queryParams = {
             ViewMode: "Catalog",
-            workspace: "dev_sadmin_bz_1",
-            searchspec: `("SR Id" = "1-54SIG7F")`
+            searchspec: attachmentId // "UserFieldCLOB"="1-123ABC"
         };
 
-        const response = await axios.get(url, {
+        return await axios.get(url, {
             headers,
-            params: queryParams
+            params: queryParams,
+            timeout: 30000
         });
 
-        console.log("Status:", response.status + " " + response.statusText);
+    } catch (error) {
+        throw new Error(`Failed to fetch ICM data for SR ID ${attachmentId}: ${error.message}`);
+    }
+}
 
-        if (response.data && response.data.items && Array.isArray(response.data.items)) {
-            response.data.items.forEach((item, index) => {
-                processICMJsonItem(item, index);
-            });
-        } else {
-            console.log("No items found in response");
-        }
+async function getProcessedData(attachmentId) {
+    try {
+        const response = await fetchIcmJsonClobData(attachmentId);
+        const processedResult = processIcmJsonClobData(response.data);
 
         return {
             success: true,
-            totalItems: response.data?.items?.length || 0,
-            statusCode: response.status,
-            statusText: response.statusText
+            data: processedResult
         };
 
     } catch (error) {
         console.error("API call failed:", error.message);
+
         return {
             success: false,
-            error: error.message,
-            totalItems: 0,
-            errors: [error.message]
+            error: error.message
         };
     }
 }
 
 module.exports = {
-    getData
+    getProcessedData
 };
