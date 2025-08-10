@@ -11,8 +11,7 @@ const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson 
 const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
 const submitForPortalAction = require("./portal/savePortalFormDataHandler.js");
 const loadPortalIntegratedForm = require("./portal/loadPortalIntegratedHandler.js");
-
-const getFormsFromFormTemplate = require("./formRepoHandler");
+require("./formRepoHandler");
 const {getProcessedData} = require("./icmJsonClobHandler");
 const router = express.Router();
 
@@ -154,7 +153,6 @@ router.get("/getAllForms", async (request, response) => {
 });
 
 router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
-
   try {
     const result = await getProcessedData(req.query.attachmentId);
 
