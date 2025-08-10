@@ -13,7 +13,7 @@ const submitForPortalAction = require("./portal/savePortalFormDataHandler.js");
 const loadPortalIntegratedForm = require("./portal/loadPortalIntegratedHandler.js");
 
 const getFormsFromFormTemplate = require("./formRepoHandler");
-const {getData} = require("./icmJsonClobHandler");
+const {getProcessedData} = require("./icmJsonClobHandler");
 const router = express.Router();
 
 const FORM_SERVER_URL = process.env.FORMSERVERURL;
@@ -154,24 +154,18 @@ router.get("/getAllForms", async (request, response) => {
 });
 
 router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
+
   try {
-    const result = await getData();
+    const result = await getProcessedData(req.query.attachmentId);
 
     if (result.success) {
-      res.status(200).json({
-        message: "Success."
-      });
+      res.status(200).json(result.data);
     } else {
-      res.status(500).json({
-        error: "Error."
-      });
+      res.status(500).json({ error: "Error." });
     }
   } catch (error) {
     console.error("Error:", error.message);
-    res.status(500).json({
-      error: "Internal server error",
-      message: error.message
-    });
+    res.status(500).json({ error: "Internal server error", message: error.message });
   }
 });
 
