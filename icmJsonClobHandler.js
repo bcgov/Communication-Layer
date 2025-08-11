@@ -31,7 +31,7 @@ async function fetchIcmJsonClobData(attachmentId) {
     try {
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
 
-        const username = process.env.SIEBEL_ICM_TRUSTED_USERNAME;
+        const username = process.env.TRUSTED_USERNAME;
 
         const headers = {
             Authorization: `Bearer ${grant.id_token.token}`,
@@ -39,7 +39,7 @@ async function fetchIcmJsonClobData(attachmentId) {
             "Content-Type": "application/json"
         };
 
-        const url = process.env.SIEBEL_ICM_BASE_URL;
+        const url = process.env.SIEBEL_ICM_API_HOST;
 
         const queryParams = {
             ViewMode: "Catalog",
