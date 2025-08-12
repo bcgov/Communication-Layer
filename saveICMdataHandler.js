@@ -133,8 +133,30 @@ async function saveICMdata(req, res) {
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
+    const truncatedKeysSaveData = {};
+    for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
+        const stringLength = oldKey.length;
+        const newKey = oldKey.substring(0, stringLength-28);
+        if (Array.isArray(saveData[oldKey]) > 0 && Object.keys(saveData[oldKey]).length > 0) { //This trunicates child/dependant objects
+            const childrenArray = [];
+            for(let i = 0; i < saveData[oldKey].length; i++) {
+                const truncatedChildrenKeys = {};
+                for (let oldChildKey in saveData[oldKey][i]) {
+                    const childStringLength = oldChildKey.length;
+                    const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
+                    truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
+                }
+                childrenArray.push(truncatedChildrenKeys);
+            }
+            const wrapperKey = {} 
+            wrapperKey[newKey] = childrenArray;
+            truncatedKeysSaveData[`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
+        } else {
+          truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
+        }
+    }
     let builder = new xml2js.Builder();
-    saveJson["XML Hierarchy"] = builder.buildObject(saveData);         
+    saveJson["XML Hierarchy"] = builder.buildObject(truncatedKeysSaveData); 
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
