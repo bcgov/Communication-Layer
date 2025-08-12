@@ -39,7 +39,7 @@ async function fetchIcmJsonClobData(attachmentId) {
             "Content-Type": "application/json"
         };
 
-        const url = process.env.SIEBEL_ICM_API_HOST;
+        const url = `${process.env.SIEBEL_ICM_API_HOST}${process.env.ICM_JSON_CLOB_ENDPONT}`;
 
         const queryParams = {
             ViewMode: "Catalog",
