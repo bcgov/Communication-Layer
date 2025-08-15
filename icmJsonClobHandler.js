@@ -43,7 +43,7 @@ async function fetchIcmJsonClobData(attachmentId) {
 
         const queryParams = {
             ViewMode: "Catalog",
-            searchspec: attachmentId // "UserFieldCLOB"="1-123ABC"
+            SearchSpec: `UserFieldCLOB=\"${attachmentId}\"`
         };
 
         return await axios.get(url, {
