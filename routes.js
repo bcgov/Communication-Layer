@@ -11,14 +11,33 @@ const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson 
 const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
 const submitForPortalAction = require("./portal/savePortalFormDataHandler.js");
 const loadPortalIntegratedForm = require("./portal/loadPortalIntegratedHandler.js");
-
-
-const getFormsFromFormTemplate = require("./formRepoHandler");
+require("./formRepoHandler");
+const {getProcessedData} = require("./icmJsonClobHandler");
 const router = express.Router();
 
 const FORM_SERVER_URL = process.env.FORMSERVERURL;
 const ENDPOINT_URL = process.env.ENDPOINTURL;
 
+const localhostOnlyMiddleware = (req, res, next) => {
+  const clientIP = req.ip ||
+      req.connection.remoteAddress ||
+      req.socket.remoteAddress ||
+      (req.connection.socket ? req.connection.socket.remoteAddress : null);
+
+  const actualIP = clientIP?.replace('::ffff:', '') || clientIP;
+
+  const isLocalhost = clientIP === '127.0.0.1' ||
+      clientIP === '::1' ||
+      clientIP === 'localhost' ||
+      actualIP?.startsWith('172.') ||  // Docker default bridge network
+      actualIP?.startsWith('192.168.') || // Docker custom networks
+      actualIP?.startsWith('10.'); // Docker swarm networks
+
+  if (!isLocalhost) {
+    return res.status(403).json({ error: 'Localhost access only' });
+  }
+  next();
+};
 
 // Form Map
 const formMap = new Map();
@@ -115,8 +134,7 @@ router.post("/generate", generateTemplate);
 
 router.get("/getAllForms", async (request, response) => {
   try {
-    const grant =
-      await keycloakForFormRepo.grantManager.obtainFromClientCredentials();
+    const grant = await keycloakForFormRepo.grantManager.obtainFromClientCredentials();
     let endpointUrl = `http://localhost:3030/api/forms-list`;
 
     const forms = await axios.get(endpointUrl, {
@@ -134,9 +152,38 @@ router.get("/getAllForms", async (request, response) => {
 
 });
 
+router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
+  try {
+    const result = await getProcessedData(req.query.attachmentId, false);
+
+    if (result.success) {
+      res.status(200).json(result.data);
+    } else {
+      res.status(500).json({ error: "Error." });
+    }
+  } catch (error) {
+    console.error("Error:", error.message);
+    res.status(500).json({ error: "Internal server error", message: error.message });
+  }
+});
+
+router.get("/processIcmJsonClobAnswers", localhostOnlyMiddleware, async (req, res) => {
+    try {
+        const result = await getProcessedData(req.query.attachmentId, true);
+
+        if (result.success) {
+            res.status(200).json(result.data);
+        } else {
+            res.status(500).json({ error: "Error." });
+        }
+    } catch (error) {
+        console.error("Error:", error.message);
+        res.status(500).json({ error: "Internal server error", message: error.message });
+    }
+});
+
 // clear the locked by flags in ICM for the form, used when form is closed
 router.post("/clearICMLockedFlag", clearICMLockedFlag);
-
 
 router.post("/generatePDFFromJson", generatePDFFromJSON);
 
@@ -149,4 +196,5 @@ router.post("/generateNewTemplate", generateNewTemplate);
 router.use('/pdfRender', renderRouter);
 router.use('/submitForPortalAction', submitForPortalAction);
 router.post("/loadPortalForm", loadPortalIntegratedForm);
+
 module.exports = router;
