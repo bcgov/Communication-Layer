@@ -154,7 +154,7 @@ router.get("/getAllForms", async (request, response) => {
 
 router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
   try {
-    const result = await getProcessedData(req.query.attachmentId);
+    const result = await getProcessedData(req.query.attachmentId, false);
 
     if (result.success) {
       res.status(200).json(result.data);
@@ -165,6 +165,21 @@ router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
     console.error("Error:", error.message);
     res.status(500).json({ error: "Internal server error", message: error.message });
   }
+});
+
+router.get("/processIcmJsonClob2", localhostOnlyMiddleware, async (req, res) => {
+    try {
+        const result = await getProcessedData(req.query.attachmentId, true);
+
+        if (result.success) {
+            res.status(200).json(result.data);
+        } else {
+            res.status(500).json({ error: "Error." });
+        }
+    } catch (error) {
+        console.error("Error:", error.message);
+        res.status(500).json({ error: "Internal server error", message: error.message });
+    }
 });
 
 // clear the locked by flags in ICM for the form, used when form is closed

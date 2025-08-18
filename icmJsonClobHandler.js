@@ -57,16 +57,33 @@ async function fetchIcmJsonClobData(attachmentId) {
     }
 }
 
-async function getProcessedData(attachmentId) {
+function extractICMJsonClobParsed(data) {
+    if (data.items && Array.isArray(data.items)) {
+        return data.items
+            .map(item => item.ICMJsonClobParsed)
+            .filter(parsed => parsed !== null && parsed !== undefined);
+    }
+
+    if (data.ICMJsonClobParsed !== null && data.ICMJsonClobParsed !== undefined) {
+        return data.ICMJsonClobParsed;
+    }
+
+    return [];
+}
+
+async function getProcessedData(attachmentId, returnAnswersOnly = true) {
     try {
         const response = await fetchIcmJsonClobData(attachmentId);
-        const processedResult = processIcmJsonClobData(response.data);
+        let processedResult = processIcmJsonClobData(response.data);
+
+        if (returnAnswersOnly) {
+            processedResult = extractICMJsonClobParsed(processedResult);
+        }
 
         return {
             success: true,
             data: processedResult
         };
-
     } catch (error) {
         console.error("API call failed:", error.message);
 
