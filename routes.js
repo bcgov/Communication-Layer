@@ -167,7 +167,7 @@ router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
   }
 });
 
-router.get("/processIcmJsonClob2", localhostOnlyMiddleware, async (req, res) => {
+router.get("/processIcmJsonClobAnswers", localhostOnlyMiddleware, async (req, res) => {
     try {
         const result = await getProcessedData(req.query.attachmentId, true);
 
