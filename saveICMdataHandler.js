@@ -155,7 +155,7 @@ async function saveICMdata(req, res) {
           truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
         }
     }
-    let builder = new xml2js.Builder();
+    let builder = new xml2js.Builder({xmldec: { version: '1.0' }});
     saveJson["XML Hierarchy"] = builder.buildObject(truncatedKeysSaveData); 
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
