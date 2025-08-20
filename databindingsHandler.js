@@ -40,6 +40,7 @@ async function fetchDataFromSources(dataSources, params) {
 
         let updatedParams = updateParams(source.params || {}, params, data);
         const response = await readJsonFormApi(source, { ...params, ...updatedParams });
+        console.log("Response:",response);
         data[source.name] = response;
 
       } catch (error) {
@@ -187,6 +188,7 @@ async function readJsonFormApi(datasource, pathParams) {
     const headers = {
       Authorization: `Bearer ${grant.id_token.token}`,
       "X-ICM-TrustedUsername": username,
+      "X-API-Host": apiHost,
     }
     if (type.toUpperCase() === 'GET') {
       // For GET requests, add params directly in axios config      
@@ -199,6 +201,7 @@ async function readJsonFormApi(datasource, pathParams) {
     }
 
     // Store response data
+    console.log("Response:",response);
     return ensureObjectOrArray(response.data);
 
   } catch (error) {
@@ -210,6 +213,10 @@ async function readJsonFormApi(datasource, pathParams) {
 function buildUrlWithParams(host, endpoint, pathVariables) {
   const hostFromEnv = getHost(pathVariables,host);
   const endpointFromEnv = getEndpoint(endpoint);
+  
+  if (!hostFromEnv) throw new Error("API host not resolved");
+  if (!endpointFromEnv) throw new Error("API endpoint not resolved");
+  
   let url = `${hostFromEnv}${endpointFromEnv}`;
   // Replace any placeholder variables like @@attachmentId
   Object.keys(pathVariables).forEach(key => {
@@ -222,18 +229,23 @@ function buildUrlWithParams(host, endpoint, pathVariables) {
 
 
 function getHost(params, host) {
-  // Use host from  environment variable if available, otherwise fall back to JSON
-  try {
-    return params["apiHost"];
-  } catch {
-    return process.env[host];
+  // Use process.env if present
+  const fromEnv = resolveMaybeEnv(host);
+  if (fromEnv) return fromEnv;
+
+  //Fall back to path params
+  if (params && typeof params.apiHost === "string" && params.apiHost.trim()) {
+    return params.apiHost.trim();
   }
+
+  return host ? (process.env[host] ?? host) : null;
 }
 
 function getEndpoint(endpoint) {
   // Use endpoint from environment variable if available, otherwise fall back to JSON
-  return process.env[endpoint] || endpoint;
+  return resolveMaybeEnv(endpoint) ?? endpoint;
 }
+
 function buildBodyWithParams(bodyFromJson, pathVariables) {
 
   let bodyString = JSON.stringify(bodyFromJson);
@@ -315,6 +327,26 @@ function updateParams(params, pathParams = {}, allFetchedData = {}) {
   }
   return updated;
 }
+
+function resolveMaybeEnv(str) {
+  if (typeof str !== "string" || !str) {
+    return null;
+  }
+
+  // Check if value is in the form "process.env.VAR_NAME"
+  const envPattern = /^process\.env\.(.+)$/;
+  const match = str.match(envPattern);
+
+  if (!match) {
+    return str;
+  }
+
+  const envVarName = match[1];
+  const envValue = process.env[envVarName];
+
+  return envValue != null ? envValue : str;
+}
+
 
 module.exports.populateDatabindings = populateDatabindings;
 module.exports.buildUrlWithParams = buildUrlWithParams;
