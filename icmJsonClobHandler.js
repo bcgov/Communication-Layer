@@ -60,12 +60,12 @@ async function fetchIcmJsonClobData(attachmentId) {
 function extractICMJsonClobParsed(data) {
     if (data.items && Array.isArray(data.items)) {
         return data.items
-            .map(item => item.ICMJsonClobParsed.Answers)
+            .map(item => item.ICMJsonClobParsed)
             .filter(parsed => parsed !== null && parsed !== undefined);
     }
 
     if (data.ICMJsonClobParsed !== null && data.ICMJsonClobParsed !== undefined) {
-        return data.ICMJsonClobParsed.Answers;
+        return data.ICMJsonClobParsed;
     }
 
     return [];
