@@ -188,6 +188,7 @@ async function readJsonFormApi(datasource, pathParams) {
     const headers = {
       Authorization: `Bearer ${grant.id_token.token}`,
       "X-ICM-TrustedUsername": username,
+      "X-API-Host": apiHost,
     }
     if (type.toUpperCase() === 'GET') {
       // For GET requests, add params directly in axios config      

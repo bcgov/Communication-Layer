@@ -6,6 +6,7 @@ const { generateTemplate,generateNewTemplate } = require("./generateHandler");
 const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
 const { getUsername } = require("./usernameHandler.js");
 const renderRouter = require("./renderHandler");
+const appCfg = require('./appConfig.js');
 
 const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
 const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
@@ -154,7 +155,8 @@ router.get("/getAllForms", async (request, response) => {
 
 router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
   try {
-    const result = await getProcessedData(req.query.attachmentId, false);
+    const apiHost = req.get("X-API-Host");
+    const result = await getProcessedData(req.query.attachmentId, apiHost, false);
 
     if (result.success) {
       res.status(200).json(result.data);
@@ -169,7 +171,8 @@ router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
 
 router.get("/processIcmJsonClobAnswers", localhostOnlyMiddleware, async (req, res) => {
     try {
-        const result = await getProcessedData(req.query.attachmentId, true);
+        const apiHost = req.get("X-API-Host");
+        const result = await getProcessedData(req.query.attachmentId, apiHost, true);
 
         if (result.success) {
             res.status(200).json(result.data);

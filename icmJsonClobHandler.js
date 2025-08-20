@@ -27,7 +27,7 @@ function processIcmJsonClobData(jsonData) {
     return parseIcmJsonClob(processedData);
 }
 
-async function fetchIcmJsonClobData(attachmentId) {
+async function fetchIcmJsonClobData(attachmentId, apiHost) {
     try {
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
 
@@ -39,7 +39,7 @@ async function fetchIcmJsonClobData(attachmentId) {
             "Content-Type": "application/json"
         };
 
-        const url = `${process.env.SIEBEL_ICM_API_HOST}${process.env.ICM_JSON_CLOB_ENDPONT}`;
+        const url = `${apiHost}${process.env.ICM_JSON_CLOB_ENDPONT}`;
 
         const queryParams = {
             ViewMode: "Catalog",
@@ -71,9 +71,9 @@ function extractICMJsonClobParsed(data) {
     return [];
 }
 
-async function getProcessedData(attachmentId, returnAnswersOnly = true) {
+async function getProcessedData(attachmentId, apiHost, returnAnswersOnly = true) {
     try {
-        const response = await fetchIcmJsonClobData(attachmentId);
+        const response = await fetchIcmJsonClobData(attachmentId, apiHost);
         let processedResult = processIcmJsonClobData(response.data);
 
         if (returnAnswersOnly) {
