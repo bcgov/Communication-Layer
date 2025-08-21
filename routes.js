@@ -120,7 +120,7 @@ router.get("/xml", async (req, res) => {
 
 // Save data route
 router.post("/saveData", async (request, response) => {
-  console.log(request.body);
+  //console.log(request.body);
   response.status(200).json("{success!}");
 });
 
@@ -143,7 +143,7 @@ router.get("/getAllForms", async (request, response) => {
         Authorization: `Bearer ${grant.access_token.token}`,
       },
     });
-    console.log("forms", forms);
+    //console.log("forms", forms);
     response.json(forms.data);
 
   } catch (err) {
