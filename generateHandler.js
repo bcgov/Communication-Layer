@@ -141,6 +141,34 @@ async function generateNewTemplate(req, res) {
         .send({ error: getErrorMessage("FORM_ALREADY_FINALIZED") });
     }
 
+    if (icm_metadata["Template"] !== template_id) {
+      return res
+          .status(400)
+          .send({ error: getErrorMessage("INVALID_FORM_ID") });
+    }
+
+    if (icm_metadata["Tool"]?.toLowerCase() !== "formfoundry") {
+      return res
+          .status(400)
+          .send({ error: getErrorMessage("INVALID_TOOL") });
+    }
+
+    const requestArea = params.area?.toLowerCase();
+
+    if (requestArea) {
+      const icmArea = icm_metadata.Categorie?.toLowerCase();
+
+      const isServiceRequest = requestArea === "service request";
+
+      const isAreaValid =
+          (isServiceRequest && icmArea === "application") ||
+          (!isServiceRequest && requestArea === icmArea);
+
+      if (!isAreaValid) {
+        return res.status(400).send({ error: getErrorMessage("INVALID_AREA") });
+      }
+    }
+
     const formJson = await constructFormJson(template_id, params);
 
     if (formJson != null) {

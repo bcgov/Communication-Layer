@@ -19,6 +19,10 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
     return_data["Locked by Id"] = "";
     return_data["DocFileName"] = "";
     return_data["Office Name"] = "";
+    return_data["Template"] = "";
+    return_data["Tool"] = "";
+    return_data["Categorie"] = "";
+
     if (!attachment_id || attachment_id == "") {
         return return_data;
     }
@@ -45,6 +49,9 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
         return_data["Locked by Id"] = response.data["Locked by Id"];
         return_data["DocFileName"] = response.data["DocFileName"];
         return_data["Office Name"] = response.data["Office Name"];
+        return_data["Template"] = response.data["Template"];
+        return_data["Tool"] = response.data["Tool"];
+        return_data["Categorie"] = response.data["Categorie"];
         return return_data;
     }
     catch (error) {
@@ -126,8 +133,30 @@ async function saveICMdata(req, res) {
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
-    let builder = new xml2js.Builder();
-    saveJson["XML Hierarchy"] = builder.buildObject(saveData);         
+    const truncatedKeysSaveData = {};
+    for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
+        const stringLength = oldKey.length;
+        const newKey = oldKey.substring(0, stringLength-28);
+        if (Array.isArray(saveData[oldKey]) > 0 && Object.keys(saveData[oldKey]).length > 0) { //This trunicates child/dependant objects
+            const childrenArray = [];
+            for(let i = 0; i < saveData[oldKey].length; i++) {
+                const truncatedChildrenKeys = {};
+                for (let oldChildKey in saveData[oldKey][i]) {
+                    const childStringLength = oldChildKey.length;
+                    const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
+                    truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
+                }
+                childrenArray.push(truncatedChildrenKeys);
+            }
+            const wrapperKey = {} 
+            wrapperKey[newKey] = childrenArray;
+            truncatedKeysSaveData[`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
+        } else {
+          truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
+        }
+    }
+    let builder = new xml2js.Builder({xmldec: { version: '1.0' }});
+    saveJson["XML Hierarchy"] = builder.buildObject(truncatedKeysSaveData); 
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {

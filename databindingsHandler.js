@@ -21,7 +21,7 @@ async function populateDatabindings(formJson, params) {
     }
 
     // Map the API data to the form fields
-    const boundData = bindDataToFields(formJson, apiData);
+    const boundData = bindDataToFields(formJson, apiData, params);
 
     return boundData;
   } catch (error) {
@@ -40,6 +40,7 @@ async function fetchDataFromSources(dataSources, params) {
 
         let updatedParams = updateParams(source.params || {}, params, data);
         const response = await readJsonFormApi(source, { ...params, ...updatedParams });
+        //console.log("Response:",response);
         data[source.name] = response;
 
       } catch (error) {
@@ -51,80 +52,106 @@ async function fetchDataFromSources(dataSources, params) {
   return data;
 }
 
-function bindDataToFields(formJson, fetchedData) {
+function getBindingValue(bindings, fetchedData, params = {}) {
+  // Normalize singular binding to array if needed
+  let list;
+  if (Array.isArray(bindings)) {
+    list = bindings;
+  } else if (bindings && bindings.source && bindings.path) {
+    list = [{
+      order: 0,
+      condition: '',
+      source:  bindings.source,
+      path: bindings.path
+    }];
+  } else {
+    return null;
+  }
+
+  const sortedBindings = list.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Evaluate each binding
+  for (const binding of sortedBindings) {
+    // Parse condition
+    const [conditionField, valuesListString = ''] = (binding.condition || '').split('=').map(str => str.trim());
+
+    // Evaluate condition
+    if (conditionField) {
+      const allowedValues = valuesListString.split(',').map(str => str.trim());
+      const currentParam = params[conditionField];
+      if (!allowedValues.includes(currentParam)) {
+        continue; 
+      }
+    }
+
+    const sourceData = fetchedData[binding.source] || {};
+    const results = JSONPath({ path: binding.path, json: sourceData });
+
+    if (Array.isArray(results) && results.length > 0 && results[0] != null && results[0] !== '') {
+      return results[0];
+    }
+  }
+
+  return null;
+}
+
+function bindDataToFields(formJson, fetchedData, params = {}) {
   const formData = {};
 
-  const processItemsForDatabinding = (items) => {
-    items.forEach(field => {
+  //helper function to bind group
+  function bindRowsToGroup(field, rows) {
+    return rows.map((rowObj, index) => {
+      const row = {};
+      const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+      const localDatabindings = binding ? { ...fetchedData, [binding.source]: rowObj } : { ...fetchedData };
 
-      if (field.type === 'container' && field.containerItems) {
-        processItemsForDatabinding(field.containerItems);
-      } else if (field.databindings != null) {
-
-        const dataSourceName = field.databindings.source;
-        const dataPath = field.databindings.path;
-        const fetchedSourceData = fetchedData[dataSourceName];
-        let valueFromPath = "";
-
-        // Fetch the value from the fetched data
-        if (fetchedSourceData) {
-          valueFromPath = JSONPath(dataPath, fetchedSourceData);
-          // If the field is a group, handle groupItems
-          if (field.type === 'group' && field.groupItems) {
-            // Create an array to store groupData objects for each item in valueFromPath
-            const groupDataArray = valueFromPath.map((pathObj, index) => {
-              const groupData = {};
-
-              // For each item in valueFromPath, iterate over the group fields
-              field.groupItems.forEach(groupItem => {
-                groupItem.fields.forEach(groupField => {
-                  if (groupField.databindings) {
-                    const fieldBindings = groupField.databindings.path;
-                    const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
-                    // Assign data from pathObj or an empty string if not available
-                    groupData[fieldIdInGroup] = transformValueToBindIfNeeded(groupField, pathObj[fieldBindings]) || '';
-                  }
-                });
-              });
-              return groupData;
-            });
-
-            // Assign the groupDataArray to formData for this field's ID
-            formData[field.id] = groupDataArray;
-          } else {
-            formData[field.id] = valueFromPath.length > 0 ? transformValueToBindIfNeeded(field, valueFromPath[0]) : null;
-          }
-        }
-      } else if (field.type === 'group' && field.groupItems && !field.repeater) {
-        const transformedItem = {};
-        //get the databindings from individual filed from non-repeating group
-        field.groupItems.forEach(groupItem => {
-          groupItem.fields.forEach(groupField => {
-            if (groupField.databindings) {
-              const dataSourceName = groupField.databindings.source;
-              const dataPath = groupField.databindings.path;
-              const fetchedSourceData = fetchedData[dataSourceName];
-              const fieldIdInGroup = `${field.id}-0-${groupField.id}`;
-              if (fetchedSourceData) {
-                const valueFromPathForGroupField = JSONPath(dataPath, fetchedSourceData);
-                //do date conversion here uisng a function - chceking the type as date and then checking format and applying
-                transformedItem[fieldIdInGroup] = valueFromPathForGroupField.length > 0 ? transformValueToBindIfNeeded(groupField, valueFromPathForGroupField[0]) : null; // Replace with actual value
-              }
-            }
-          });
-        });
-        formData[field.id] = [transformedItem];
-      }
+      field.groupItems.forEach(groupItem =>
+        groupItem.fields.forEach(groupField => {
+          if (!groupField.databindings) return;
+          const fieldIdInGroup = `${field.id}-${index}-${groupField.id}`;
+          const subVal = getBindingValue(groupField.databindings,localDatabindings,params);
+          row[fieldIdInGroup] = transformValueToBindIfNeeded(groupField, subVal) || '';
+        })
+      );
+      return row;
     });
   }
 
-  if (formJson?.data?.items) {
+  function processItemsForDatabinding(items) {
+    items.forEach(field => {
+      // containers
+      if (field.type === 'container' && field.containerItems) {
+        return processItemsForDatabinding(field.containerItems);
+      }
+
+      // groups 
+      if (field.type === 'group' && field.groupItems) {
+        if (field.repeater) {
+          // repeatable group
+          const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+          const rows = binding ? JSONPath({ path: binding.path, json: fetchedData }) || [] : [];
+          formData[field.id] = bindRowsToGroup(field, rows);
+        } else {
+          // single-instance group
+          const binding = Array.isArray(field.databindings) ? field.databindings[0]: field.databindings || null;
+          const rows = binding? (JSONPath({ path: binding.path, json: fetchedData }) || []).slice(0, 1) : [{}];
+          formData[field.id] = bindRowsToGroup(field, rows);
+        }
+        return;
+      }
+
+      //Single fields
+      if (field.databindings) {
+        const raw = getBindingValue(field.databindings, fetchedData, params);
+        formData[field.id] = raw != null ? transformValueToBindIfNeeded(field, raw) : null;
+      }
+    });
+  };
+
+  if (Array.isArray(formJson?.data?.items)) {
     processItemsForDatabinding(formJson.data.items);
   }
-
-  // Iterate through fields
-  formJson.data.items.forEach
-
+  // console.dir(formData, { depth: null, colors: true });
   return formData;
 }
 
@@ -161,6 +188,7 @@ async function readJsonFormApi(datasource, pathParams) {
     const headers = {
       Authorization: `Bearer ${grant.id_token.token}`,
       "X-ICM-TrustedUsername": username,
+      "X-API-Host": apiHost,
     }
     if (type.toUpperCase() === 'GET') {
       // For GET requests, add params directly in axios config      
@@ -173,6 +201,7 @@ async function readJsonFormApi(datasource, pathParams) {
     }
 
     // Store response data
+    //console.log("Response:",response);
     return ensureObjectOrArray(response.data);
 
   } catch (error) {
@@ -184,6 +213,10 @@ async function readJsonFormApi(datasource, pathParams) {
 function buildUrlWithParams(host, endpoint, pathVariables) {
   const hostFromEnv = getHost(pathVariables,host);
   const endpointFromEnv = getEndpoint(endpoint);
+  
+  if (!hostFromEnv) throw new Error("API host not resolved");
+  if (!endpointFromEnv) throw new Error("API endpoint not resolved");
+  
   let url = `${hostFromEnv}${endpointFromEnv}`;
   // Replace any placeholder variables like @@attachmentId
   Object.keys(pathVariables).forEach(key => {
@@ -196,18 +229,23 @@ function buildUrlWithParams(host, endpoint, pathVariables) {
 
 
 function getHost(params, host) {
-  // Use host from  environment variable if available, otherwise fall back to JSON
-  try {
-    return params["apiHost"];
-  } catch {
-    return process.env[host];
+  // Use process.env if present
+  const fromEnv = resolveMaybeEnv(host);
+  if (fromEnv) return fromEnv;
+
+  //Fall back to path params
+  if (params && typeof params.apiHost === "string" && params.apiHost.trim()) {
+    return params.apiHost.trim();
   }
+
+  return host ? (process.env[host] ?? host) : null;
 }
 
 function getEndpoint(endpoint) {
   // Use endpoint from environment variable if available, otherwise fall back to JSON
-  return process.env[endpoint] || endpoint;
+  return resolveMaybeEnv(endpoint) ?? endpoint;
 }
+
 function buildBodyWithParams(bodyFromJson, pathVariables) {
 
   let bodyString = JSON.stringify(bodyFromJson);
@@ -289,6 +327,26 @@ function updateParams(params, pathParams = {}, allFetchedData = {}) {
   }
   return updated;
 }
+
+function resolveMaybeEnv(str) {
+  if (typeof str !== "string" || !str) {
+    return null;
+  }
+
+  // Check if value is in the form "process.env.VAR_NAME"
+  const envPattern = /^process\.env\.(.+)$/;
+  const match = str.match(envPattern);
+
+  if (!match) {
+    return str;
+  }
+
+  const envVarName = match[1];
+  const envValue = process.env[envVarName];
+
+  return envValue != null ? envValue : str;
+}
+
 
 module.exports.populateDatabindings = populateDatabindings;
 module.exports.buildUrlWithParams = buildUrlWithParams;
