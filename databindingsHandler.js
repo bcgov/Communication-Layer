@@ -40,7 +40,7 @@ async function fetchDataFromSources(dataSources, params) {
 
         let updatedParams = updateParams(source.params || {}, params, data);
         const response = await readJsonFormApi(source, { ...params, ...updatedParams });
-        console.log("Response:",response);
+        //console.log("Response:",response);
         data[source.name] = response;
 
       } catch (error) {
@@ -201,7 +201,7 @@ async function readJsonFormApi(datasource, pathParams) {
     }
 
     // Store response data
-    console.log("Response:",response);
+    //console.log("Response:",response);
     return ensureObjectOrArray(response.data);
 
   } catch (error) {
