@@ -182,7 +182,6 @@ async function readJsonFormApi(datasource, pathParams) {
   }
   try {
     const url = buildUrlWithParams(host, endpoint, pathParams);
-    console.log("URL",url);
     let response;
     const grant =
       await keycloakForSiebel.grantManager.obtainFromClientCredentials();
@@ -202,7 +201,7 @@ async function readJsonFormApi(datasource, pathParams) {
     }
 
     // Store response data
-    console.log("Response:",response);
+    // console.log("Response:",response);
     return ensureObjectOrArray(response.data);
 
   } catch (error) {
