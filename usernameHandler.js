@@ -28,7 +28,7 @@ async function isUsernameValid(username,employeeURL) {
         return response.data?.items?.["Login Name"]?.toUpperCase() === username.toUpperCase();
 
     } catch (error) {
-        console.log("Response:",response);
+        console.log("Error:",error);
         if (error.response) {
             console.error(`Siebel API Error (${error.response.status}): ${error.response.data?.ERROR || "Unknown error"}`);
             throw new Error(`${error.response.status}`);
