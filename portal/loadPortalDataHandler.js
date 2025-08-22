@@ -56,22 +56,41 @@ async function expireTokenInPortal(portal,token, userId) {
 }
 
 async function getSavedFormFromPortal(portal,token, userId) {  
-  let parametersForForm = "";  
+    let parametersForForm = "";  
 
   try {
     const urlForValidateTokenAndGetJson= portal.apiHost+ (portal.getSavedJsonEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
     console.log("urlForValidateTokenAndGetJson >>",urlForValidateTokenAndGetJson);
-    const response = await axios.post(`${urlForValidateTokenAndGetJson}`,
-      {
-        token,
-        userId
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
+    let response;
+    if (portal.portalAuth === "basic" && ((portal.basicAuth && portal.basicAuth.username && portal.basicAuth.password) || portal.apiSecret)) {
+      const auth = (portal.basicAuth && portal.basicAuth.username && portal.basicAuth.password)
+        ? "Basic " + btoa(portal.basicAuth.username + ":" + portal.basicAuth.password)
+        : "Basic " + btoa(portal.apiSecret);
+        response = await axios.post(`${urlForValidateTokenAndGetJson}`,
+          {
+            token,
+            userId
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': auth
+            },
+          }
+        ); 
+    } else {
+      response = await axios.post(`${urlForValidateTokenAndGetJson}`,
+        {
+          token,
+          userId
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    ); 
+      ); 
+    }
     //TODO: verify the json against schema  or some other sanity checks
     return response.data;
     
