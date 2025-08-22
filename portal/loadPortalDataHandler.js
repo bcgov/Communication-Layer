@@ -75,7 +75,7 @@ async function getSavedFormFromPortal(portal,token, userId) {
             headers: {
               'Content-Type': 'application/json',
               'Authorization': auth
-            },
+            }
           }
         ); 
     } else {
