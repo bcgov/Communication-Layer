@@ -11,7 +11,6 @@ async function isUsernameValid(username,employeeURL) {
         }
         
         const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
-        console.log("Grant:",grant);
         const response = await axios.get(employeeURL, {
             params: {
                 excludeEmptyFieldsInResponse: "true",
@@ -24,11 +23,9 @@ async function isUsernameValid(username,employeeURL) {
                 "X-ICM-TrustedUsername": username,
             },
         });
-        console.log("Response:",response);
         return response.data?.items?.["Login Name"]?.toUpperCase() === username.toUpperCase();
 
     } catch (error) {
-        console.log("Error:",error);
         if (error.response) {
             console.error(`Siebel API Error (${error.response.status}): ${error.response.data?.ERROR || "Unknown error"}`);
             throw new Error(`${error.response.status}`);
