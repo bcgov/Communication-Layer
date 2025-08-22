@@ -12,7 +12,6 @@ const keycloakForSiebel = new Keycloak(
     secret: process.env.KC_CLIENTSECRET,
     serverUrl: process.env.KC_SERVERURL,
     grantType: "client_credentials",
-    scope: "openid data",
     bearerOnly: true,
     enabled: "yes",
   }
