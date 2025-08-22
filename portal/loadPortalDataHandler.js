@@ -56,7 +56,7 @@ async function expireTokenInPortal(portal,token, userId) {
 }
 
 async function getSavedFormFromPortal(portal,token, userId) {  
-    let parametersForForm = "";  
+  let parametersForForm = "";  
 
   try {
     const urlForValidateTokenAndGetJson= portal.apiHost+ (portal.getSavedJsonEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
