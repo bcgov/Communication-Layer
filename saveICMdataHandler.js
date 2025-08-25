@@ -7,6 +7,7 @@ const { getUsername, isUsernameValid } = require("./usernameHandler.js");
 const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 const { isJsonStringValid } = require("./validate.js");
 const appCfg = require('./appConfig.js');
+const { toICMFormat } = require("./dateConverter.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 // utility function to fetch Attachment status (In Progress, Open...)
@@ -133,6 +134,27 @@ async function saveICMdata(req, res) {
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
+    const formDefinitionItems = JSON.parse(savedFormParam)["form_definition"]["data"]["items"];// This is the field info for form items
+    const dateItemsId = []; // This will contain all of the IDs of the date fields
+    formDefinitionItems.forEach(item => { // Add any date types found in this loop into the dateItemsId
+        if (item.containerItems) { // Check for Date fields in containers
+            item.containerItems.forEach(subItem => {
+                if (subItem.type === "date") dateItemsId.push(subItem.id);
+                else if (subItem.type === "container") { // There is a possibility of dates being inside field type: container
+                    subItem.containerItems.forEach(childItemData => {
+                        if (childItemData.type === "date") dateItemsId.push(childItemData.id);
+                    });
+                }
+            });
+        } else if (item.groupItems){ // Check for Date fields in groups
+            item.groupItems.forEach(subItem => {
+                subItem.fields.forEach(childItemData => { // Group fields is where the dates will be in
+                    if (childItemData.type === "date") dateItemsId.push(childItemData.id);
+                });
+            });
+        }
+    });
+
     const truncatedKeysSaveData = {};
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
         const stringLength = oldKey.length;
@@ -144,7 +166,15 @@ async function saveICMdata(req, res) {
                 for (let oldChildKey in saveData[oldKey][i]) {
                     const childStringLength = oldChildKey.length;
                     const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
-                    truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
+                    if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
+                        const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
+                        if (newDateFormat === "-1") {
+                            throw new Error("Invalid date. Was unable to convert to ICM format!");
+                        }
+                        truncatedChildrenKeys[newChildKey] = newDateFormat;
+                    } else {
+                        truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
+                    }
                 }
                 childrenArray.push(truncatedChildrenKeys);
             }
@@ -152,7 +182,15 @@ async function saveICMdata(req, res) {
             wrapperKey[newKey] = childrenArray;
             truncatedKeysSaveData[`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
         } else {
-          truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
+            if (dateItemsId.includes(oldKey)) { // If data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
+                const newDateFormat = toICMFormat(saveData[oldKey]);
+                if (newDateFormat === "-1") {
+                    throw new Error("Invalid date. Was unable to convert to ICM format!");
+                }
+                truncatedKeysSaveData[newKey] = newDateFormat;
+            } else {
+                truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
+            }
         }
     }
     let builder = new xml2js.Builder({xmldec: { version: '1.0' }});
