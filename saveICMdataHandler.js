@@ -8,6 +8,8 @@ const { getErrorMessage } = require("./errorHandling/errorHandler.js");
 const { isJsonStringValid } = require("./validate.js");
 const appCfg = require('./appConfig.js');
 const { toICMFormat } = require("./dateConverter.js");
+const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
+const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 // utility function to fetch Attachment status (In Progress, Open...)
@@ -193,8 +195,40 @@ async function saveICMdata(req, res) {
             }
         }
     }
-    let builder = new xml2js.Builder({xmldec: { version: '1.0' }});
-    saveJson["XML Hierarchy"] = builder.buildObject(truncatedKeysSaveData); 
+    let builder; // This will be for building the XML
+    const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
+    const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
+    const dictionary = formExceptions;
+    if (keyExists(dictionary, formId)) { // If any forms with the correct version have been listed as exceptions, then proceed with their form exceptions
+        // If the root needs a differernt name, apply it here. Otherwise use the default "root"
+        if (propertyExists(dictionary, formId, "rootName") && propertyNotEmpty(dictionary, formId, "rootName")) {
+            builder = new xml2js.Builder({xmldec: { version: '1.0' }, rootName: dictionary[formId]["rootName"]});
+        } else {
+            builder = new xml2js.Builder({xmldec: { version: '1.0' }});
+        }
+
+        let wrapperJson = truncatedKeysSaveData;
+        // If subRoots exist, wrap the sub-roots around the JSON where the last array object will be closest to JSON and first array object will be closest to root/rootName
+        if (propertyExists(dictionary, formId, "subRoots") && propertyNotEmpty(dictionary, formId, "subRoots")) {
+            wrapperJson = {};
+            let tempJson = {};
+            const subRootLength = dictionary[formId]["subRoots"].length;
+            for (i = subRootLength; i > 0; i= i -1) {
+                if (i === subRootLength) {
+                    tempJson[dictionary[formId]["subRoots"][i-1]] = truncatedKeysSaveData;
+                } else {
+                    wrapperJson[dictionary[formId]["subRoots"][i-1]] = tempJson;
+                    tempJson = wrapperJson;
+                    wrapperJson = {};
+                }
+            }
+            wrapperJson = tempJson;
+        }
+        saveJson["XML Hierarchy"] = builder.buildObject(wrapperJson);
+    } else {
+        builder = new xml2js.Builder({xmldec: { version: '1.0' }});
+        saveJson["XML Hierarchy"] = builder.buildObject(truncatedKeysSaveData);
+    } 
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
