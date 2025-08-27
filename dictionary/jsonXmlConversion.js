@@ -9,8 +9,14 @@ const formExceptions = {
      "HR3689E": { 
         "rootName": "ListOfDtFormInstanceLW", 
         "subRoots": ["FormInstance"],
-        "omitFields": [],
-        "version": "2",
+        "versions" : {
+            "1" :{
+                "omitFields": []
+            },
+            "2" : {
+                "omitFields": []
+            }
+        }
     }
 };
 

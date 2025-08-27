@@ -199,7 +199,7 @@ async function saveICMdata(req, res) {
     const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
     const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
     const dictionary = formExceptions;
-    if (keyExists(dictionary, formId) && dictionary[formId].version === formVersion) { // If any forms with the correct version have been listed as exceptions, then proceed with their form exceptions
+    if (keyExists(dictionary, formId)) { // If any forms with the correct version have been listed as exceptions, then proceed with their form exceptions
         // If the root needs a differernt name, apply it here. Otherwise use the default "root"
         if (propertyExists(dictionary, formId, "rootName") && propertyNotEmpty(dictionary, formId, "rootName")) {
             builder = new xml2js.Builder({xmldec: { version: '1.0' }, rootName: dictionary[formId]["rootName"]});
