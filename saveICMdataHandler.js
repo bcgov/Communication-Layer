@@ -137,25 +137,10 @@ async function saveICMdata(req, res) {
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
     const formDefinitionItems = JSON.parse(savedFormParam)["form_definition"]["data"]["items"];// This is the field info for form items
-    const dateItemsId = []; // This will contain all of the IDs of the date fields
-    formDefinitionItems.forEach(item => { // Add any date types found in this loop into the dateItemsId
-        if (item.containerItems) { // Check for Date fields in containers
-            item.containerItems.forEach(subItem => {
-                if (subItem.type === "date") dateItemsId.push(subItem.id);
-                else if (subItem.type === "container") { // There is a possibility of dates being inside field type: container
-                    subItem.containerItems.forEach(childItemData => {
-                        if (childItemData.type === "date") dateItemsId.push(childItemData.id);
-                    });
-                }
-            });
-        } else if (item.groupItems){ // Check for Date fields in groups
-            item.groupItems.forEach(subItem => {
-                subItem.fields.forEach(childItemData => { // Group fields is where the dates will be in
-                    if (childItemData.type === "date") dateItemsId.push(childItemData.id);
-                });
-            });
-        }
-    });
+    
+    // dateItemsId : This will contain all of the IDs of the date fields
+    // checkboxItemsId : This will contain all of the IDs of the checkbox fields
+    const { dateItemsId, checkboxItemsId } = getFormIds(formDefinitionItems);
 
     const truncatedKeysSaveData = {};
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
@@ -174,6 +159,8 @@ async function saveICMdata(req, res) {
                             throw new Error("Invalid date. Was unable to convert to ICM format!");
                         }
                         truncatedChildrenKeys[newChildKey] = newDateFormat;
+                    } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field, change from true/false/undefined to Yes/No/""
+                        truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
                     } else {
                         truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
                     }
@@ -190,6 +177,8 @@ async function saveICMdata(req, res) {
                     throw new Error("Invalid date. Was unable to convert to ICM format!");
                 }
                 truncatedKeysSaveData[newKey] = newDateFormat;
+            } else if (checkboxItemsId.includes(oldKey)) { // If data is in a checkbox field, change from true/false/undefined to Yes/No/""
+                truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
             } else {
                 truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
             }
@@ -418,6 +407,69 @@ async function clearICMLockedFlag(req, res) {
     }
 
 }
+
+/* Get the UUIDs (data.items "id"s) from the form for specific field types
+ * @params formDefinitionItems  = JSON.parse(savedFormParam)["form_definition"]["data"]["items"]
+ * @returns dateItemsId : This will contain all of the IDs of the date fields
+ * @returns checkboxItemsId : This will contain all of the IDs of the checkbox fields
+ */
+function getFormIds (formDefinitionItems) {
+    const dateItemsId = [];
+    const checkboxItemsId = [];
+    formDefinitionItems.forEach(item => { // Add the field types found in this loop into their specific item id arrays
+        if (item.containerItems) { // Check for fields in containers (currently, there can be up to 5 container levels)
+            item.containerItems.forEach(subItem => {
+                if (subItem.type === "date") dateItemsId.push(subItem.id);
+                else if (subItem.type === "checkbox") checkboxItemsId.push(subItem.id);
+                else if (subItem.type === "container") { // Check container field level 2
+                    subItem.containerItems.forEach(subItem2 => {
+                        if (subItem2.type === "date") dateItemsId.push(subItem2.id);
+                        else if (subItem2.type === "checkbox") checkboxItemsId.push(subItem2.id);
+                        else if (subItem2.type === "container") { // Check container field level 3
+                            subItem2.containerItems.forEach(subItem3 => {
+                                if (subItem3.type === "date") dateItemsId.push(subItem3.id);
+                                else if (subItem3.type === "checkbox") checkboxItemsId.push(subItem3.id);
+                                else if (subItem3.type === "container") { // Check container field level 4
+                                    subItem3.containerItems.forEach(subItem4 => {
+                                        if (subItem4.type === "date") dateItemsId.push(subItem4.id);
+                                        else if (subItem4.type === "checkbox") checkboxItemsId.push(subItem4.id);
+                                        else if (subItem4.type === "container") { // Check container field level 5
+                                            subItem4.containerItems.forEach(subItem5 => {
+                                                if (subItem5.type === "date") dateItemsId.push(subItem5.id);
+                                                else if (subItem5.type === "checkbox") checkboxItemsId.push(subItem5.id);
+                                            });
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        } else if (item.groupItems){ // Check for fields in groups
+            item.groupItems.forEach(subItem => {
+                subItem.fields.forEach(childItemData => { // Group's fields is where the fields will be in
+                    if (childItemData.type === "date") dateItemsId.push(childItemData.id);
+                    else if (childItemData.type === "checkbox") checkboxItemsId.push(childItemData.id);
+                });
+            });
+        }
+    });
+    return { dateItemsId, checkboxItemsId };
+}
+
+/**
+ * Convert the checkbox value to one of the following:
+ * true -> "Yes"
+ * false -> "No"
+ * undefined -> ""
+ */
+function convertCheckboxFormatToICM (value) {
+    if (value === true) return "Yes";
+    else if (value === false) return "No";
+    else return "";
+}
+
 module.exports.saveICMdata = saveICMdata;
 module.exports.loadICMdata = loadICMdata;
 module.exports.clearICMLockedFlag = clearICMLockedFlag;
