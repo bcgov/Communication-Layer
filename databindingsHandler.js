@@ -266,6 +266,16 @@ function transformValueToBindIfNeeded(field, valueToBind) {
       const transformedValue = format(parsedDate, "yyyy-MM-dd");
       return transformedValue;
     }
+    if (field && field.type == "checkbox" && valueToBind){
+      if (valueToBind == "Yes" || valueToBind=="yes")
+      {
+        return (true);
+      }
+      if (valueToBind == "No"|| valueToBind=="no")
+      {
+        return (false);
+      }
+    }
   } catch (error) {
     console.error('Error processing date value:', error);
   }
