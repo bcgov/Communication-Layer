@@ -414,36 +414,17 @@ async function clearICMLockedFlag(req, res) {
  * @returns checkboxItemsId : This will contain all of the IDs of the checkbox fields
  */
 function getFormIds (formDefinitionItems) {
-    const dateItemsId = [];
-    const checkboxItemsId = [];
+    let dateItemsId = [];
+    let checkboxItemsId = [];
     formDefinitionItems.forEach(item => { // Add the field types found in this loop into their specific item id arrays
         if (item.containerItems) { // Check for fields in containers (currently, there can be up to 5 container levels)
             item.containerItems.forEach(subItem => {
                 if (subItem.type === "date") dateItemsId.push(subItem.id);
                 else if (subItem.type === "checkbox") checkboxItemsId.push(subItem.id);
-                else if (subItem.type === "container") { // Check container field level 2
-                    subItem.containerItems.forEach(subItem2 => {
-                        if (subItem2.type === "date") dateItemsId.push(subItem2.id);
-                        else if (subItem2.type === "checkbox") checkboxItemsId.push(subItem2.id);
-                        else if (subItem2.type === "container") { // Check container field level 3
-                            subItem2.containerItems.forEach(subItem3 => {
-                                if (subItem3.type === "date") dateItemsId.push(subItem3.id);
-                                else if (subItem3.type === "checkbox") checkboxItemsId.push(subItem3.id);
-                                else if (subItem3.type === "container") { // Check container field level 4
-                                    subItem3.containerItems.forEach(subItem4 => {
-                                        if (subItem4.type === "date") dateItemsId.push(subItem4.id);
-                                        else if (subItem4.type === "checkbox") checkboxItemsId.push(subItem4.id);
-                                        else if (subItem4.type === "container") { // Check container field level 5
-                                            subItem4.containerItems.forEach(subItem5 => {
-                                                if (subItem5.type === "date") dateItemsId.push(subItem5.id);
-                                                else if (subItem5.type === "checkbox") checkboxItemsId.push(subItem5.id);
-                                            });
-                                        }
-                                    });
-                                }
-                            });
-                        }
-                    });
+                else if (subItem.type === "container") { 
+                    const {dateItemsId: recursiveDateItemIds, checkboxItemsId: recursiveCheckboxItemIds} = getFormIds([subItem]);
+                    dateItemsId = [...dateItemsId, ...recursiveDateItemIds];
+                    checkboxItemsId = [...checkboxItemsId, ...recursiveCheckboxItemIds];
                 }
             });
         } else if (item.groupItems){ // Check for fields in groups
