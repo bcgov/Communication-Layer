@@ -142,7 +142,25 @@ async function saveICMdata(req, res) {
     // checkboxItemsId : This will contain all of the IDs of the checkbox fields
     const { dateItemsId, checkboxItemsId } = getFormIds(formDefinitionItems);
 
+    const wrapperValues = {};
+
+    const dictionary = formExceptions;
+    const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
+    const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
+    const isFormException = keyExists(dictionary, formId); // If true, then this form will have its exceptions formatted
+    const toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
+    if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
+        dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
+            const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
+            wrapperValues[tagKey] = [];
+            wrapperTag[tagKey]["wrapFields"].forEach(fieldId => {
+                toWrapIds[fieldId] = tagKey;
+            });
+        });
+    }
+
     const truncatedKeysSaveData = {};
+
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
         const stringLength = oldKey.length;
         const newKey = oldKey.substring(0, stringLength-28);
@@ -180,15 +198,23 @@ async function saveICMdata(req, res) {
             } else if (checkboxItemsId.includes(oldKey)) { // If data is in a checkbox field, change from true/false/undefined to Yes/No/""
                 truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
             } else {
-                truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
+                if (toWrapIds[oldKey]) {
+                    wrapperValues[toWrapIds[oldKey]].push({[newKey]: saveData[oldKey]}); 
+                } else {
+                    truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
+                }
             }
         }
     }
+
+    const wrapperTagKeys = Object.keys(wrapperValues);
+    wrapperTagKeys.forEach(key => {
+        const bundledItems = wrapperValues[key];
+        if (bundledItems.length != 0) truncatedKeysSaveData[key] = [bundledItems];
+    });
+    
     let builder; // This will be for building the XML
-    const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
-    const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
-    const dictionary = formExceptions;
-    if (keyExists(dictionary, formId)) { // If any forms with the correct version have been listed as exceptions, then proceed with their form exceptions
+    if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
         // If the root needs a differernt name, apply it here. Otherwise use the default "root"
         if (propertyExists(dictionary, formId, "rootName") && propertyNotEmpty(dictionary, formId, "rootName")) {
             builder = new xml2js.Builder({xmldec: { version: '1.0' }, rootName: dictionary[formId]["rootName"]});

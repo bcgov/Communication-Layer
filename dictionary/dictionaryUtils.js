@@ -37,7 +37,7 @@ function propertyKeyExists (dictionary, key, property, propertyKey) {
 function propertyNotEmpty (dictionary, key, property) {
     const propertyType = typeof dictionary[key][property];
     if (propertyType === "string" && dictionary[key][property] != "") return true;
-    else if (propertyType === "object" && dictionary[key][property] != [] && dictionary[key][property] != {}) return true;
+    else if (propertyType === "object" && dictionary[key][property].length != 0 && dictionary[key][property] != {}) return true;
     else return false;
 };
 
