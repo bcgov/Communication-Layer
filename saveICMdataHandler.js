@@ -142,7 +142,7 @@ async function saveICMdata(req, res) {
     // checkboxItemsId : This will contain all of the IDs of the checkbox fields
     const { dateItemsId, checkboxItemsId } = getFormIds(formDefinitionItems);
 
-    const wrapperValues = {};
+    const truncatedKeysSaveData = {};
 
     const dictionary = formExceptions;
     const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
@@ -152,14 +152,18 @@ async function saveICMdata(req, res) {
     if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
         dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
             const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
-            wrapperValues[tagKey] = [];
-            wrapperTag[tagKey]["wrapFields"].forEach(fieldId => {
-                toWrapIds[fieldId] = tagKey;
-            });
+            if (wrapperTag[tagKey]["wrapFields"].length != 0) { // If there are any wrappers with no fields, ignore. Otherwise, keep a list of UUID and the wrapper to put it in.
+                truncatedKeysSaveData[tagKey] = {};
+                wrapperTag[tagKey]["wrapFields"].forEach(fieldId => {
+                    toWrapIds[fieldId] = tagKey;
+                });
+            }
         });
     }
 
-    const truncatedKeysSaveData = {};
+
+    // TODO: The if-statement. The Else-statement at the very bottom is done. Consider making these checks a function.
+
 
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
         const stringLength = oldKey.length;
@@ -194,24 +198,26 @@ async function saveICMdata(req, res) {
                 if (newDateFormat === "-1") {
                     throw new Error("Invalid date. Was unable to convert to ICM format!");
                 }
-                truncatedKeysSaveData[newKey] = newDateFormat;
+                if (toWrapIds[oldKey]) {
+                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = newDateFormat;
+                } else {
+                    truncatedKeysSaveData[newKey] = newDateFormat;
+                }
             } else if (checkboxItemsId.includes(oldKey)) { // If data is in a checkbox field, change from true/false/undefined to Yes/No/""
-                truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
+                if (toWrapIds[oldKey]) {
+                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
+                } else {
+                    truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
+                }
             } else {
                 if (toWrapIds[oldKey]) {
-                    wrapperValues[toWrapIds[oldKey]].push({[newKey]: saveData[oldKey]}); 
+                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = saveData[oldKey]; 
                 } else {
                     truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
                 }
             }
         }
     }
-
-    const wrapperTagKeys = Object.keys(wrapperValues);
-    wrapperTagKeys.forEach(key => {
-        const bundledItems = wrapperValues[key];
-        if (bundledItems.length != 0) truncatedKeysSaveData[key] = [bundledItems];
-    });
     
     let builder; // This will be for building the XML
     if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
