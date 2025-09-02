@@ -2,7 +2,7 @@
  * Keys are the form_definition.form_id
  * Property: rootName : a string that will replace "root" from the XML
  * Property: subRoots : an array of strings. These will be between root and JSON data. The first value in the array will be highest (after root) while the last will be lowest (before JSON)
- * Property: wrapperTags : an array of objects. If not empty, then should include object { [the wrapper Tag name] : { wrapFields: [], wrapperTags: []} } where the second wrapperTag repeats the full object if children are needed.
+ * Property: wrapperTags : an array of objects. If not empty, then should include object { [the wrapper Tag name] : { wrapFields: [] } }
  * Property: allowBooleanCheckbox : if a field is in this array, skip conversion step
  * Property: omitFields : an array of strings. These are the UUIDs of fields that must be omitted before XML creation. (TO BE DONE in saveICMdataHandler.js)
  * Property: version : a string that will check if the exception list should include the version of the form submitted. All values in version should overwrite the default form properties.
@@ -43,15 +43,18 @@ const formExceptions = {
                         "primary-phone-number-type-a7eba596-6474-4a01-93e5-6cd49c8ef4cc",
                         "primary-phone-number-f29b9ffd-9e7c-4f20-8bc3-57b333d88a0e",
                         "secondary-phone-number-type-fc15a5f0-bfcd-4fe8-8836-833fc2573525",
-                        "secondary-phone-number-135375c3-f0bc-4b3a-aea2-b98995676ebc",
+                        "secondary-phone-number-135375c3-f0bc-4b3a-aea2-b98995676ebc"
                     ], 
-                    "wrapperTags" : []
                 },
             },
             {
                 "Child" : {
-                    "wrapFields" : [],
-                    "wrapperTags" : []
+                    "wrapFields" : [
+                        "child-last-name-15a0adbf-a3bd-4bd1-be3f-bfb9a2b02f3e",
+                        "child-first-name-4a8302bb-6eca-46c8-ae50-efe37434ea8e",
+                        "child-middle-names-81cf1856-1541-4eed-85d8-1f376b727fd0",
+                        "child-dob-3d6f9a94-7c0f-4a06-89dc-872ee39fa818"
+                    ],
                 }
             }
         ],

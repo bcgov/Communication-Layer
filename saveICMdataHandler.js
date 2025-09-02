@@ -142,18 +142,17 @@ async function saveICMdata(req, res) {
     // checkboxItemsId : This will contain all of the IDs of the checkbox fields
     const { dateItemsId, checkboxItemsId } = getFormIds(formDefinitionItems);
 
-    const truncatedKeysSaveData = {};
-
     const dictionary = formExceptions;
     const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
     const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
     const isFormException = keyExists(dictionary, formId); // If true, then this form will have its exceptions formatted
+    const tempFormExceptionList = {};
     const toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
     if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
         dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
             const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
             if (wrapperTag[tagKey]["wrapFields"].length != 0) { // If there are any wrappers with no fields, ignore. Otherwise, keep a list of UUID and the wrapper to put it in.
-                truncatedKeysSaveData[tagKey] = {};
+                tempFormExceptionList[tagKey] = {};
                 wrapperTag[tagKey]["wrapFields"].forEach(fieldId => {
                     toWrapIds[fieldId] = tagKey;
                 });
@@ -161,66 +160,8 @@ async function saveICMdata(req, res) {
         });
     }
 
-
-    for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
-        const stringLength = oldKey.length;
-        const newKey = oldKey.substring(0, stringLength-28);
-        if (Array.isArray(saveData[oldKey]) > 0 && Object.keys(saveData[oldKey]).length > 0) { //This trunicates child/dependant objects
-            const childrenArray = [];
-            for(let i = 0; i < saveData[oldKey].length; i++) {
-                const truncatedChildrenKeys = {};
-                for (let oldChildKey in saveData[oldKey][i]) {
-                    const childStringLength = oldChildKey.length;
-                    const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
-                    if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
-                        const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
-                        if (newDateFormat === "-1") {
-                            throw new Error("Invalid date. Was unable to convert to ICM format!");
-                        }
-                        truncatedChildrenKeys[newChildKey] = newDateFormat;
-                    } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field, change from true/false/undefined to Yes/No/""
-                        truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
-                    } else {
-                        truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
-                    }
-                }
-                childrenArray.push(truncatedChildrenKeys);
-            }
-            if (toWrapIds[oldKey]) {
-                const wrapperKey = {};
-                wrapperKey[newKey] = childrenArray;
-                truncatedKeysSaveData[toWrapIds[oldKey]][`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
-            } else {
-                const wrapperKey = {};
-                wrapperKey[newKey] = childrenArray;
-                truncatedKeysSaveData[`${newKey}-List`] = wrapperKey; // Add a wrapper around the children/dependecies
-            }
-        } else {
-            if (dateItemsId.includes(oldKey)) { // If data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
-                const newDateFormat = toICMFormat(saveData[oldKey]);
-                if (newDateFormat === "-1") {
-                    throw new Error("Invalid date. Was unable to convert to ICM format!");
-                }
-                if (toWrapIds[oldKey]) {
-                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = newDateFormat;
-                } else {
-                    truncatedKeysSaveData[newKey] = newDateFormat;
-                }
-            } else if (checkboxItemsId.includes(oldKey)) { // If data is in a checkbox field, change from true/false/undefined to Yes/No/""
-                if (toWrapIds[oldKey]) {
-                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
-                } else {
-                    truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
-                }
-            } else {
-                if (toWrapIds[oldKey]) {
-                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = saveData[oldKey]; 
-                } else {
-                    truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
-                }
-            }
-        }
-    }
+    // The updated JSON values required for XML creation
+    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, tempFormExceptionList, toWrapIds, dateItemsId, checkboxItemsId);
     
     let builder; // This will be for building the XML
     if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
@@ -443,7 +384,7 @@ async function clearICMLockedFlag(req, res) {
 
 }
 
-/* Get the UUIDs (data.items "id"s) from the form for specific field types
+/** Get the UUIDs (data.items "id"s) from the form for specific field types
  * @params formDefinitionItems  = JSON.parse(savedFormParam)["form_definition"]["data"]["items"]
  * @returns dateItemsId : This will contain all of the IDs of the date fields
  * @returns checkboxItemsId : This will contain all of the IDs of the checkbox fields
@@ -503,6 +444,84 @@ function convertCheckboxFormatToICM (value) {
     if (value === true) return "Yes";
     else if (value === false) return "No";
     else return "";
+}
+
+/** Take the saveData JSON values and update them to new layout. Changes include:
+ * Shorten UUID. 
+ * Wrap values with children inside a List. 
+ * Wrap specified values under a parent. 
+ * Change date format. 
+ * Convert checkboxes to use "Yes" or "No". 
+ * 
+ * @param saveData : = JSON.parse(savedFormParam)["data"]
+ * @param truncatedKeysSaveData : list of key-object pairs that will be returned at end of function. These may or may not already include values related to toWrapIds.
+ * @param toWrapIds : list of key-string pairs where the keys are UUIDs and the strings are what wrapper tag they need to go under.
+ * @param dateItemsId : list of date fields
+ * @param checkboxItemsId : list of checkbox fields
+ * @returns truncatedKeysSaveData : a list of key-object pairs
+ */
+
+function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId) {
+    for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
+        const stringLength = oldKey.length;
+        const newKey = oldKey.substring(0, stringLength-28);
+        if (Array.isArray(saveData[oldKey]) > 0 && Object.keys(saveData[oldKey]).length > 0) { //This trunicates child/dependant objects
+            const childrenArray = [];
+            for(let i = 0; i < saveData[oldKey].length; i++) {
+                const truncatedChildrenKeys = {};
+                for (let oldChildKey in saveData[oldKey][i]) {
+                    const childStringLength = oldChildKey.length;
+                    const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
+                    if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
+                        const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
+                        if (newDateFormat === "-1") {
+                            throw new Error("Invalid date. Was unable to convert to ICM format!");
+                        }
+                        truncatedChildrenKeys[newChildKey] = newDateFormat;
+                    } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field, change from true/false/undefined to Yes/No/""
+                        truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
+                    } else {
+                        truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
+                    }
+                }
+                childrenArray.push(truncatedChildrenKeys);
+            }
+            if (toWrapIds[oldKey]) {
+                const wrapperKey = {};
+                wrapperKey[newKey] = childrenArray;
+                truncatedKeysSaveData[toWrapIds[oldKey]][`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
+            } else {
+                const wrapperKey = {};
+                wrapperKey[newKey] = childrenArray;
+                truncatedKeysSaveData[`${newKey}-List`] = wrapperKey; // Add a wrapper around the children/dependecies
+            }
+        } else {
+            if (dateItemsId.includes(oldKey)) { // If data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
+                const newDateFormat = toICMFormat(saveData[oldKey]);
+                if (newDateFormat === "-1") {
+                    throw new Error("Invalid date. Was unable to convert to ICM format!");
+                }
+                if (toWrapIds[oldKey]) {
+                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = newDateFormat;
+                } else {
+                    truncatedKeysSaveData[newKey] = newDateFormat;
+                }
+            } else if (checkboxItemsId.includes(oldKey)) { // If data is in a checkbox field, change from true/false/undefined to Yes/No/""
+                if (toWrapIds[oldKey]) {
+                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
+                } else {
+                    truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
+                }
+            } else {
+                if (toWrapIds[oldKey]) {
+                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = saveData[oldKey]; 
+                } else {
+                    truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
+                }
+            }
+        }
+    }
+    return truncatedKeysSaveData;
 }
 
 module.exports.saveICMdata = saveICMdata;
