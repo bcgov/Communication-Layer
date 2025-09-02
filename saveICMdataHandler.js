@@ -162,9 +162,6 @@ async function saveICMdata(req, res) {
     }
 
 
-    // TODO: The if-statement. The Else-statement at the very bottom is done. Consider making these checks a function.
-
-
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
         const stringLength = oldKey.length;
         const newKey = oldKey.substring(0, stringLength-28);
@@ -189,9 +186,15 @@ async function saveICMdata(req, res) {
                 }
                 childrenArray.push(truncatedChildrenKeys);
             }
-            const wrapperKey = {} 
-            wrapperKey[newKey] = childrenArray;
-            truncatedKeysSaveData[`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
+            if (toWrapIds[oldKey]) {
+                const wrapperKey = {};
+                wrapperKey[newKey] = childrenArray;
+                truncatedKeysSaveData[toWrapIds[oldKey]][`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
+            } else {
+                const wrapperKey = {};
+                wrapperKey[newKey] = childrenArray;
+                truncatedKeysSaveData[`${newKey}-List`] = wrapperKey; // Add a wrapper around the children/dependecies
+            }
         } else {
             if (dateItemsId.includes(oldKey)) { // If data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
                 const newDateFormat = toICMFormat(saveData[oldKey]);
