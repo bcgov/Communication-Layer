@@ -146,22 +146,18 @@ async function saveICMdata(req, res) {
     const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
     const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
     const isFormException = keyExists(dictionary, formId); // If true, then this form will have its exceptions formatted
-    const tempFormExceptionList = {};
-    const toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
+    let toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
     if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
         dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
             const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
-            if (wrapperTag[tagKey]["wrapFields"].length != 0) { // If there are any wrappers with no fields, ignore. Otherwise, keep a list of UUID and the wrapper to put it in.
-                tempFormExceptionList[tagKey] = {};
-                wrapperTag[tagKey]["wrapFields"].forEach(fieldId => {
-                    toWrapIds[fieldId] = tagKey;
-                });
+            if (wrapperTag[tagKey].length != 0) { // If there are any wrappers with no fields, ignore. Otherwise, keep a list of UUID and the wrapper to put it in.
+                toWrapIds = {...toWrapIds, ...getWrapperIds(wrapperTag[tagKey], [tagKey])};
             }
         });
     }
 
     // The updated JSON values required for XML creation
-    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, tempFormExceptionList, toWrapIds, dateItemsId, checkboxItemsId);
+    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId);
     
     let builder; // This will be for building the XML
     if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
@@ -427,6 +423,97 @@ function convertCheckboxFormatToICM (value) {
     else return "";
 }
 
+/** Recursive function that gets all of the wrapper tags from a value in a dictionary's wrapperTags
+ * 
+ * @param keyPair : {}
+ * @param topLevelKeys : []
+ * @returns 
+ */
+function getWrapperIds (keyPair, topLevelKeys) {
+    const keys = Object.keys(keyPair);
+    if (typeof keyPair === "undefined" || keys.length === 0) return undefined
+    let toWrapIds = {};
+    keys.forEach(key => {
+        if (typeof keyPair[key] === "number") {
+            toWrapIds[key] = {tags: topLevelKeys, level: keyPair[key]};            
+        } else if (typeof keyPair[key] === "object") {
+            const tempKeyWrappers = topLevelKeys.concat([key]);
+            const tempWrapperContainer = getWrapperIds(keyPair[key], tempKeyWrappers);
+            if (typeof tempWrapperContainer != undefined) {
+                Object.keys(tempWrapperContainer).forEach(value => {
+                    toWrapIds[value] = tempWrapperContainer[value];
+                });
+            }
+        }
+    });
+    return toWrapIds;
+}
+
+/** When multiple wrappers are listed in dictionary for a uuid, wrap for JSON -> XML here
+ * 
+ * @param truncatedKeysSaveData 
+ * @param toWrapIds 
+ * @param dataToWrap 
+ * @param oldKey 
+ * @param newKey 
+ * @param isChild : boolean, checks if the multilevel wrapper was called from the child uuid shortening if-else
+ * @returns 
+ */
+function multilevelWrappers(truncatedKeysSaveData, toWrapIds, dataToWrap, oldKey, newKey, isChild){
+    if (toWrapIds[oldKey].tags.length === 1 || toWrapIds[oldKey].level === 0) { //One wrapper
+        if(isChild) {
+            const wrapperKey = {};
+            wrapperKey[newKey] = dataToWrap;
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][`${newKey}-List`] = wrapperKey; // Add a wrapper around the children/dependecies
+        } else {
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][newKey] = dataToWrap;
+        }
+    } else if (toWrapIds[oldKey].tags.length === 2 || toWrapIds[oldKey].level === 1) { //Two wrappers
+        if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]]) {
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]] = {};
+        }
+        if(isChild) {
+            const wrapperKey = {};
+            wrapperKey[newKey] = dataToWrap;
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][`${newKey}-List`] = wrapperKey;
+        } else {
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][newKey] = dataToWrap;
+        }
+    } else if (toWrapIds[oldKey].tags.length === 3 || toWrapIds[oldKey].level === 2) { //Three wrappers
+        if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]]) {
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]] = {};
+        }
+        if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]]){
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]] = {};
+        }
+        if(isChild) {
+            const wrapperKey = {};
+            wrapperKey[newKey] = dataToWrap;
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]][`${newKey}-List`] = wrapperKey;
+        } else {
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]][newKey] = dataToWrap;
+        }
+    } else if (toWrapIds[oldKey].tags.length === 4 || toWrapIds[oldKey].level === 3) { //Four wrappers
+        if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]]) {
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]] = {};
+        }
+        if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]]){
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]] = {};
+        }
+        if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]][toWrapIds[oldKey].tags[3]]){
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]][toWrapIds[oldKey].tags[3]] = {};
+        }
+        if(isChild) {
+            const wrapperKey = {};
+            wrapperKey[newKey] = dataToWrap;
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]][toWrapIds[oldKey].tags[3]][`${newKey}-List`] = wrapperKey;
+        } else {
+            truncatedKeysSaveData[toWrapIds[oldKey].tags[0]][toWrapIds[oldKey].tags[1]][toWrapIds[oldKey].tags[2]][toWrapIds[oldKey].tags[3]][newKey] = dataToWrap;
+        }
+    }
+    return truncatedKeysSaveData
+}
+
 /** Take the saveData JSON values and update them to new layout. Changes include:
  * Shorten UUID. 
  * Wrap values with children inside a List. 
@@ -460,7 +547,7 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                         }
                         truncatedChildrenKeys[newChildKey] = newDateFormat;
                     } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field, change from true/false/undefined to Yes/No/""
-                        truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
+                        truncatedChildrenKeys[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
                     } else {
                         truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
                     }
@@ -468,9 +555,10 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                 childrenArray.push(truncatedChildrenKeys);
             }
             if (toWrapIds[oldKey]) {
-                const wrapperKey = {};
-                wrapperKey[newKey] = childrenArray;
-                truncatedKeysSaveData[toWrapIds[oldKey]][`${newKey}-List`] = wrapperKey // Add a wrapper around the children/dependecies
+                if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]]) { //Initalize wrapper if top level doesn't exist
+                    truncatedKeysSaveData[toWrapIds[oldKey].tags[0]] = {};
+                }
+                truncatedKeysSaveData = multilevelWrappers(truncatedKeysSaveData, toWrapIds, childrenArray, oldKey, newKey, true);
             } else {
                 const wrapperKey = {};
                 wrapperKey[newKey] = childrenArray;
@@ -483,19 +571,29 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                     throw new Error("Invalid date. Was unable to convert to ICM format!");
                 }
                 if (toWrapIds[oldKey]) {
-                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = newDateFormat;
+                    if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]]) { //Initalize wrapper if top level doesn't exist
+                        truncatedKeysSaveData[toWrapIds[oldKey].tags[0]] = {};
+                    }
+                    truncatedKeysSaveData = multilevelWrappers(truncatedKeysSaveData, toWrapIds, newDateFormat, oldKey, newKey, false);
                 } else {
                     truncatedKeysSaveData[newKey] = newDateFormat;
                 }
             } else if (checkboxItemsId.includes(oldKey)) { // If data is in a checkbox field, change from true/false/undefined to Yes/No/""
                 if (toWrapIds[oldKey]) {
-                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
+                    if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]]) { //Initalize wrapper if top level doesn't exist
+                        truncatedKeysSaveData[toWrapIds[oldKey].tags[0]] = {};
+                    }
+                    const newCheckboxFormat = convertCheckboxFormatToICM(saveData[oldKey]);
+                    truncatedKeysSaveData = multilevelWrappers(truncatedKeysSaveData, toWrapIds, newCheckboxFormat, oldKey, newKey, false);
                 } else {
                     truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey]);
                 }
             } else {
                 if (toWrapIds[oldKey]) {
-                    truncatedKeysSaveData[toWrapIds[oldKey]][newKey] = saveData[oldKey]; 
+                    if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]]) { //Initalize wrapper if top level doesn't exist
+                        truncatedKeysSaveData[toWrapIds[oldKey].tags[0]] = {};
+                    }
+                    truncatedKeysSaveData = multilevelWrappers(truncatedKeysSaveData, toWrapIds, saveData[oldKey], oldKey, newKey, false);
                 } else {
                     truncatedKeysSaveData[newKey] = saveData[oldKey]; //Data is added to new JSON with the truncated key
                 }
