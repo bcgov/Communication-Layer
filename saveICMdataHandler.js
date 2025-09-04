@@ -210,7 +210,20 @@ async function saveICMdata(req, res) {
         if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
-        response = await axios.put(url, saveJson, { params: query, headers });
+        response = await axios.put(url, saveJson, {
+            params: query,
+            headers: {
+              ...headers,
+              'Accept-Encoding': 'identity',  
+            },
+            decompress: false,                
+            responseType: 'text',             
+            transformResponse: x => x,        
+            validateStatus: () => true,       
+          });
+        console.log('ICM PUT status:', response.status);
+        console.log('ICM PUT headers:', response.headers);
+        console.log('ICM PUT body (first 2k):', String(response.data).slice(0, 2000));
         return res.status(200).send({});
     }
     catch (error) {

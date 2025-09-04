@@ -27,7 +27,7 @@ async function generatePDFFromJSON(req, res) {
     try {
       
       savedJson = JSON.parse(savedJsonString);
-      console.log("Saved Parsed JSON:",savedJson);
+      // console.log("Saved Parsed JSON:",savedJson);
       const { valid, errors } = validateJson(savedJson);
 
       if (valid) {
