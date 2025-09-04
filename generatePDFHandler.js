@@ -3,6 +3,7 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 const { validateJson } = require('./validate');
 const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler');
+const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 async function generatePDFFromJSON(req, res) {
   try {
@@ -165,6 +166,11 @@ async function generatePDFFromURL(req, res) {
 }
 
 async function getPDFFromURL(url) {
+  // Increases to 5000 seemed to be working well (could also set the params in env file if needed)
+  const HYDRATE_MS = Number(process.env.PDF_HYDRATE_MS ?? 5000);      
+  const CLICK_WINDOW_MS = Number(process.env.PDF_CLICK_WINDOW_MS ?? 3000);
+  const CLICK_RETRY_EVERY_MS = Number(process.env.PDF_CLICK_INTERVAL_MS ?? 200);
+  const POST_CLICK_MS = Number(process.env.PDF_POST_CLICK_MS ?? 2500);
 
   // console.log("Puppeteer path:", process.env.PUPPETEER_EXECUTABLE_PATH);
   // console.log("Puppeteer URL:", url);
@@ -183,13 +189,62 @@ async function getPDFFromURL(url) {
     //const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    // Set the HTML content of the page
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 150000 });
-
     // Optional: Adjust the page's viewport for better PDF layout
     await page.setViewport({ width: 1280, height: 800 });
 
+    // Set the HTML content of the page
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 150000 });
+
+    // Let app hydrate
+    await sleep(HYDRATE_MS);
+    
+    // Click “Show Letter” with a short retry window
+    const clickScript = `
+      (function(){
+        function clickByText(substr){
+          substr = substr.toLowerCase();
+          const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_ELEMENT);
+          while (walker.nextNode()){
+            const el   = walker.currentNode;
+            const tag  = (el.tagName||'').toLowerCase();
+            const role = el.getAttribute && el.getAttribute('role');
+            const clickable = tag==='button' || tag==='a' || role==='button';
+            if (!clickable) continue;
+            const t = (el.innerText || el.textContent || '').trim().toLowerCase();
+            if (t.includes(substr)){
+              el.dispatchEvent(new MouseEvent('click', {bubbles:true,cancelable:true,view:window}));
+              return true;
+            }
+          }
+          return false;
+        }
+        if (!window.__clickedShowLetter) window.__clickedShowLetter = clickByText('show letter');
+        return !!window.__clickedShowLetter;
+      })();
+    `;
+
+    const deadline = Date.now() + CLICK_WINDOW_MS;
+    let clicked = await page.evaluate(clickScript);
+    if (!clicked) {
+      for (const f of page.frames()) {
+        try { clicked = await f.evaluate(clickScript); if (clicked) break; } catch {}
+      }
+    }
+    while (!clicked && Date.now() < deadline) {
+      await sleep(CLICK_RETRY_EVERY_MS);
+      clicked = await page.evaluate(clickScript);
+      if (!clicked) {
+        for (const f of page.frames()) {
+          try { clicked = await f.evaluate(clickScript); if (clicked) break; } catch {}
+        }
+      }
+    }
+
+    // Give it time to assemble the printable view
+    await sleep(POST_CLICK_MS);
+
     // Generate PDF with print CSS applied
+    await page.emulateMediaType('print');
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
