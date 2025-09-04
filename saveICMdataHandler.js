@@ -466,7 +466,7 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                         }
                         truncatedChildrenKeys[newChildKey] = newDateFormat;
                     } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field, change from true/false/undefined to Yes/No/""
-                        truncatedKeysSaveData[newKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
+                        truncatedKeysSaveData[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
                     } else {
                         truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
                     }
