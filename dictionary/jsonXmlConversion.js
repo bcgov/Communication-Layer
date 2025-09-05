@@ -3,7 +3,7 @@
  * Property: rootName : a string that will replace "root" from the XML
  * Property: subRoots : an array of strings. These will be between root and JSON data. The first value in the array will be highest (after root) while the last will be lowest (before JSON)
  * Property: wrapperTags : an array of objects. If not empty, then should include object { [the wrapper Tag name] : { wrapFields: [] } }
- * Property: allowBooleanCheckbox : if a field is in this array, skip conversion step
+ * Property: allowCheckboxWithNoChange : if a field is in this array, skip conversion step
  * Property: omitFields : an array of strings. These are the UUIDs of fields that must be omitted before XML creation. (TO BE DONE in saveICMdataHandler.js)
  * Property: version : a string that will check if the exception list should include the version of the form submitted. All values in version should overwrite the default form properties.
  */
@@ -12,7 +12,7 @@ const formExceptions = {
         "rootName": "ListOfDtFormInstanceLW", 
         "subRoots": ["FormInstance"],
         "wrapperTags": [],
-        "allowBooleanCheckbox": [],
+        "allowCheckboxWithNoChange": [],
         "omitFields": [],
         "versions": {
             "1": {
@@ -89,7 +89,7 @@ const formExceptions = {
                 }
             }
         ],
-        "allowBooleanCheckbox": [],
+        "allowCheckboxWithNoChange": [],
         "omitFields": [],
         "versions" : {
             "1" :{

@@ -147,6 +147,7 @@ async function saveICMdata(req, res) {
     const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
     const isFormException = keyExists(dictionary, formId); // If true, then this form will have its exceptions formatted
     let toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
+    const noCheckboxChange = dictionary[formId].allowCheckboxWithNoChange;
     if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
         dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
             const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
@@ -157,7 +158,7 @@ async function saveICMdata(req, res) {
     }
 
     // The updated JSON values required for XML creation
-    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId);
+    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange);
     
     let builder; // This will be for building the XML
     if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
@@ -532,10 +533,11 @@ function multilevelWrappers(truncatedKeysSaveData, toWrapIds, dataToWrap, oldKey
  * @param toWrapIds : list of key-string pairs where the keys are UUIDs and the strings are what wrapper tag they need to go under.
  * @param dateItemsId : list of date fields
  * @param checkboxItemsId : list of checkbox fields
+ * @param noCheckboxChange : list of checkbox UUIDs that should not have their value changed
  * @returns truncatedKeysSaveData : a list of key-object pairs
  */
 
-function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId) {
+function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange) {
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
         const stringLength = oldKey.length;
         const newKey = oldKey.substring(0, stringLength-28);
@@ -552,7 +554,7 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                             throw new Error("Invalid date. Was unable to convert to ICM format!");
                         }
                         truncatedChildrenKeys[newChildKey] = newDateFormat;
-                    } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field, change from true/false/undefined to Yes/No/""
+                    } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength)) && !noCheckboxChange.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field AND is not listed for ommission, change from true/false/undefined to Yes/No/""
                         truncatedChildrenKeys[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
                     } else {
                         truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
@@ -584,7 +586,7 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                 } else {
                     truncatedKeysSaveData[newKey] = newDateFormat;
                 }
-            } else if (checkboxItemsId.includes(oldKey)) { // If data is in a checkbox field, change from true/false/undefined to Yes/No/""
+            } else if (checkboxItemsId.includes(oldKey) && !noCheckboxChange.includes(oldKey)) { // If data is in a checkbox field AND is not listed for ommission, change from true/false/undefined to Yes/No/""
                 if (toWrapIds[oldKey]) {
                     if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]]) { //Initalize wrapper if top level doesn't exist
                         truncatedKeysSaveData[toWrapIds[oldKey].tags[0]] = {};
