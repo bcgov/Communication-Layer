@@ -163,9 +163,9 @@ async function saveICMdata(req, res) {
     if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
         // If the root needs a differernt name, apply it here. Otherwise use the default "root"
         if (propertyExists(dictionary, formId, "rootName") && propertyNotEmpty(dictionary, formId, "rootName")) {
-            builder = new xml2js.Builder({xmldec: { version: '1.0' }, rootName: dictionary[formId]["rootName"]});
+            builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: false }, rootName: dictionary[formId]["rootName"]});
         } else {
-            builder = new xml2js.Builder({xmldec: { version: '1.0' }});
+            builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: false }});
         }
 
         let wrapperJson = truncatedKeysSaveData;
@@ -187,10 +187,16 @@ async function saveICMdata(req, res) {
         }
         saveJson["XML Hierarchy"] = builder.buildObject(wrapperJson);
     } else {
-        builder = new xml2js.Builder({xmldec: { version: '1.0' }});
+        builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: false }});
         saveJson["XML Hierarchy"] = builder.buildObject(truncatedKeysSaveData);
     } 
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
+    const xml = saveJson["XML Hierarchy"];
+    const xmlSize = Buffer.byteLength(xml, 'utf8'); // size in bytes
+
+    console.log("XML Hierarchy:", xml);
+    console.log("XML Hierarchy length (chars):", xml.length);
+    console.log("XML Hierarchy size (bytes):", xmlSize);
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
         let response;
