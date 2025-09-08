@@ -551,19 +551,23 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                     for (let oldChildKey in saveData[oldKey][i]) {
                         const childStringLength = oldChildKey.length;
                         const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
-                        if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
-                            const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
-                            if (newDateFormat === "-1") {
-                                throw new Error("Invalid date. Was unable to convert to ICM format!");
+                        if (!omitFields.includes(oldChildKey.substring(stringLength+3, childStringLength))) {
+                            if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
+                                const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
+                                if (newDateFormat === "-1") {
+                                    throw new Error("Invalid date. Was unable to convert to ICM format!");
+                                }
+                                truncatedChildrenKeys[newChildKey] = newDateFormat;
+                            } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength)) && !noCheckboxChange.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field AND is not listed for ommission, change from true/false/undefined to Yes/No/""
+                                truncatedChildrenKeys[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
+                            } else {
+                                truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
                             }
-                            truncatedChildrenKeys[newChildKey] = newDateFormat;
-                        } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength)) && !noCheckboxChange.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field AND is not listed for ommission, change from true/false/undefined to Yes/No/""
-                            truncatedChildrenKeys[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
-                        } else {
-                            truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
                         }
                     }
-                    childrenArray.push(truncatedChildrenKeys);
+                    if (Object.keys(truncatedChildrenKeys).length != 0) {
+                        childrenArray.push(truncatedChildrenKeys);
+                    }
                 }
                 if (toWrapIds[oldKey]) {
                     if (!truncatedKeysSaveData[toWrapIds[oldKey].tags[0]]) { //Initalize wrapper if top level doesn't exist
