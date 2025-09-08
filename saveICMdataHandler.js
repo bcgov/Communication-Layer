@@ -147,7 +147,7 @@ async function saveICMdata(req, res) {
     const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
     const isFormException = keyExists(dictionary, formId); // If true, then this form will have its exceptions formatted
     let toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
-    const noCheckboxChange = dictionary[formId].allowCheckboxWithNoChange;
+    const noCheckboxChange = isFormException ? dictionary[formId].allowCheckboxWithNoChange : [];
     if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
         dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
             const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
