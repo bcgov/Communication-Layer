@@ -21,6 +21,12 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 const allowedOrigins = process.env.ALLOWEDORIGINS ? process.env.ALLOWEDORIGINS.split(',') : [];
 console.log("Allowed origins:", allowedOrigins);
 
+app.use((req, _res, next) => {
+  console.log("Full request:");
+  console.log(util.inspect(req, { showHidden: false, depth: null }));
+  next();
+});
+
 const corsOptions = {
   origin: (origin, callback) => {
     console.log("Incoming Origin:", origin);            
@@ -35,10 +41,6 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-app.use((req, _res, next) => {
-  if (req.headers.origin) console.log("Header Origin:", req.headers.origin);  // <— ADD
-  next();
-});
 
 app.use(cors(corsOptions));
 
