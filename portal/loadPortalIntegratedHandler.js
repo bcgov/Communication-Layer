@@ -9,7 +9,7 @@ async function loadPortalIntegratedForm(req, res) {
   try {
     const params = req.body;
     const token = params["id"]; 
-    const userId = "test";   
+    const userId = params["userId"];   
     if (!token ) {
       return res
         .status(400)
