@@ -23,7 +23,9 @@ console.log("Allowed origins:", allowedOrigins);
 
 const corsOptions = {
   origin: (origin, callback) => {
+    console.log("Incoming Origin:", origin);            // <— ADD
     if (!origin || allowedOrigins.includes(origin)) {
+      console.log("CORS allowed for:", origin);         // <— ADD
       callback(null, true);
     } else {
       console.log("CORS blocked for:", origin);
@@ -32,6 +34,11 @@ const corsOptions = {
   },
   optionsSuccessStatus: 200
 };
+
+app.use((req, _res, next) => {
+  if (req.headers.origin) console.log("Header Origin:", req.headers.origin);  // <— ADD
+  next();
+});
 
 app.use(cors(corsOptions));
 
