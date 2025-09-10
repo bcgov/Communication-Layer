@@ -19,24 +19,12 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 const allowedOrigins = process.env.ALLOWEDORIGINS ? process.env.ALLOWEDORIGINS.split(',') : [];
-console.log("Allowed origins:", allowedOrigins);
-
-app.use((req, _res, next) => {
-  console.log("Requests:", req.method, req.originalUrl);
-  console.log("Origin:", req.headers.origin || "none");
-  console.log("Headers:", req.headers);
-  console.log("Body:", req.body);
-  next();
-});
 
 const corsOptions = {
   origin: (origin, callback) => {
-    console.log("Incoming Origin:", origin);            
     if (!origin || allowedOrigins.includes(origin)) {
-      console.log("CORS allowed for:", origin);        
       callback(null, true);
     } else {
-      console.log("CORS blocked for:", origin);
       callback(new Error('Not allowed by CORS'));
     }
   },
