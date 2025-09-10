@@ -22,8 +22,10 @@ const allowedOrigins = process.env.ALLOWEDORIGINS ? process.env.ALLOWEDORIGINS.s
 console.log("Allowed origins:", allowedOrigins);
 
 app.use((req, _res, next) => {
-  console.log("Full request:");
-  console.log(util.inspect(req, { showHidden: false, depth: null }));
+  console.log("Requests:", req.method, req.originalUrl);
+  console.log("Origin:", req.headers.origin || "none");
+  console.log("Headers:", req.headers);
+  console.log("Body:", req.body);
   next();
 });
 
