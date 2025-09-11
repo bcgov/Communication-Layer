@@ -66,6 +66,7 @@ async function getSavedFormFromPortal(portal,token, userId) {
       const auth = (portal.basicAuth && portal.basicAuth.username && portal.basicAuth.password)
         ? "Basic " + btoa(portal.basicAuth.username + ":" + portal.basicAuth.password)
         : "Basic " + btoa(portal.apiSecret);
+        console.log("Auth:",auth);
         response = await axios.post(`${urlForValidateTokenAndGetJson}`,
           {
             token,
@@ -78,6 +79,7 @@ async function getSavedFormFromPortal(portal,token, userId) {
             }
           }
         ); 
+    console.log("Response:",response);
     } else {
       response = await axios.post(`${urlForValidateTokenAndGetJson}`,
         {
