@@ -119,8 +119,23 @@ async function saveICMdata(req, res) {
         .status(401)
         .send({ error: getErrorMessage("FORM_ALREADY_FINALIZED") });
     }
-    //saveForm validate before saving to ICM
-    const valid = isJsonStringValid(savedFormParam);
+
+    //saveForm validate before saving to ICM and determine kiln version being used
+    const includesData = Object.keys(JSON.parse(savedFormParam)).includes("data"); // Check if data exists.
+    if (!includesData) {
+    console.log('JSON is  not valid ');
+    return res
+        .status(400)
+        .send({ error: getErrorMessage("FORM_NOT_VALID") });
+    }
+    /**
+     * Apply Kiln Version
+     * Kiln V1 uses data: { items: []}
+     * Kiln V2 uses dataSources []
+     */
+    const kilnVersion = Object.keys(JSON.parse(savedFormParam)["data"]).includes("items") ? 1 : 2; 
+
+    const valid = isJsonStringValid(savedFormParam, kilnVersion);
     if (!valid) {
         console.log('JSON is  not valid ');
         return res
@@ -135,8 +150,8 @@ async function saveICMdata(req, res) {
     saveJson["DocFileName"] = (form_metadata["DocFileName"] && form_metadata["DocFileName"] !== "") ? form_metadata["DocFileName"] : attachment_id.replace(/^[^-]+-/, 'Form_');
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
-    let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson    
-    const formDefinitionItems = JSON.parse(savedFormParam)["form_definition"]["data"]["items"];// This is the field info for form items
+    let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson  
+    const formDefinitionItems = kilnVersion === 1 ? JSON.parse(savedFormParam)["form_definition"]["data"]["items"] : JSON.parse(savedFormParam)["form_definition"]["elements"];// This is the field info for form items
     
     // dateItemsId : This will contain all of the IDs of the date fields
     // checkboxItemsId : This will contain all of the IDs of the checkbox fields
@@ -285,7 +300,7 @@ async function loadICMdata(req, res) {
         response = await axios.get(url, { params: query, headers });
         let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
         //validate the returned data to be of the expected format 
-        const valid = isJsonStringValid(return_data);
+        const valid = isJsonStringValid(return_data, 1); //TODO ADO-3215 change for kiln version
         if (!valid) {
             console.log('JSON is  not valid ');
             return res
@@ -536,10 +551,11 @@ function multilevelWrappers(truncatedKeysSaveData, toWrapIds, dataToWrap, oldKey
  * @param checkboxItemsId : list of checkbox fields
  * @param noCheckboxChange : list of checkbox UUIDs that should not have their value changed
  * @param omitFields : list of field UUIDS that should not be included in the XML
+ * @param {number} kilnVersion : the Kiln version matching the save data json layout
  * @returns truncatedKeysSaveData : a list of key-object pairs
  */
 
-function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields) {
+function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields, kilnVersion) {
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
         if (!omitFields.includes(oldKey)) {
             const stringLength = oldKey.length;
@@ -549,19 +565,38 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                 for(let i = 0; i < saveData[oldKey].length; i++) {
                     const truncatedChildrenKeys = {};
                     for (let oldChildKey in saveData[oldKey][i]) {
-                        const childStringLength = oldChildKey.length;
-                        const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
-                        if (!omitFields.includes(oldChildKey.substring(stringLength+3, childStringLength))) {
-                            if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
-                                const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
-                                if (newDateFormat === "-1") {
-                                    throw new Error("Invalid date. Was unable to convert to ICM format!");
+                        if (kilnVersion === 1) { // Kiln V1
+                            const childStringLength = oldChildKey.length;
+                            const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
+                            if (!omitFields.includes(oldChildKey.substring(stringLength+3, childStringLength))) {
+                                if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
+                                    const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
+                                    if (newDateFormat === "-1") {
+                                        throw new Error("Invalid date. Was unable to convert to ICM format!");
+                                    }
+                                    truncatedChildrenKeys[newChildKey] = newDateFormat;
+                                } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength)) && !noCheckboxChange.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field AND is not listed for ommission, change from true/false/undefined to Yes/No/""
+                                    truncatedChildrenKeys[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
+                                } else {
+                                    truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
                                 }
-                                truncatedChildrenKeys[newChildKey] = newDateFormat;
-                            } else if (checkboxItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength)) && !noCheckboxChange.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a checkbox field AND is not listed for ommission, change from true/false/undefined to Yes/No/""
-                                truncatedChildrenKeys[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
-                            } else {
-                                truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
+                            }
+                        }
+                        else { // Kiln V2
+                            const childStringLength = oldChildKey.length;
+                            const newChildKey = oldChildKey.substring(0, childStringLength-28);
+                            if (!omitFields.includes(oldChildKey.substring(0, childStringLength))) {
+                                if (dateItemsId.includes(oldChildKey.substring(0, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
+                                    const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
+                                    if (newDateFormat === "-1") {
+                                        throw new Error("Invalid date. Was unable to convert to ICM format!");
+                                    }
+                                    truncatedChildrenKeys[newChildKey] = newDateFormat;
+                                } else if (checkboxItemsId.includes(oldChildKey.substring(0, childStringLength)) && !noCheckboxChange.includes(oldChildKey.substring(0, childStringLength))) { // If child data is in a checkbox field AND is not listed for ommission, change from true/false/undefined to Yes/No/""
+                                    truncatedChildrenKeys[newChildKey] = convertCheckboxFormatToICM(saveData[oldKey][i][oldChildKey]);
+                                } else {
+                                    truncatedChildrenKeys[newChildKey] = saveData[oldKey][i][oldChildKey];
+                                }
                             }
                         }
                     }
