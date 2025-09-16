@@ -128,14 +128,8 @@ async function saveICMdata(req, res) {
         .status(400)
         .send({ error: getErrorMessage("FORM_NOT_VALID") });
     }
-    /**
-     * Apply Kiln Version
-     * Kiln V1 uses data: { items: []}
-     * Kiln V2 uses dataSources []
-     */
-    const kilnVersion = Object.keys(JSON.parse(savedFormParam)["data"]).includes("items") ? 1 : 2; 
-
-    const valid = isJsonStringValid(savedFormParam, kilnVersion);
+ 
+    const valid = isJsonStringValid(savedFormParam);
     if (!valid) {
         console.log('JSON is  not valid ');
         return res
@@ -151,6 +145,14 @@ async function saveICMdata(req, res) {
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson  
+
+
+    /**
+     * Apply Kiln Version
+     * Kiln V1 uses data: { items: []}
+     * Kiln V2 uses dataSources []
+     */
+    const kilnVersion = Object.keys(JSON.parse(savedFormParam)["data"]).includes("items") ? 1 : 2;
     const formDefinitionItems = kilnVersion === 1 ? JSON.parse(savedFormParam)["form_definition"]["data"]["items"] : JSON.parse(savedFormParam)["form_definition"]["elements"];// This is the field info for form items
     
     // dateItemsId : This will contain all of the IDs of the date fields
@@ -300,7 +302,7 @@ async function loadICMdata(req, res) {
         response = await axios.get(url, { params: query, headers });
         let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
         //validate the returned data to be of the expected format 
-        const valid = isJsonStringValid(return_data, 1); //TODO ADO-3215 change for kiln version
+        const valid = isJsonStringValid(return_data);
         if (!valid) {
             console.log('JSON is  not valid ');
             return res

@@ -10,7 +10,14 @@ function loadSchema(schemaPath) {
 }
 
 // Function to validate JSON data against a YAML schema
-function validateJson(jsonData, kilnVersion) {
+function validateJson(jsonData) {
+
+    /**
+     * Apply Kiln Version
+     * Kiln V1 uses data: { items: []}
+     * Kiln V2 uses dataSources []
+     */
+    const kilnVersion = Object.keys(jsonData["data"]).includes("items") ? 1 : 2; 
     const schema = loadSchema("schema/saved_json.yaml");
     const formDefinitionSchema = kilnVersion === 1 ? loadSchema("schema/form_definition.yaml") : loadSchema("schema/form_definitionV2.yaml");
 
@@ -26,10 +33,10 @@ function validateJson(jsonData, kilnVersion) {
     return { valid, errors: validate.errors };
 }
 
-function isJsonStringValid(jsonDataString, kilnVersion) {
+function isJsonStringValid(jsonDataString) {
     try {
         const jsonData = JSON.parse(jsonDataString);  
-        return isJsonValid(jsonData, kilnVersion)
+        return isJsonValid(jsonData)
       }
       catch (error) {
         console.error("Error converting incoming json:", error);  
@@ -37,11 +44,11 @@ function isJsonStringValid(jsonDataString, kilnVersion) {
       }      
 }
 
-function isJsonValid(jsonData, kilnVersion) {
+function isJsonValid(jsonData) {
     try {
             //const jsonData = JSON.parse(jsonDataString);  
             if(jsonData) {        
-                const { valid, errors } = validateJson(jsonData, kilnVersion);  
+                const { valid, errors } = validateJson(jsonData);  
                 if (valid) {
                 console.log('JSON is valid ✅');
                 } else {
