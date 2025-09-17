@@ -148,8 +148,10 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
     });
   };
 
-  if (Array.isArray(formJson?.data?.items)) {
+  if (Array.isArray(formJson?.data?.items)) { // Kiln-v1
     processItemsForDatabinding(formJson.data.items);
+  } else if (Array.isArray(formJson?.elements)) { // Kilnv2
+    processItemsForDatabinding(formJson.elements);
   }
   // console.dir(formData, { depth: null, colors: true });
   return formData;
