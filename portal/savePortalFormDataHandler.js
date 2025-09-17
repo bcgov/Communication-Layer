@@ -1,6 +1,11 @@
 const appConfig = require('../appConfig.js');
 async function submitForPortalAction (req,res) {
     const { tokenId, savedForm ,config} = req.body;   
+    console.log('submitForPortalAction:', {
+      tokenId: req.body?.tokenId,
+      savedFormType: typeof req.body?.savedForm,
+      actionCount: req.body?.config?.actions?.length
+    });
     try{
       
       if (!config?.actions || !Array.isArray(config.actions)) {
@@ -50,12 +55,19 @@ async function handleEndpointAction(tokenId,action, formData, portalConfig) {
         (action.body || []).map(b => Object.entries(b)[0])
       );
       const payload = { ...savedJson, ...actionBody };      
+      console.log('handleEndpointAction ->', {
+        url,
+        method: action.type,
+        headers,
+        payloadKeys: Object.keys(payload)
+      });
       const response = await fetch(url, {
         method: action.type,
         headers: { ...headers, Authorization: `Bearer ${action.authentication}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
+      console.log('Fetch status:', response.status);
+
       if (!response.ok) {
         const text = await response.text();        
         throw new Error(`Endpoint error: ${response.status} ${text}`);
