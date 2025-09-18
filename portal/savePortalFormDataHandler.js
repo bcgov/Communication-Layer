@@ -1,4 +1,5 @@
 const appConfig = require('../appConfig.js');
+const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 async function submitForPortalAction (req,res) {
     const { tokenId, savedForm ,config} = req.body;   
     console.log('submitForPortalAction:', {
@@ -47,9 +48,10 @@ async function handleEndpointAction(tokenId,action, formData, portalConfig) {
       const url = portalHost+action.path;
       const headers = Object.fromEntries(action.headers.map(h => Object.entries(h)[0])); 
 
+      const  base64EncodedJson = Buffer.from(formData, 'utf8').toString('base64');
       const savedJson = {
               "token": tokenId,        
-              "formJson": formData
+              "formJson": base64EncodedJson,              
             };
       const actionBody = Object.fromEntries(
         (action.body || []).map(b => Object.entries(b)[0])
