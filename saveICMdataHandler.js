@@ -152,7 +152,7 @@ async function saveICMdata(req, res) {
      * Kiln V1 uses data: { items: []}
      * Kiln V2 uses dataSources []
      */
-    const kilnVersion = Object.keys(JSON.parse(savedFormParam)["data"]).includes("items") ? 1 : 2;
+    const kilnVersion = Object.keys(JSON.parse(savedFormParam)["form_definition"]["data"]).includes("items") ? 1 : 2;
     const formDefinitionItems = kilnVersion === 1 ? JSON.parse(savedFormParam)["form_definition"]["data"]["items"] : JSON.parse(savedFormParam)["form_definition"]["elements"];// This is the field info for form items
     
     // dateItemsId : This will contain all of the IDs of the date fields
