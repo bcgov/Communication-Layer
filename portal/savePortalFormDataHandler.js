@@ -45,17 +45,19 @@ async function handleEndpointAction(tokenId,action, formData, portalConfig) {
     
       try {  
       const portalHost = portalConfig["apiHost"] || action.host;
-      const url = portalHost+action.path;
-      const headers = Object.fromEntries(action.headers.map(h => Object.entries(h)[0])); 
-
+      const url = portalHost+action.path;       
+      const headers = Array.isArray(action.headers)
+        ? Object.fromEntries(action.headers.map(b => Object.entries(b)[0]))
+        : (action.headers || {});
       const  base64EncodedJson = Buffer.from(formData, 'utf8').toString('base64');
       const savedJson = {
               "token": tokenId,        
               "formJson": base64EncodedJson,              
             };
-      const actionBody = Object.fromEntries(
-        (action.body || []).map(b => Object.entries(b)[0])
-      );
+      
+      const actionBody = Array.isArray(action.body)
+        ? Object.fromEntries(action.body.map(b => Object.entries(b)[0]))
+        : (action.body || {});
       const payload = { ...savedJson, ...actionBody };      
       console.log('handleEndpointAction ->', {
         url,
