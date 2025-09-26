@@ -29,7 +29,13 @@ async function saveForPortalAction(req, res) {
       }) || {};
 
     const portalHost = portalConfig.apiHost;
-    const endpoint = req.body?.path ||portalConfig.saveEndpoint;
+    let endpoint = req.body?.path ||portalConfig.saveEndpoint;
+    
+    //Skip "API." request paths
+    if (endpoint && /API\./i.test(endpoint)) {
+      endpoint = portalConfig.saveEndpoint;
+    }
+
     const url = portalHost+endpoint;
     const method = "POST";
 
