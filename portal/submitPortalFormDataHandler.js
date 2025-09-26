@@ -27,11 +27,6 @@ async function submitForPortalAction(req, res) {
     const interfaceHost = portalConfig.apiHost;
     let submitPath = req.body?.path ||portalConfig.submitEndpoint;
     
-    //Skip "API." request paths
-    if (submitPath && /API\./i.test(submitPath)) {
-      submitPath = portalConfig.submitEndpoint;
-    }
-
     if (!interfaceHost || !submitPath) {
       return res
         .status(500)

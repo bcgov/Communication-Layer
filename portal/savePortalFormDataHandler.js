@@ -31,11 +31,6 @@ async function saveForPortalAction(req, res) {
     const portalHost = portalConfig.apiHost;
     let endpoint = req.body?.path ||portalConfig.saveEndpoint;
     
-    //Skip "API." request paths
-    if (endpoint && /API\./i.test(endpoint)) {
-      endpoint = portalConfig.saveEndpoint;
-    }
-
     const url = portalHost+endpoint;
     const method = "POST";
 

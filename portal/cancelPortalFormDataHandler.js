@@ -33,11 +33,6 @@ async function cancelPortalAction(req, res) {
     const apiHost = portalConfig.apiHost;
     let expirePath = req.body?.path || (portalConfig.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);
 
-    //Skip "API." request paths
-    if (expirePath && /API\./i.test(expirePath)) {
-      expirePath = (portalConfig.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);
-    }
-
     if (!apiHost || !expirePath) {
       return res
         .status(500)

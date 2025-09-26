@@ -20,13 +20,13 @@ const interfaces = {
 
                     {
                         action_type: "endpoint",
-                        path: "API.saveButtonAction",
+                        api_path: "API.saveButtonAction",
                         body: "tokenId: params[\"id\"],savedForm: JSON.stringify(createSavedData())",
                         type: "POST"
                     },
                     {
                         action_type: "endpoint",
-                        path: "API.submitButtonAction",
+                        api_path: "API.submitButtonAction",
                         body: "tokenId: params[\"id\"]",
                         type: "POST"
                     },
@@ -57,7 +57,7 @@ const interfaces = {
                 actions: [
                     {
                         action_type: "endpoint",
-                        path: "API.cancelButtonAction",
+                        api_path: "API.cancelButtonAction",
                         body: `tokenId: params["id"]`,
                         type: "POST"
                     },
