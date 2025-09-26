@@ -314,7 +314,7 @@ function updateParams(params, pathParams = {}, allFetchedData = {}) {
       });
     }
 
-    // 2. Replace all !!.[Source]=jsonpath in the string
+    // 2. Replace all '!!.[Source]=jsonpath' in the string
     if (typeof val === 'string') {
       val = val.replace(/'!!\.\[([^\]]+)\]=(.+\])'/g, (match, sourceName, jsonPath) => {
         const sourceData = allFetchedData[sourceName.trim()];

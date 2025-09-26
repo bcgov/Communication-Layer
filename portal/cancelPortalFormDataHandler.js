@@ -1,22 +1,23 @@
+// portal/expirePortalToken.js
 const appConfig = require('../appConfig.js');
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const buildPortalAuthHeader = require('./authHandler.js');
 
-async function saveForPortalAction(req, res) {
-  const { tokenId, savedForm } = req.body;
+async function cancelPortalAction(req, res) {
+  const { tokenId} = req.body || {};
 
-  console.log('saveForPortalAction:', {
-    tokenId: req.body?.tokenId,
-    savedForm: typeof req.body?.savedForm,
+  console.log('expireNETPortal:', {
+    tokenId: req.body?.tokenId
   });
 
   try {
-    if (!tokenId || !savedForm) {
+    if (!tokenId) {
       return res
         .status(400)
-        .send({ error: "Missing tokenId or savedForm" });
+        .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") || "Missing tokenId" });
     }
 
+    // Resolve portal config the same way as submit
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const portalConfig =
       appConfig[rawHost] ||
@@ -26,13 +27,13 @@ async function saveForPortalAction(req, res) {
         } catch {
           return false;
         }
-      }) || {};
+      }) ||
+      {};
 
     const portalHost = portalConfig.apiHost;
-    let endpoint = req.body?.path ||portalConfig.saveEndpoint;
+    let endpoint = req.body?.path || (portalConfig.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);
     const interfaceMethod = req.body?.type || "POST";
 
-    
     const url = portalHost+endpoint;
 
     if (!portalHost || !endpoint) {
@@ -41,10 +42,9 @@ async function saveForPortalAction(req, res) {
         .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") || "Missing portalHost or endpoint path" });
     }
 
-    const base64EncodedJson = Buffer.from(savedForm, "utf8").toString("base64");
-    const savedJson = { token: tokenId, jsonToSave: base64EncodedJson };
+    const savedJson = { token: tokenId };
 
-    console.log('SaveForPortalAction ->', {
+    console.log('CancelForPortalAction ->', {
       url,
       interfaceMethod,
       savedJson
@@ -69,13 +69,14 @@ async function saveForPortalAction(req, res) {
         .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") || `Endpoint error: ${response.status} ${text}` });
     }
 
-    res.json({ status: "success" });
-  } catch (error) {
-    console.error("saveForPortalAction error:", error);
+    return res.json({ status: 'success', expired: true });
+
+  } catch (err) {
+    console.error('expireNETPortal error:', err);
     return res
-      .status(400)
-      .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") });
+      .status(500)
+      .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") || (err?.message || 'Unhandled error') });
   }
 }
 
-module.exports = saveForPortalAction;
+module.exports = cancelPortalAction;
