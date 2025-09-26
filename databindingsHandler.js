@@ -5,7 +5,29 @@ const axios = require("axios");
 const { getUsername, isUsernameValid } = require('./usernameHandler.js');
 const { parse, format } = require("date-fns");
 
+/**
+ * Custom Axios params serializer that encodes whitespace as %20
+ */
+function customParamsSerializer(params) {
+  const queryParts = [];
+  for (const key in params) {
+    if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
 
+    const value = params[key];
+
+    if (value === null || typeof value === 'undefined') continue;
+
+    // Handle arrays by repeating the key for each value
+    if (Array.isArray(value)) {
+      value.forEach((val) => {
+        queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+      });
+    } else {
+      queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+    }
+  }
+  return queryParts.join('&');
+}
 async function populateDatabindings(formJson, params) {
   //start code here
   try {
@@ -194,12 +216,12 @@ async function readJsonFormApi(datasource, pathParams) {
     }
     if (type.toUpperCase() === 'GET') {
       // For GET requests, add params directly in axios config      
-      response = await axios.get(url, { params: pathParams, headers }
+      response = await axios.get(url, { params: pathParams, headers, paramsSerializer: customParamsSerializer}
       );
     } else if (type.toUpperCase() === 'POST') {
       // For POST requests, pass params in the body if applicable
       const bodyForPost = buildBodyWithParams(body, pathParams);
-      response = await axios.post(url, bodyForPost, { params: pathParams, headers });
+      response = await axios.post(url, bodyForPost, { params: pathParams, headers, paramsSerializer: customParamsSerializer});
     }
 
     // Store response data
