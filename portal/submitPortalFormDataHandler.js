@@ -24,8 +24,8 @@ async function submitForPortalAction(req, res) {
       }) ||
       {};
 
-    const interfaceHost   = portalConfig.apiHost;
-    const submitPath      = portalConfig.submitEndpoint;
+    const interfaceHost = portalConfig.apiHost;
+    const submitPath = req.body?.path ||portalConfig.submitEndpoint;
 
     if (!interfaceHost || !submitPath) {
       return res
@@ -40,6 +40,7 @@ async function submitForPortalAction(req, res) {
     const headers = {
       'Content-Type': 'application/json',
       ...buildPortalAuthHeader(portalConfig),
+      ...(req.body?.headers || {}),
     };
 
     const savePayload = {

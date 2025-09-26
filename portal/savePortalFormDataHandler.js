@@ -29,7 +29,7 @@ async function saveForPortalAction(req, res) {
       }) || {};
 
     const portalHost = portalConfig.apiHost;
-    const endpoint = portalConfig.saveEndpoint;
+    const endpoint = req.body?.path ||portalConfig.saveEndpoint;
     const url = portalHost+endpoint;
     const method = "POST";
 
@@ -53,6 +53,7 @@ async function saveForPortalAction(req, res) {
       headers: {
         "Content-Type": "application/json",
         ...buildPortalAuthHeader(portalConfig),
+        ...(req.body?.headers || {}),
       },
       body: JSON.stringify(savedJson),
     });

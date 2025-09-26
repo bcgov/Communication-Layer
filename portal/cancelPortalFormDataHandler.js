@@ -31,7 +31,7 @@ async function cancelPortalAction(req, res) {
       {};
 
     const apiHost = portalConfig.apiHost;
-    const expirePath = (portalConfig.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);
+    const expirePath = req.body?.path || (portalConfig.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);
 
     if (!apiHost || !expirePath) {
       return res
@@ -41,6 +41,7 @@ async function cancelPortalAction(req, res) {
 
     const headers = {
       'Content-Type': 'application/json',
+      ...(req.body?.headers || {})
     };
 
     const expired = await expireTokenInPortal(portalConfig, tokenId, headers);
