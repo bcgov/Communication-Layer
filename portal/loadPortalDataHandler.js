@@ -54,4 +54,4 @@ async function getSavedFormFromPortal(portal,token) {
   
 }
 
-module.exports = {getParametersFromPortal ,  expireTokenInPortal, getSavedFormFromPortal };
+module.exports = {getParametersFromPortal , getSavedFormFromPortal };
