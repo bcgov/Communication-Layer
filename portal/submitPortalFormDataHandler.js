@@ -26,6 +26,7 @@ async function submitForPortalAction(req, res) {
 
     const interfaceHost = portalConfig.apiHost;
     let submitPath = req.body?.path ||portalConfig.submitEndpoint;
+    const interfaceMethod = req.body?.type || "POST";
     
     if (!interfaceHost || !submitPath) {
       return res
@@ -49,7 +50,7 @@ async function submitForPortalAction(req, res) {
 
 
     const submitResp = await fetch(submitUrl.toString(), {
-      method: 'POST',
+      method: interfaceMethod,
       headers,
       body: JSON.stringify(savePayload) 
     });

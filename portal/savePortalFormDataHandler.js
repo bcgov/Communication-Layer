@@ -30,9 +30,10 @@ async function saveForPortalAction(req, res) {
 
     const portalHost = portalConfig.apiHost;
     let endpoint = req.body?.path ||portalConfig.saveEndpoint;
+    const interfaceMethod = req.body?.type || "POST";
+
     
     const url = portalHost+endpoint;
-    const method = "POST";
 
     if (!portalHost || !endpoint) {
       return res
@@ -45,12 +46,12 @@ async function saveForPortalAction(req, res) {
 
     console.log('SaveForPortalAction ->', {
       url,
-      method,
+      interfaceMethod,
       savedJson
     });
 
     const response = await fetch(url, {
-      method,
+      interfaceMethod,
       headers: {
         "Content-Type": "application/json",
         ...buildPortalAuthHeader(portalConfig),

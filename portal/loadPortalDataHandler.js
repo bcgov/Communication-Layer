@@ -30,33 +30,6 @@ async function getParametersFromPortal(portal,token) {
   
 }
 
-async function expireTokenInPortal(portal,token) {
-  //call another api from portal to get the params
-
-  let isTokenExpired = false;
-
-  try {
-    const urlForExpiringToken = portal.apiHost + (portal.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);;
-    console.log("urlForExpiringToken",urlForExpiringToken);
-    const response = await axios.post(`${urlForExpiringToken}`,      
-      {
-        token
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-          ...buildPortalAuthHeader(portal),
-        }
-      });
-
-    isTokenExpired = response.data;
-  } catch (err) {
-    console.log( 'Failed to contact target app', err.message );
-    
-    return true;
-  }
-  return isTokenExpired;
-}
-
 async function getSavedFormFromPortal(portal,token) {  
   let parametersForForm = "";  
 

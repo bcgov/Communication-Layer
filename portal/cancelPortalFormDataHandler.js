@@ -30,27 +30,47 @@ async function cancelPortalAction(req, res) {
       }) ||
       {};
 
-    const apiHost = portalConfig.apiHost;
-    let expirePath = req.body?.path || (portalConfig.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);
+    const portalHost = portalConfig.apiHost;
+    let endpoint = req.body?.path || (portalConfig.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);
+    const interfaceMethod = req.body?.type || "POST";
 
-    if (!apiHost || !expirePath) {
+    const url = portalHost+endpoint;
+
+    if (!portalHost || !endpoint) {
       return res
-        .status(500)
-        .send({ error: getErrorMessage("PORTAL_CONFIG_NOT_FOUND") || "Missing apiHost or expire endpoint in appConfig" });
+        .status(400)
+        .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") || "Missing portalHost or endpoint path" });
     }
 
-    const headers = {
-      'Content-Type': 'application/json',
-      ...(req.body?.headers || {})
-    };
+    const savedJson = { token: tokenId };
 
-    const expired = await expireTokenInPortal(portalConfig, tokenId, headers);
+    console.log('CancelForPortalAction ->', {
+      url,
+      interfaceMethod,
+      savedJson
+    });
 
-    if (!expired) {
-      return res.status(502).send({ error: "Portal did not confirm token expiration" });
+    const response = await fetch(url, {
+      interfaceMethod,
+      headers: {
+        "Content-Type": "application/json",
+        ...buildPortalAuthHeader(portalConfig),
+        ...(req.body?.headers || {}),
+      },
+      body: JSON.stringify(savedJson),
+    });
+
+    console.log("Fetch status:", response.status);
+
+    if (!response.ok) {
+      const text = await response.text();
+      return res
+        .status(400)
+        .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") || `Endpoint error: ${response.status} ${text}` });
     }
 
     return res.json({ status: 'success', expired: true });
+    
   } catch (err) {
     console.error('expireNETPortal error:', err);
     return res
