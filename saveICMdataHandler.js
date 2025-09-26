@@ -166,6 +166,8 @@ async function saveICMdata(req, res) {
     let toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
     const noCheckboxChange = (isFormException && propertyExists(dictionary, formId, "allowCheckboxWithNoChange")) ? dictionary[formId].allowCheckboxWithNoChange : [];
     const omitFields = (isFormException && propertyExists(dictionary, formId, "omitFields")) ? dictionary[formId].omitFields : [];
+    const addFields = (isFormException && propertyExists(dictionary, formId, "addFields")) ? dictionary[formId].addFields : {};
+
     if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
         dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
             const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
@@ -176,7 +178,7 @@ async function saveICMdata(req, res) {
     }
 
     // The updated JSON values required for XML creation
-    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields);
+    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields, addFields, kilnVersion);
     
     let builder; // This will be for building the XML
     if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
@@ -553,11 +555,12 @@ function multilevelWrappers(truncatedKeysSaveData, toWrapIds, dataToWrap, oldKey
  * @param checkboxItemsId : list of checkbox fields
  * @param noCheckboxChange : list of checkbox UUIDs that should not have their value changed
  * @param omitFields : list of field UUIDS that should not be included in the XML
+ * @param addFields : list of empty fields to add for form to succeed in saving as XML
  * @param {number} kilnVersion : the Kiln version matching the save data json layout
  * @returns truncatedKeysSaveData : a list of key-object pairs
  */
 
-function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields, kilnVersion) {
+function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields, addFields, kilnVersion) {
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
         if (!omitFields.includes(oldKey)) {
             const stringLength = oldKey.length;
@@ -652,6 +655,120 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                 }
             }
         }
+    }
+    //Check additional fields needed before returning final value
+    const additionalFieldKeys = Object.keys(addFields);
+    if (additionalFieldKeys.length > 0) {
+        additionalFieldKeys.forEach(key => {
+            if (addFields[key] === null) { //Parent key/field. If it passes, then this should not exist in form already because this is for ADDING fields. If it exists in form, it will be overwritten.
+                truncatedKeysSaveData[key] = null;
+            } else if (truncatedKeysSaveData[key] === undefined) { //If truncatedKeysSaveData[key] does not exist, create it with all values under the add key from dictionary
+                truncatedKeysSaveData[key] = addFields[key];
+            } else { //Has children in dictionary AND truncatedKeysSaveData exists already
+
+                    //Consider making the following a recursive function in a future iteration
+                    /**
+                     * For each key:
+                     *  Check to see if field is undefined. If undefined, then define it as empty
+                     *  Get the keys of the object if avaliable. Otherwise, get empty array
+                     *  If truncatedKeysSaveData keys lead to a group/list: apply values from dictionary
+                     *  Else if there are child keys avaliable: check the child keys (i.e. repeat this for each key)
+                     *  Else: save current level truncatedKeysSaveData with the current dictionary key values
+                     */
+
+                const childFields1 = addFields[key] != null ? Object.keys(addFields[key]) : [];
+                 if (truncatedKeysSaveData[key] && truncatedKeysSaveData[key].length != undefined) {
+                    truncatedKeysSaveData[key][childKey1].forEach((value, index) => {
+                        truncatedKeysSaveData[key][index] = {...truncatedKeysSaveData[key][index], ...addFields[key]};
+                    });
+                } else if(childFields1.length > 0) {
+                    childFields1.forEach(childKey1 => {
+                        if (truncatedKeysSaveData[key][childKey1] === undefined) {
+                            truncatedKeysSaveData[key][childKey1] = {};
+                        }
+                        const childFields2 = addFields[key][childKey1] != null ? Object.keys(addFields[key][childKey1]) : [];
+                        if (truncatedKeysSaveData[key][childKey1] && truncatedKeysSaveData[key][childKey1].length != undefined) { //Add the second layer of empty fields to groups
+                            truncatedKeysSaveData[key][childKey1].forEach((value, index) => {
+                                truncatedKeysSaveData[key][childKey1][index] = {...truncatedKeysSaveData[key][childKey1][index], ...addFields[key][childKey1]};
+                            });
+                        } else if (childFields2.length > 0) { //Continue if there are more fields listed
+                            childFields2.forEach(childKey2 => {
+                                if (truncatedKeysSaveData[key][childKey1][childKey2] === undefined) {
+                                    truncatedKeysSaveData[key][childKey1][childKey2] = {};
+                                }
+                                const childFields3 = addFields[key][childKey1][childKey2] != null ? Object.keys(addFields[key][childKey1][childKey2]) : [];
+                                if (truncatedKeysSaveData[key][childKey1][childKey2] && truncatedKeysSaveData[key][childKey1][childKey2].length != undefined) {
+                                    truncatedKeysSaveData[key][childKey1][childKey2].forEach((value, index) => {
+                                        truncatedKeysSaveData[key][childKey1][childKey2][index] = {...truncatedKeysSaveData[key][childKey1][childKey2][index], ...addFields[key][childKey1][childKey2]};
+                                    });
+                                } else if (childFields3.length > 0) {
+                                    childFields3.forEach(childKey3 => {
+                                        if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3] === undefined) {
+                                            truncatedKeysSaveData[key][childKey1][childKey2][childKey3] = {};
+                                        }
+                                        const childFields4 = addFields[key][childKey1][childKey2][childKey3] != null ? Object.keys(addFields[key][childKey1][childKey2][childKey3]) : [];
+                                        if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3] && truncatedKeysSaveData[key][childKey1][childKey2][childKey3].length != undefined) {
+                                            truncatedKeysSaveData[key][childKey1][childKey2][childKey3].forEach((value, index) => {
+                                                truncatedKeysSaveData[key][childKey1][childKey2][childKey3][index] = {...truncatedKeysSaveData[key][childKey1][childKey2][childKey3][index], ...addFields[key][childKey1][childKey2][childKey3]};
+                                            });
+                                        } else if (childFields4.length > 0) {
+                                            childFields4.forEach(childKey4 => {
+                                                if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4] === undefined) {
+                                                    truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4] = {};
+                                                }
+                                                const childFields5 = addFields[key][childKey1][childKey2][childKey3][childKey4] != null ? Object.keys(addFields[key][childKey1][childKey2][childKey3][childKey4]) : [];
+                                                if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4] && truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4].length != undefined) {
+                                                    truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4].forEach((value, index) => {
+                                                        truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][index] = {...truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][index], ...addFields[key][childKey1][childKey2][childKey3][childKey4]};
+                                                    });
+                                                } else if (childFields5.length > 0) {
+                                                    childFields5.forEach(childKey5 => {
+                                                        if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5] === undefined) {
+                                                            truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5] = {};
+                                                        }
+                                                        const childFields6 = addFields[key][childKey1][childKey2][childKey3][childKey4][childKey5] != null ? Object.keys(addFields[key][childKey1][childKey2][childKey3][childKey4][childKey5]) : [];
+                                                        if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5] && truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5].length != undefined) {
+                                                            truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5].forEach((value, index) => {
+                                                                truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][index] = {...truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][index], ...addFields[key][childKey1][childKey2][childKey3][childKey4][childKey5]};
+                                                            });
+                                                        } else if (childFields6.length > 0) {
+                                                            childFields6.forEach(childKey6 => {
+                                                                if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6] === undefined) {
+                                                                    truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6] = {};
+                                                                }
+                                                                if (truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6] && truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6].length != undefined) {
+                                                                    truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5].forEach((value, index) => {
+                                                                        truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6][index] = {...truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6][index], ...addFields[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6]};
+                                                                    });
+                                                                } else {
+                                                                    truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6] = addFields[key][childKey1][childKey2][childKey3][childKey4][childKey5][childKey6];
+                                                                }
+                                                            });
+                                                        } else {
+                                                            truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4][childKey5] = addFields[key][childKey1][childKey2][childKey3][childKey4][childKey5];
+                                                        }
+                                                    });
+                                                } else {
+                                                    truncatedKeysSaveData[key][childKey1][childKey2][childKey3][childKey4] = addFields[key][childKey1][childKey2][childKey3][childKey4];
+                                                }
+                                            });
+                                        } else {
+                                            truncatedKeysSaveData[key][childKey1][childKey2][childKey3] = addFields[key][childKey1][childKey2][childKey3];
+                                        }
+                                    });
+                                } else {
+                                    truncatedKeysSaveData[key][childKey1][childKey2] = addFields[key][childKey1][childKey2];
+                                }
+                            });
+                        } else { //If value is null or if truncatedKeysSaveData[key][childKey1] did not exist
+                            truncatedKeysSaveData[key][childKey1] = addFields[key][childKey1];
+                        }
+                    });
+                } else { //The parent key has not been made yet, so make it and add dictionary values. This is just a precaution because the scenario should be solved during addFields null check
+                    truncatedKeysSaveData[key] = addFields[key];
+                }
+            }
+        });
     }
     return truncatedKeysSaveData;
 }
