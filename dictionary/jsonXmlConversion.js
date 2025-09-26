@@ -8,8 +8,53 @@
  * Property: version : a string that will check if the exception list should include the version of the form submitted. All values in version should overwrite the default form properties.
  */
 const formExceptions = {
-    "HR3689E": { 
-        "rootName": "ListOfDtFormInstanceLW", 
+    "CF0630": {
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "CF0631": {
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "CF0632": {
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "CF0633": {
+        "rootName": "ListOfDtFormInstanceLw", 
         "subRoots": ["FormInstance"],
         "wrapperTags": [],
         "allowCheckboxWithNoChange": [],
@@ -24,7 +69,7 @@ const formExceptions = {
         }
     },
     "CF0925": {
-        "rootName": "", 
+        "rootName": "form1", 
         "subRoots": [],
         "wrapperTags": [
             {
@@ -99,7 +144,127 @@ const formExceptions = {
                 "omitFields": []
             }
         }
-    } 
+    },
+    "CF0926": {
+        "rootName": "form1", 
+        "subRoots": [],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "CF2900": {
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": [],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "HR0080": {
+        "rootName": "Results", 
+        "subRoots": [],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "HR3687E": {
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "HR3688E": {
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "HR3689E": { 
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "HR3690E": { 
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
+    "HR3704E": {
+        "rootName": "ListOfDtFormInstanceLw", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    }
 };
 
 module.exports = { formExceptions };
