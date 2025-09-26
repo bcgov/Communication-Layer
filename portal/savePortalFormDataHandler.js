@@ -51,7 +51,7 @@ async function saveForPortalAction(req, res) {
     });
 
     const response = await fetch(url, {
-      interfaceMethod,
+      method: interfaceMethod,
       headers: {
         "Content-Type": "application/json",
         ...buildPortalAuthHeader(portalConfig),

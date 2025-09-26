@@ -1,7 +1,7 @@
 // portal/expirePortalToken.js
 const appConfig = require('../appConfig.js');
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
-const { expireTokenInPortal } = require('./loadPortalDataHandler.js');
+const buildPortalAuthHeader = require('./authHandler.js');
 
 async function cancelPortalAction(req, res) {
   const { tokenId} = req.body || {};
@@ -51,7 +51,7 @@ async function cancelPortalAction(req, res) {
     });
 
     const response = await fetch(url, {
-      interfaceMethod,
+      method: interfaceMethod,
       headers: {
         "Content-Type": "application/json",
         ...buildPortalAuthHeader(portalConfig),
@@ -70,7 +70,7 @@ async function cancelPortalAction(req, res) {
     }
 
     return res.json({ status: 'success', expired: true });
-    
+
   } catch (err) {
     console.error('expireNETPortal error:', err);
     return res
