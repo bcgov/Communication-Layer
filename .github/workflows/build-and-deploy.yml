@@ -6,6 +6,7 @@ on:
       - main
       - dev
       - test
+    workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
