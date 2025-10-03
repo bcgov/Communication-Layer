@@ -157,7 +157,7 @@ async function saveICMdata(req, res) {
     
     // dateItemsId : This will contain all of the IDs of the date fields
     // checkboxItemsId : This will contain all of the IDs of the checkbox fields
-    const { dateItemsId, checkboxItemsId } = getFormIds(formDefinitionItems);
+    const { dateItemsId, checkboxItemsId, textInfoFields } = getFormIds(formDefinitionItems);
 
     const dictionary = formExceptions;
     const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
@@ -178,7 +178,7 @@ async function saveICMdata(req, res) {
     }
 
     // The updated JSON values required for XML creation
-    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields, addFields, kilnVersion);
+    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId, textInfoFields, noCheckboxChange, omitFields, addFields, kilnVersion);
     
     let builder; // This will be for building the XML
     if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
@@ -411,19 +411,23 @@ async function clearICMLockedFlag(req, res) {
  * @params formDefinitionItems  = JSON.parse(savedFormParam)["form_definition"]["data"]["items"]
  * @returns dateItemsId : This will contain all of the IDs of the date fields
  * @returns checkboxItemsId : This will contain all of the IDs of the checkbox fields
+ * @returns textInfoFields : This will contain all of the IDs of the text-info fields
  */
 function getFormIds (formDefinitionItems) {
     let dateItemsId = [];
     let checkboxItemsId = [];
+    let textInfoFields = [];
     formDefinitionItems.forEach(item => { // Add the field types found in this loop into their specific item id arrays
         if (item.containerItems) { // Check for fields in containers (currently, there can be up to 5 container levels)
             item.containerItems.forEach(subItem => {
                 if (subItem.type === "date") dateItemsId.push(subItem.id);
                 else if (subItem.type === "checkbox") checkboxItemsId.push(subItem.id);
+                else if (subItem.type === "text-info") textInfoFields.push(subItem.id);
                 else if (subItem.type === "container") { 
-                    const {dateItemsId: recursiveDateItemIds, checkboxItemsId: recursiveCheckboxItemIds} = getFormIds([subItem]);
+                    const {dateItemsId: recursiveDateItemIds, checkboxItemsId: recursiveCheckboxItemIds, textInfoFields: recursiveTextInfoFields} = getFormIds([subItem]);
                     dateItemsId = [...dateItemsId, ...recursiveDateItemIds];
                     checkboxItemsId = [...checkboxItemsId, ...recursiveCheckboxItemIds];
+                    textInfoFields = [ ...textInfoFields, ...recursiveTextInfoFields];
                 }
             });
         } else if (item.groupItems){ // Check for fields in groups
@@ -431,11 +435,16 @@ function getFormIds (formDefinitionItems) {
                 subItem.fields.forEach(childItemData => { // Group's fields is where the fields will be in
                     if (childItemData.type === "date") dateItemsId.push(childItemData.id);
                     else if (childItemData.type === "checkbox") checkboxItemsId.push(childItemData.id);
+                    else if (childItemData.type === "text-info") textInfoFields.push(childItemData.id);
                 });
             });
+        } else {
+            if (item.type === "date") dateItemsId.push(item.id);
+            else if (item.type === "checkbox") checkboxItemsId.push(item.id);
+            else if (item.type === "text-info") textInfoFields.push(item.id);
         }
     });
-    return { dateItemsId, checkboxItemsId };
+    return { dateItemsId, checkboxItemsId, textInfoFields };
 }
 
 /**
@@ -553,6 +562,7 @@ function multilevelWrappers(truncatedKeysSaveData, toWrapIds, dataToWrap, oldKey
  * @param toWrapIds : list of key-string pairs where the keys are UUIDs and the strings are what wrapper tag they need to go under.
  * @param dateItemsId : list of date fields
  * @param checkboxItemsId : list of checkbox fields
+ * @param textInfoFields : list of text-info fields. These will be omitted from adding to the XML
  * @param noCheckboxChange : list of checkbox UUIDs that should not have their value changed
  * @param omitFields : list of field UUIDS that should not be included in the XML
  * @param addFields : list of empty fields to add for form to succeed in saving as XML
@@ -560,9 +570,9 @@ function multilevelWrappers(truncatedKeysSaveData, toWrapIds, dataToWrap, oldKey
  * @returns truncatedKeysSaveData : a list of key-object pairs
  */
 
-function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId, noCheckboxChange, omitFields, addFields, kilnVersion) {
+function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateItemsId, checkboxItemsId, textInfoFields, noCheckboxChange, omitFields, addFields, kilnVersion) {
     for(let oldKey in saveData) { //This begins trunicating the JSON keys for XML (UUID should be first 8 characters)
-        if (!omitFields.includes(oldKey)) {
+        if (!omitFields.includes(oldKey) && !textInfoFields.includes(oldKey)) {
             const stringLength = oldKey.length;
             const newKey = oldKey.substring(0, stringLength-28);
             if (Array.isArray(saveData[oldKey]) > 0 && Object.keys(saveData[oldKey]).length > 0) { //This trunicates child/dependant objects
@@ -573,7 +583,7 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                         if (kilnVersion === 1) { // Kiln V1
                             const childStringLength = oldChildKey.length;
                             const newChildKey = oldChildKey.substring(stringLength+3, childStringLength-28);
-                            if (!omitFields.includes(oldChildKey.substring(stringLength+3, childStringLength))) {
+                            if (!omitFields.includes(oldChildKey.substring(stringLength+3, childStringLength)) && !textInfoFields.includes(oldChildKey.substring(stringLength+3, childStringLength))) {
                                 if (dateItemsId.includes(oldChildKey.substring(stringLength+3, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
                                     const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
                                     if (newDateFormat === "-1") {
@@ -590,7 +600,7 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                         else { // Kiln V2
                             const childStringLength = oldChildKey.length;
                             const newChildKey = oldChildKey.substring(0, childStringLength-28);
-                            if (!omitFields.includes(oldChildKey.substring(0, childStringLength))) {
+                            if (!omitFields.includes(oldChildKey.substring(0, childStringLength)) && !textInfoFields.includes(oldChildKey.substring(0, childStringLength))) {
                                 if (dateItemsId.includes(oldChildKey.substring(0, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
                                     const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
                                     if (newDateFormat === "-1") {
