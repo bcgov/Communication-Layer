@@ -940,7 +940,9 @@ const formExceptions = {
             "Sanctioned": null,
             "CanadianCitizen": null,
             "ApplicantTwoYearIndependence": null,
-            "ApplicantTwoYearRationale": null
+            "ApplicantTwoYearRationale": null,
+            "SpouseTwoYearIndependence": null,
+            "SpouseTwoYearRationale": null
         },
         "versions": {
             "1": {
