@@ -62,7 +62,313 @@ const formExceptions = {
         "wrapperTags": [],
         "allowCheckboxWithNoChange": [],
         "omitFields": [],
-        "addFields": {},
+        "addFields": {
+            "ListOfUserEnteredData9": {
+                "UserEnteredData9": {
+                    "String35": null,
+                    "String34": null,
+                    "String33": null,
+                    "Date1": null
+                },
+                "ListOfUserEnteredData8": {
+                    "UserEnteredData8": {
+                        "String42": null,
+                        "String41": null
+                    }
+                },
+                "ListOfUserEnteredData12": {
+                    "UserEnteredData12": {
+                        "String42": null,
+                        "String41": null,
+                        "String36": null,
+                        "Date9": null
+                    }
+                },
+                "HeaderERIQ": null,
+                "Created": null,
+                "FormInstanceId": null,
+                "CreatedBy": null,
+                "CaseContactERIQ": null,
+                "SRNum": null,
+                "BenefitPlanId": null,
+                "CaseId": null,
+                "Category": null,
+                "ContactId": null,
+                "DocFileName": null,
+                "DocFileSize": null,
+                "DocFileSrcType": null,
+                "FinalFlag": null,
+                "ICPId": null,
+                "IncidentNo": null,
+                "MISCaseNum": null,
+                "CaseNum": null,
+                "SRId": null,
+                "SubCategory": null,
+                "Template": null,
+                "RenderFlatFlag": null,
+                "Bool01": null,
+                "Bool02": null,
+                "Bool03": null,
+                "Bool04": null,
+                "Bool05": null,
+                "TemplateLocation": null,
+                "Date01": null,
+                "Date03": null,
+                "Date04": null,
+                "Date05": null,
+                "String01": null,
+                "String02": null,
+                "String03": null,
+                "String04": null,
+                "String05": null,
+                "String06": null,
+                "String07": null,
+                "String08": null,
+                "String09": null,
+                "String10": null,
+                "String11": null,
+                "AuxName": null,
+                "AuxType": null,
+                "Number01": null,
+                "Number02": null,
+                "Number03": null,
+                "Number04": null,
+                "Number05": null,
+                "Bool06": null,
+                "Bool07": null,
+                "Bool08": null,
+                "Bool09": null,
+                "Bool010": null,
+                "Date06": null,
+                "Date07": null,
+                "Bool11": null,
+                "Bool12": null,
+                "Bool13": null,
+                "Bool14": null,
+                "Bool15": null,
+                "Bool16": null,
+                "Bool17": null,
+                "Bool18": null,
+                "Bool19": null,
+                "Bool20": null,
+                "Bool21": null,
+                "Bool22": null,
+                "Bool23": null,
+                "Bool24": null,
+                "Bool25": null,
+                "Bool26": null,
+                "Bool27": null,
+                "Bool28": null,
+                "Bool29": null,
+                "Bool30": null,
+                "Bool31": null,
+                "Bool32": null,
+                "Bool33": null,
+                "Bool34": null,
+                "Bool35": null,
+                "Bool36": null,
+                "Bool37": null,
+                "Bool38": null,
+                "Bool39": null,
+                "Bool40": null,
+                "Bool41": null,
+                "Bool42": null,
+                "Bool43": null,
+                "Bool44": null,
+                "Bool45": null,
+                "Bool46": null,
+                "Bool47": null,
+                "Bool48": null,
+                "Bool49": null,
+                "Bool50": null,
+                "String14": null,
+                "String15": null,
+                "String16": null,
+                "String17": null,
+                "String18": null,
+                "String19": null,
+                "String20": null,
+                "String21": null,
+                "String22": null,
+                "String23": null,
+                "String24": null,
+                "String25": null,
+                "String26": null,
+                "String27": null,
+                "String28": null,
+                "String29": null,
+                "String30": null,
+                "String31": null,
+                "String32": null,
+                "String33": null,
+                "String34": null,
+                "String35": null,
+                "String36": null,
+                "String37": null,
+                "String38": null,
+                "String39": null,
+                "String40": null,
+                "String41": null,
+                "String42": null,
+                "String43": null,
+                "String44": null,
+                "String45": null,
+                "String46": null,
+                "String47": null,
+                "String48": null,
+                "String49": null,
+                "String50": null,
+                "String51": null,
+                "String52": null,
+                "String53": null,
+                "String54": null,
+                "String55": null,
+                "String56": null,
+                "String57": null,
+                "String58": null,
+                "String59": null,
+                "String60": null,
+                "String61": null,
+                "String62": null,
+                "String63": null,
+                "String64": null,
+                "String65": null,
+                "ListOfContact": {
+                    "Contact": {
+                        "BirthDate": null,
+                        "CaseRelTypeCode": null,
+                        "ClientIDNumber": null,
+                        "EmailAddress": null,
+                        "FirstName": null,
+                        "FullName": null,
+                        "FullNameMiddle": null,
+                        "LastName": null,
+                        "MF": null,
+                        "MiddleName": null,
+                        "MiddleNameInitial": null
+                    }
+                },
+                "ListOfCase": {
+                    "Case": {
+                        "CaseNum": null,
+                        "Name": null,
+                        "Status": null,
+                        "ListOfContactAbove18": {
+                            "ContactAbove18": {
+                                "ContactFullName": null,
+                                "ContactFullNameMiddle": null,
+                                "AddressLine2": null,
+                                "Province": null,
+                                "AddressLine1": null,
+                                "City": null,
+                                "AddressLine3": null,
+                                "PostalCode": null,
+                                "ClientIDNumber": null,
+                                "MiddleNameInitial": null,
+                                "PersonUId": null
+                            }
+                        },
+                        "ListOfContactBelow18": {
+                            "ContactBelow18": {
+                                "AddressLine1": null,
+                                "AddressLine2": null,
+                                "City": null,
+                                "PostalCode": null,
+                                "AddressLine3": null,
+                                "ContactFullName": null,
+                                "Province": null,
+                                "ContactFullNameMiddle": null,
+                                "Gender": null,
+                                "ContactId": null,
+                                "Age": null,
+                                "BirthDate": null,
+                                "FirstName": null,
+                                "Role": null,
+                                "ClientIDNumber": null,
+                                "MiddleName": null,
+                                "Relationship": null,
+                                "MiddleNameInital": null,
+                                "LastName": null,
+                                "PersonUId": null,
+                                "Date01": null,
+                                "PersonIdICM": null,
+                                "Number02": null
+                            }
+                        }
+                    }
+                },
+                "ListOfEmployee": {
+                    "Employee": {
+                        "EMailAddr": null,
+                        "Emp": null,
+                        "Fax": null,
+                        "FirstName": null,
+                        "FullName": null,
+                        "FullNameMiddle": null,
+                        "JobTitle": null,
+                        "LastName": null,
+                        "MiddleName": null,
+                        "MiddleNameInitial": null,
+                        "WorkPhoneNumber": null
+                    }
+                },
+                "ListOfDtFormInstanceChildData": {
+                    "DtFormInstanceChildData": {
+                        "Date01": null,
+                        "Date02": null,
+                        "Number01": null,
+                        "Number02": null,
+                        "Number03": null,
+                        "Number04": null,
+                        "String01": null,
+                        "String02": null
+                    }
+                },
+                "ListOfDtFormInstanceChildData2": {
+                    "DtFormInstanceChildData2": {
+                        "Bool01": null,
+                        "Date01": null,
+                        "Number05": null,
+                        "String01": null,
+                        "String02": null
+                    }
+                },
+                "ListOfDtFormInstanceChildData3": {
+                    "DtFormInstanceChildData3": {
+                        "Bool03": null,
+                        "String01": null,
+                        "String02": null,
+                        "String03": null,
+                        "String04": null,
+                        "String05": null,
+                        "String07": null,
+                        "String08": null,
+                        "String09": null
+                    }
+                },
+                "ListOfDtFormInstanceChildData4": {
+                    "DtFormInstanceChildData4": {
+                        "Bool01": null
+                    }
+                },
+                "ListOfDtFormInstanceChildData11": {
+                    "DtFormInstanceChildData11": {
+                        "Bool01": null,
+                        "Date01": null,
+                        "Date02": null,
+                        "String01": null,
+                        "String02": null
+                    }
+                },
+                "ListOfDtFormInstanceChildData5": {
+                    "DtFormInstanceChildData5": {
+                        "String12": null,
+                        "String13": null,
+                        "String14": null
+                    }
+                }
+            }
+        },
         "versions": {
             "1": {
                 "omitFields": []
@@ -190,7 +496,12 @@ const formExceptions = {
         ],
         "allowCheckboxWithNoChange": [],
         "omitFields": [],
-        "addFields": {},
+        "addFields": {
+            "SRSubType": null,
+            "ParentGuardian": {
+                "ApplicantMailingAddress": null
+            }
+        },
         "versions" : {
             "1" :{
                 "omitFields": []
@@ -466,10 +777,6 @@ const formExceptions = {
                         "CareArrangementsList": {
                             "CareArrangements": {
                                 "licensed-group-b650d0a6-2871-433c-9a2b-9e80a2f7c9a8": 3,
-                                "mailing-address-1-003b31e6-6661-4229-b17e-1d1121bb4de0": 3,
-                                "citytown-b8a078b2-4985-4cc6-9de4-48674704cd75": 3,
-                                "postal-code-7cf09061-3472-4a74-802f-76aa8c115aa0": 3,
-                                "comments-4532571d-f24a-4877-bf9e-d69f979b2a08": 3
                             }
                         },
                         "first-name-4f1d33c2-cd25-4801-9902-d1d33a0ba010": 1,
@@ -526,6 +833,11 @@ const formExceptions = {
                 "Dependent": {
                     "CareArrangementsList": {
                         "CareArrangements": {
+                            "LicenceNumber": null,
+                            "MailingAddress": null,
+                            "MailingCity": null,
+                            "MailingPostalCode": null,
+                            "CCAProviderComments": null,
                             "FacilityID": null,
                             "CCAProviderName": null,
                             "CCAProviderDaytimePhone": null,
@@ -622,7 +934,14 @@ const formExceptions = {
         "wrapperTags": [],
         "allowCheckboxWithNoChange": [],
         "omitFields": [],
-        "addFields": {},
+        "addFields": {
+            "OfficeCity": null,
+            "FormInstanceId": null,
+            "Sanctioned": null,
+            "CanadianCitizen": null,
+            "ApplicantTwoYearIndependence": null,
+            "ApplicantTwoYearRationale": null
+        },
         "versions": {
             "1": {
                 "omitFields": []
