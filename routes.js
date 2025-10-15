@@ -10,8 +10,11 @@ const appCfg = require('./appConfig.js');
 
 const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
 const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
-const submitForPortalAction = require("./portal/savePortalFormDataHandler.js");
+const saveForPortalAction = require("./portal/savePortalFormDataHandler.js");
 const loadPortalIntegratedForm = require("./portal/loadPortalIntegratedHandler.js");
+const submitForPortalAction = require("./portal/submitPortalFormDataHandler.js");
+const cancelForPortalAction = require('./portal/cancelPortalFormDataHandler.js');
+const interface = require("./interface.js");
 require("./formRepoHandler");
 const {getProcessedData} = require("./icmJsonClobHandler");
 const router = express.Router();
@@ -197,7 +200,10 @@ router.post("/loadSavedJson", loadSavedJson);
 router.post("/generatePortalForm", generatePortalIntegratedTemplate);
 router.post("/generateNewTemplate", generateNewTemplate);
 router.use('/pdfRender', renderRouter);
-router.use('/submitForPortalAction', submitForPortalAction);
+router.use('/saveForPortalAction', saveForPortalAction);
 router.post("/loadPortalForm", loadPortalIntegratedForm);
+router.use("/interface", interface);
+router.post('/submitForPortalAction', submitForPortalAction);
+router.post('/cancelForPortalAction', cancelForPortalAction);
 
 module.exports = router;

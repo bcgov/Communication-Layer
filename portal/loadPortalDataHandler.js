@@ -1,6 +1,8 @@
 const axios = require("axios");
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
-async function getParametersFromPortal(portal,token, userId) {  
+const buildPortalAuthHeader = require('./authHandler.js');
+
+async function getParametersFromPortal(portal,token) {  
   let parametersForForm = "";  
 
   try {
@@ -8,12 +10,12 @@ async function getParametersFromPortal(portal,token, userId) {
     console.log("urlForValidateTokenAndGetParams >>",urlForValidateTokenAndGetParams);
     const response = await axios.post(`${urlForValidateTokenAndGetParams}`,
       {
-        token,
-        userId
+        token
       },
       {
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...buildPortalAuthHeader(portal),
         }
       }
     );    
@@ -28,54 +30,22 @@ async function getParametersFromPortal(portal,token, userId) {
   
 }
 
-async function expireTokenInPortal(portal,token, userId) {
-  //call another api from portal to get the params
-
-  let isTokenExpired = false;
-
-  try {
-    const urlForExpiringToken = portal.apiHost + (portal.expireTokenEndPoint || process.env.PORTAL_EXPIRE_TOKEN_ENDPOINT);;
-    console.log("urlForExpiringToken",urlForExpiringToken);
-    const response = await axios.post(`${urlForExpiringToken}`,      
-      {
-        token,
-        userId
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-
-    isTokenExpired = response.data;
-  } catch (err) {
-    console.log( 'Failed to contact target app', err.message );
-    
-    return true;
-  }
-  return isTokenExpired;
-}
-
-async function getSavedFormFromPortal(portal,token, userId) {  
+async function getSavedFormFromPortal(portal,token) {  
   let parametersForForm = "";  
 
   try {
     const urlForValidateTokenAndGetJson= portal.apiHost+ (portal.getSavedJsonEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
     console.log("urlForValidateTokenAndGetJson >>",urlForValidateTokenAndGetJson);
-    const response = await axios.post(`${urlForValidateTokenAndGetJson}`,
-      {
-        token,
-        userId
-      },
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    ); 
+
+    const headers = {
+      "Content-Type": "application/json",
+      ...buildPortalAuthHeader(portal),
+    };
+    const response = await axios.post(urlForValidateTokenAndGetJson, { token}, { headers });
+
     //TODO: verify the json against schema  or some other sanity checks
     return response.data;
-    
-    
+  
   } catch (err) {
     console.log( 'Failed to contact target app', err ); 
 
@@ -84,4 +54,4 @@ async function getSavedFormFromPortal(portal,token, userId) {
   
 }
 
-module.exports = {getParametersFromPortal ,  expireTokenInPortal, getSavedFormFromPortal };
+module.exports = {getParametersFromPortal , getSavedFormFromPortal };

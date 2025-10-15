@@ -11,8 +11,15 @@ function loadSchema(schemaPath) {
 
 // Function to validate JSON data against a YAML schema
 function validateJson(jsonData) {
+
+    /**
+     * Apply Kiln Version
+     * Kiln V1 uses data: { items: []}
+     * Kiln V2 uses dataSources []
+     */
+    const kilnVersion = Object.keys(jsonData["data"]).includes("items") ? 1 : 2; 
     const schema = loadSchema("schema/saved_json.yaml");
-    const formDefinitionSchema = loadSchema("schema/form_definition.yaml");
+    const formDefinitionSchema = kilnVersion === 1 ? loadSchema("schema/form_definition.yaml") : loadSchema("schema/form_definitionV2.yaml");
 
     const ajv = new Ajv({ allErrors: true });
     addFormats(ajv);
