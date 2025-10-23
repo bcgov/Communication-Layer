@@ -36,11 +36,15 @@ properties:
     type: object
     properties:
       form_id:
-        type: number
+        anyOf:
+          - type: number
+          - type: string
       form_developer:
         type: object
       comments: 
-        type: "null"
+        anyOf:
+          - type: string
+          - type: "null"
       created_at: 
         type: string
       updated_at: 
