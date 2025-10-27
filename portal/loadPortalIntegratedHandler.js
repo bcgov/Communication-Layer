@@ -27,6 +27,7 @@ async function loadPortalIntegratedForm(req, res) {
         return res.status(400).send({ error: getErrorMessage("FORM_NOT_FOUND", { templateId: template_id }) });
     }  
     //the formJson is a base64 string . Converting to json here.  
+    console.log("Form Json:",formJson);
     const savedJson = Buffer.from(formJson["formJson"], 'base64').toString('utf-8');      
     const data = JSON.parse(savedJson);      
     res.status(200).send(data);    
