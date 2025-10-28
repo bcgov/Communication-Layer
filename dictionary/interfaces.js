@@ -36,6 +36,11 @@ const interfaces = {
                         body: "tokenId: params[\"id\"]",
                         type: "POST"
                     }
+                    ,{
+                        action_type: "javascript",
+                        script: `
+                        await handleSubmit();`
+                    }
                 ]
             },
             {
