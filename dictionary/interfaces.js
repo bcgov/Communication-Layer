@@ -17,7 +17,11 @@ const interfaces = {
                         setModalOpen(true); 
                         return false; }`
                     },
-
+                    {
+                        action_type: "javascript",
+                        script: `const confirmed = await confirmModal();
+                        if (!confirmed) return false;`
+                    },         
                     {
                         action_type: "endpoint",
                         api_path: "API.saveButtonAction",
@@ -34,6 +38,8 @@ const interfaces = {
                         action_type: "javascript",
                         script: `setModalTitle("Success ✅");
                         setModalMessage("Form Submitted Successfully.");
+                        setPrimaryButton("");   
+                        setSecondaryButton("");   
                         setModalOpen(true);
                         await handleSubmit();`
                     }]
