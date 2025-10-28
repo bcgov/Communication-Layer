@@ -14,6 +14,8 @@ const interfaces = {
                         script: `if (!validateAllFields()) 
                         { setModalTitle("Validation Error"); 
                         setModalMessage("Please clear the errors in the form before submitting."); 
+                        setPrimaryButton("");   
+                        setSecondaryButton(""); 
                         setModalOpen(true); 
                         return false; }`
                     },
@@ -33,16 +35,8 @@ const interfaces = {
                         api_path: "API.submitButtonAction",
                         body: "tokenId: params[\"id\"]",
                         type: "POST"
-                    },
-                    {
-                        action_type: "javascript",
-                        script: `setModalTitle("Success ✅");
-                        setModalMessage("Form Submitted Successfully.");
-                        setPrimaryButton("");   
-                        setSecondaryButton("");   
-                        setModalOpen(true);
-                        await handleSubmit();`
-                    }]
+                    }
+                ]
             },
             {
                 type: "button",
