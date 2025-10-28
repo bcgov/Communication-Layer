@@ -38,8 +38,7 @@ const interfaces = {
                     }
                     ,{
                         action_type: "javascript",
-                        script: `
-                        await handleSubmit();`
+                        script: `await handleSubmit();`
                     }
                 ]
             },
