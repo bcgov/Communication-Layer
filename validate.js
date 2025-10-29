@@ -17,7 +17,9 @@ function validateJson(jsonData) {
      * Kiln V1 uses data: { items: []}
      * Kiln V2 uses dataSources []
      */
-    const kilnVersion = Object.keys(jsonData["data"]).includes("items") ? 1 : 2; 
+    const kilnVersion = Object.keys(jsonData["data"]).includes("items") ? 1
+    : Object.keys(jsonData?.["form_definition"]["data"]).includes("items") ? 1
+    : 2; 
     const schema = loadSchema("schema/saved_json.yaml");
     const formDefinitionSchema = kilnVersion === 1 ? loadSchema("schema/form_definition.yaml") : loadSchema("schema/form_definitionV2.yaml");
 
