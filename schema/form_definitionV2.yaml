@@ -33,6 +33,8 @@ properties:
       type: object
     default: []
   data:
+    type: array
+  form_data:
     type: object
     properties:
       form_id:
