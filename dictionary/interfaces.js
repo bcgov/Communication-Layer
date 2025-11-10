@@ -86,7 +86,7 @@ const interfaces = {
       style: "",
       actions: [
         {
-          script: "setFormErrors({});if (!validateAllFields()){ setModalTitle(\"Validation Error\"); setModalMessage(\"There are errors in form.The form will be saved in draft form\"); setModalOpen(true); return true; }",
+          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"error\" }), \"*\"); return true; }",
           action_type: "javascript"
         },
         {
@@ -95,11 +95,7 @@ const interfaces = {
           type: "POST",
           api_path: "API.saveButtonAction",
           action_type: "endpoint"
-        },
-        {
-          script: "const isErrorEmpty = Object.keys(formErrors).length === 0;if(!isErrorEmpty){setModalTitle(\"Validation Error\"); setModalMessage(\"There are errors in form.The form will be saved in draft form\"); setModalOpen(true); return true;}else {setModalTitle(\"Success ✅\");setModalMessage(\"Form Saved Successfully as draft.\"); setModalOpen(true);}",
-          action_type: "javascript"
-        }
+        }        
       ]
     },
 	{
@@ -112,7 +108,7 @@ const interfaces = {
       style: "",
       actions: [
         {
-          script: "setFormErrors({});if (!validateAllFields()){ setModalTitle(\"Validation Error\"); setModalMessage(\"There are errors in form.Please clear them before saving.\"); setModalOpen(true); return false; }",
+          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"error\" }), \"*\"); return false; }",
           action_type: "javascript"
         },
         {
@@ -123,7 +119,7 @@ const interfaces = {
           action_type: "endpoint"
         },
         {
-          script: "setModalTitle(\"Success ✅\");setModalMessage(\"Form Submitted Successfully.\"); setModalOpen(true);await handleSubmit();",
+          script: "await handleSubmit();",
           action_type: "javascript"
         }       
       ]
