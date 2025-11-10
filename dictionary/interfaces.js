@@ -86,7 +86,7 @@ const interfaces = {
       style: "",
       actions: [
         {
-          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"error\" }), \"*\"); return true; }",
+          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnSave\" }), \"*\"); return true; }",
           action_type: "javascript"
         },
         {
@@ -108,7 +108,7 @@ const interfaces = {
       style: "",
       actions: [
         {
-          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"error\" }), \"*\"); return false; }",
+          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnComplete\" }), \"*\"); return false; }",
           action_type: "javascript"
         },
         {
