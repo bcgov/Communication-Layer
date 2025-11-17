@@ -68,6 +68,7 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
 async function saveICMdata(req, res) {
     try {
     let params = req.body;
+    console.log("Req for Save:",params);
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost] || Object.values(appCfg).find(cfg => {
         try {
@@ -77,6 +78,7 @@ async function saveICMdata(req, res) {
         }
       }) || {};
     params = { ...params,...configOpt  };   
+    console.log("Params for Save:",params);
     const attachment_id = params["attachmentId"];
     const savedFormParam = params["savedForm"];
     

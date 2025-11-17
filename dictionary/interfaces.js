@@ -73,6 +73,58 @@ const interfaces = {
 
 
         ]
+    },
+    CAREGIVER: {
+        interface: [    
+	    {
+        mode: [
+            "portalNew",
+            "portalEdit"
+        ],
+       type: "button",
+      label: "Save",
+      style: "",
+      actions: [
+        {
+          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnSave\" }), \"*\"); return true; }",
+          action_type: "javascript"
+        },
+        {
+          body: "tokenId: params[\"id\"],savedForm: JSON.stringify(createSavedData())",
+          path: "/application-forms/saveDraft",
+          type: "POST",
+          api_path: "API.saveButtonAction",
+          action_type: "endpoint"
+        }        
+      ]
+    },
+	{
+      mode: [
+        "portalNew",
+        "portalEdit"
+      ],
+      type: "button",
+      label: "Complete",
+      style: "",
+      actions: [
+        {
+          script: "setFormErrors({});if (!validateAllFields()){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnComplete\" }), \"*\"); return false; }",
+          action_type: "javascript"
+        },
+        {
+          body: "tokenId: params[\"id\"],savedForm: JSON.stringify(createSavedData())",
+          path: "/application-forms/submit",
+          type: "POST",
+          api_path: "API.saveButtonAction",
+          action_type: "endpoint"
+        },
+        {
+          script: "await handleSubmit();",
+          action_type: "javascript"
+        }       
+      ]
+    }
+  ]
     }
 };
 

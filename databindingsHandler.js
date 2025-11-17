@@ -141,9 +141,10 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
 
   function processItemsForDatabinding(items) {
     items.forEach(field => {
+      const fieldId = field?.id ? field.id : field?.uuid;
       // containers
-      if (field.type === 'container' && field.containerItems) {
-        return processItemsForDatabinding(field.containerItems);
+      if (field.type === 'container' && (field.containerItems || field.children)) {
+        return field.containerItems ? processItemsForDatabinding(field.containerItems) : processItemsForDatabinding(field.children);
       }
 
       // groups 
@@ -152,12 +153,12 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
           // repeatable group
           const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
           const rows = binding ? JSONPath({ path: binding.path, json: fetchedData }) || [] : [];
-          formData[field.id] = bindRowsToGroup(field, rows);
+          formData[fieldId] = bindRowsToGroup(field, rows);
         } else {
           // single-instance group
           const binding = Array.isArray(field.databindings) ? field.databindings[0]: field.databindings || null;
           const rows = binding? (JSONPath({ path: binding.path, json: fetchedData }) || []).slice(0, 1) : [{}];
-          formData[field.id] = bindRowsToGroup(field, rows);
+          formData[fieldId] = bindRowsToGroup(field, rows);
         }
         return;
       }
@@ -165,7 +166,7 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
       //Single fields
       if (field.databindings) {
         const raw = getBindingValue(field.databindings, fetchedData, params);
-        formData[field.id] = raw != null ? transformValueToBindIfNeeded(field, raw) : null;
+        formData[fieldId] = raw != null ? transformValueToBindIfNeeded(field, raw) : null;
       }
     });
   };
