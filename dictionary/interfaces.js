@@ -74,6 +74,72 @@ const interfaces = {
 
         ]
     },
+    NETportalsV2: {
+      interface: [
+        {
+          type: "button",
+          label: "Submit",
+          mode: ["portalEdit"],
+          style: "primary",
+          actions: [
+            {
+              "action_type": "javascript",
+              "script": "if (!validateAllFields()?.isValid) { setModalTitle('Validation Error'); setModalMessage('Please fix the highlighted fields.'); setModalOpen(true); return false; }"
+            },
+            {
+              "action_type": "javascript",
+              "script": "const confirmed = await confirmModal(); if (!confirmed) { return false; }"
+            },
+            {
+              action_type: "endpoint",
+              api_path: "API.saveButtonAction",
+              type: "POST",
+              body: "tokenId: params['id'], savedForm: JSON.stringify(createSavedData())"
+            },
+            {
+              action_type: "endpoint",
+              api_path: "API.submitButtonAction",
+              type: "POST",
+              body: "tokenId: params['id']"
+            },
+            {
+              action_type: "javascript",
+              script: `await handleSubmit();`
+          }
+          ]
+        },
+        {
+          type: "button",
+          label: "Cancel",
+          mode: ["portalEdit", "portalView"],
+          style: "secondary",
+          actions: [
+            {
+              action_type: "endpoint",
+              api_path: "API.cancelButtonAction",
+              type: "POST",
+              body: "tokenId: params['id']",
+            },
+            {
+              action_type: "javascript",
+              script: "await handleCancel();"
+            }
+          ]
+        },
+        {
+          type: "button",
+          label: "Print",
+          mode: ["portalView"],
+          style: "tertiary",
+          actions: [
+            {
+              action_type: "javascript",
+              script: "handlePrint();"
+            }
+          ]
+        }
+      ]
+  },
     CAREGIVER: {
         interface: [    
 	    {
