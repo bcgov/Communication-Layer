@@ -68,7 +68,6 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
 async function saveICMdata(req, res) {
     try {
     let params = req.body;
-    console.log("Req for Save:",params);
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost] || Object.values(appCfg).find(cfg => {
         try {
@@ -78,7 +77,6 @@ async function saveICMdata(req, res) {
         }
       }) || {};
     params = { ...params,...configOpt  };   
-    console.log("Params for Save:",params);
     const attachment_id = params["attachmentId"];
     const savedFormParam = params["savedForm"];
     
@@ -217,7 +215,7 @@ async function saveICMdata(req, res) {
     const xml = saveJson["XML Hierarchy"];
     const xmlSize = Buffer.byteLength(xml, 'utf8'); // size in bytes
 
-    console.log("XML Hierarchy:", xml);
+    // console.log("XML Hierarchy:", xml);
     console.log("XML Hierarchy length (chars):", xml.length);
     console.log("XML Hierarchy size (bytes):", xmlSize);
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
@@ -341,9 +339,6 @@ async function clearICMLockedFlag(req, res) {
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
     let username = null;
-    console.log("1.Params for clear:",params);
-    console.log("1.Raw Host for clear:",rawHost);
-    console.log("1.Config Opts clear:",configOpt);
 
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
@@ -401,10 +396,8 @@ async function clearICMLockedFlag(req, res) {
         if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
-        
 
         response = await axios.put(url, saveJson, { params: query, headers });
-        console.log("Response Clear:",response.status);
         return res.status(200).send({});
     }
 
