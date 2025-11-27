@@ -342,7 +342,6 @@ async function clearICMLockedFlag(req, res) {
     }
     let username = null;
     console.log("1.Params for clear:",params);
-    console.log("1.Query for clear:",query);
     console.log("1.Raw Host for clear:",rawHost);
     console.log("1.Config Opts clear:",configOpt);
 
