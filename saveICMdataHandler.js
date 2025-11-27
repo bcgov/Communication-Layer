@@ -401,10 +401,7 @@ async function clearICMLockedFlag(req, res) {
         if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
-        console.log("2.Params for clear:",params);
-        console.log("2.Query for clear:",query);
-        console.log("2.Raw Host for clear:",rawHost);
-        console.log("2.Config Opts clear:",configOpt);
+        
 
         response = await axios.put(url, saveJson, { params: query, headers });
         console.log("Response Clear:",response.status);
