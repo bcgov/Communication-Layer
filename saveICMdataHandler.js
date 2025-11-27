@@ -341,6 +341,10 @@ async function clearICMLockedFlag(req, res) {
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
     let username = null;
+    console.log("1.Params for clear:",params);
+    console.log("1.Query for clear:",query);
+    console.log("1.Raw Host for clear:",rawHost);
+    console.log("1.Config Opts clear:",configOpt);
 
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
@@ -398,10 +402,10 @@ async function clearICMLockedFlag(req, res) {
         if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
-        console.log("Params for clear:",params);
-        console.log("Query for clear:",query);
-        console.log("Raw Host for clear:",rawHost);
-        console.log("Config Opts clear:",configOpt);
+        console.log("2.Params for clear:",params);
+        console.log("2.Query for clear:",query);
+        console.log("2.Raw Host for clear:",rawHost);
+        console.log("2.Config Opts clear:",configOpt);
 
         response = await axios.put(url, saveJson, { params: query, headers });
         console.log("Response Clear:",response.status);
