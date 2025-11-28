@@ -12,9 +12,10 @@ const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
 const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
-// utility function to fetch Attachment status (In Progress, Open...)
-//  and Locked By User field  
-async function getICMAttachmentStatus(attachment_id, username, params) {
+
+// Fetch attachment status and locked-by fields from ICM
+// authHeaders: optional pre-acquired headers to avoid duplicate Keycloak token calls
+async function getICMAttachmentStatus(attachment_id, username, params, authHeaders = null) {
     let return_data = {};
     return_data["Status"] = "";
     return_data["Locked by User"] = "";
@@ -39,6 +40,7 @@ async function getICMAttachmentStatus(attachment_id, username, params) {
             Authorization: `Bearer ${grant.id_token.token}`,
             "X-ICM-TrustedUsername": username,
         }
+
         const query = {
              viewMode: "Catalog"
         }
@@ -253,7 +255,7 @@ async function loadICMdata(req, res) {
     let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
     const configOpt = appCfg[rawHost];
-    params = { ...params,...configOpt  }; 
+    params = { ...params,...configOpt  };
     const attachment_id = params["attachmentId"];
     const office_name = params["OfficeName"];
     console.log("attachment_id>>", attachment_id);
@@ -275,9 +277,23 @@ async function loadICMdata(req, res) {
         return res
             .status(401)
             .send({ error: getErrorMessage("INVALID_USER") });
-    }  
-    let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params);
-    let icm_status = icm_metadata["Status"];   
+    }
+
+    // Acquire token once and reuse for all ICM calls
+    let authHeaders;
+    try {
+        const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
+        authHeaders = {
+            Authorization: `Bearer ${grant.id_token.token}`,
+            "X-ICM-TrustedUsername": username,
+        };
+    } catch (error) {
+        console.error("Failed to acquire Keycloak token:", error);
+        return res.status(500).send({ error: getErrorMessage("GENERIC_ERROR_MSG") });
+    }
+
+    let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params, authHeaders);
+    let icm_status = icm_metadata["Status"];
     if (!icm_status || icm_status == "") {
         console.log("Error fetching Form Instance Thin data for ", attachment_id);
         return res
@@ -288,12 +304,6 @@ async function loadICMdata(req, res) {
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
         let response;
-        const grant =
-            await keycloakForSiebel.grantManager.obtainFromClientCredentials();
-        const headers = {
-            Authorization: `Bearer ${grant.id_token.token}`,
-            "X-ICM-TrustedUsername": username,
-        }
         const query = {
             viewMode: "Catalog",
             inlineattachment: true
@@ -301,9 +311,9 @@ async function loadICMdata(req, res) {
         if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
         }
-        response = await axios.get(url, { params: query, headers });
+        response = await axios.get(url, { params: query, headers: authHeaders });
         let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
-        //validate the returned data to be of the expected format 
+        //validate the returned data to be of the expected format
         const valid = isJsonStringValid(return_data);
         if (!valid) {
             console.log('JSON is  not valid ');
