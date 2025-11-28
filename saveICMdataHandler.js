@@ -34,11 +34,16 @@ async function getICMAttachmentStatus(attachment_id, username, params, authHeade
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
         let response;
-        const grant =
-            await keycloakForSiebel.grantManager.obtainFromClientCredentials();
-        const headers = {
-            Authorization: `Bearer ${grant.id_token.token}`,
-            "X-ICM-TrustedUsername": username,
+        let headers;
+
+        if (authHeaders) {
+            headers = authHeaders;
+        } else {
+            const grant = await keycloakForSiebel.grantManager.obtainFromClientCredentials();
+            headers = {
+                Authorization: `Bearer ${grant.id_token.token}`,
+                "X-ICM-TrustedUsername": username,
+            };
         }
 
         const query = {
