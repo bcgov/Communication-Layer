@@ -7,10 +7,7 @@ const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 async function generatePDFFromJSON(req, res) {
   try {
-    let attachment = req.body.attachment ?? req.body[0];
-
-    // console.log("PDF Request:",req);
-    // console.log("PDF Request body:",req.body);
+    let attachment = req.body.attachment ?? req.body[0];    
 
     // Validate attachment is present in incoming message
     if (!attachment) {
@@ -23,11 +20,10 @@ async function generatePDFFromJSON(req, res) {
 
     const savedJsonString = Buffer.from(attachment, 'base64').toString('utf-8');
     let savedJson;
-    // console.log("Saved JSON String:",savedJsonString);
+    
     try {
       
-      savedJson = JSON.parse(savedJsonString);
-      // console.log("Saved Parsed JSON:",savedJson);
+      savedJson = JSON.parse(savedJsonString);      
       const { valid, errors } = validateJson(savedJson);
 
       if (valid) {
@@ -61,8 +57,7 @@ async function generatePDFFromJSON(req, res) {
 
     // Generate PDF buffer
     const pdfBuffer = await generatePDF(savedJsonString); //get the pdf from the savedJson
-    const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-    // console.log("PDF Base64:",pdfBase64);
+    const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');    
     
     res.status(200).json({
       errorCode: 0,
@@ -83,8 +78,7 @@ async function generatePDFFromJSON(req, res) {
 async function generatePDF(savedJson) {
 
   const id = await storeData(savedJson);
-  const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
-  // console.log("PDF Endpoint:",endPointForPDF);
+  const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id; 
   const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);
   deleteData(id);
   return pdfBufferFromURL;
@@ -146,8 +140,7 @@ async function generatePDFFromHTML(req, res) {
 
 async function generatePDFFromURL(req, res) {
   const { path } = req.body;
-  try {
-
+  try {    
     const pdfBuffer = await getPDFFromURL(path);
 
     // Send PDF back to client
@@ -171,9 +164,7 @@ async function getPDFFromURL(url) {
   const CLICK_WINDOW_MS = Number(process.env.PDF_CLICK_WINDOW_MS ?? 3000);
   const CLICK_RETRY_EVERY_MS = Number(process.env.PDF_CLICK_INTERVAL_MS ?? 200);
   const POST_CLICK_MS = Number(process.env.PDF_POST_CLICK_MS ?? 2500);
-
-  // console.log("Puppeteer path:", process.env.PUPPETEER_EXECUTABLE_PATH);
-  // console.log("Puppeteer URL:", url);
+  
   const browser = await puppeteer.launch({
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     args: [
@@ -242,7 +233,20 @@ async function getPDFFromURL(url) {
 
     // Give it time to assemble the printable view
     await sleep(POST_CLICK_MS);
+    
+    // Ensure JS fully loaded. Calling this is critical as the function need to called before printing
+    await page.waitForSelector('#print',{ timeout: 200000 }); // Use the actual selector  
 
+  // Step 3: Click the button
+    await page.click('#print'); // Same selector as above
+
+    await page.evaluate((t) => {
+    document.title = t;
+    const titleTag = document.querySelector("title") || 
+                     document.head.appendChild(document.createElement("title"));
+    titleTag.textContent = t;
+  }, "Untitled"); 
+    
     // Generate PDF with print CSS applied
     await page.emulateMediaType('print');
     const pdfBuffer = await page.pdf({
@@ -296,4 +300,4 @@ async function loadSavedJson(req, res) {
 
 
 
-module.exports = { generatePDFFromHTML, generatePDFFromURL, generatePDFFromJSON, loadSavedJson };
+module.exports = { generatePDFFromHTML, generatePDFFromURL, generatePDFFromJSON, loadSavedJson ,generatePDF };

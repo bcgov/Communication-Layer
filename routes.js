@@ -3,7 +3,7 @@ const axios = require("axios");
 const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const { generateTemplate,generateNewTemplate } = require("./generateHandler");
-const { saveICMdata, loadICMdata, clearICMLockedFlag } = require("./saveICMdataHandler");
+const { saveICMdata, loadICMdata, clearICMLockedFlag, loadICMdataAsPDF } = require("./saveICMdataHandler");
 const { getUsername } = require("./usernameHandler.js");
 const renderRouter = require("./renderHandler");
 const appCfg = require('./appConfig.js');
@@ -205,5 +205,6 @@ router.post("/loadPortalForm", loadPortalIntegratedForm);
 router.use("/interface", interface);
 router.post('/submitForPortalAction', submitForPortalAction);
 router.post('/cancelForPortalAction', cancelForPortalAction);
+router.post("/loadICMDataAsPDF", loadICMdataAsPDF);
 
 module.exports = router;

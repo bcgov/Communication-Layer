@@ -10,6 +10,7 @@ const appCfg = require('./appConfig.js');
 const { toICMFormat } = require("./dateConverter.js");
 const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
 const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
+const {generatePDF }= require("./generatePDFHandler.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 
@@ -152,8 +153,7 @@ async function saveICMdata(req, res) {
     saveJson["DocFileExt"] = "json";
     saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
     let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson  
-
-
+    
     /**
      * Apply Kiln Version
      * Kiln V1 uses data: { items: []}
@@ -799,7 +799,93 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
     return truncatedKeysSaveData;
 }
 
+async function loadICMdataAsPDF(req,res) {
+    
+    //load the savedJson form ICM.
+    let params = req.body;
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
+    const configOpt = appCfg[rawHost];
+    params = { ...params,...configOpt  }; 
+    const attachment_id = params["attachmentId"];
+    const office_name = params["OfficeName"];    
+    if (!attachment_id) {
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
+    }
+    let username = null;
+
+    if (params["token"]) {
+        username = await getUsername(params["token"], params["employeeEndpoint"]);
+    } else if (params["username"]) {
+        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
+        username = valid ? params["username"] : null;
+    }
+
+    if (!username || !isNaN(username)) {
+        return res
+            .status(401)
+            .send({ error: getErrorMessage("INVALID_USER") });
+    }  
+    let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params);
+    let icm_status = icm_metadata["Status"];   
+    if (!icm_status || icm_status == "") {
+        console.log("Error fetching Form Instance Thin data for ", attachment_id);
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
+    }
+    //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT FormFoundry Upsert/DT Form Instance Orbeon Revise/'+attachment_id+'/','');
+    let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
+    try {
+        let response;
+        const grant =
+            await keycloakForSiebel.grantManager.obtainFromClientCredentials();
+        const headers = {
+            Authorization: `Bearer ${grant.id_token.token}`,
+            "X-ICM-TrustedUsername": username,
+        }
+        const query = {
+            viewMode: "Catalog",
+            inlineattachment: true
+        }
+        if (params.icmWorkspace) {
+            query.workspace = params.icmWorkspace;
+        }
+        response = await axios.get(url, { params: query, headers });
+        let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
+        //validate the returned data to be of the expected format 
+        const valid = isJsonStringValid(return_data);
+        if (!valid) {
+            console.log('JSON is  not valid ');
+            return res
+                .status(400)
+                .send({ error: getErrorMessage("FORM_NOT_VALID") });
+        }
+        //validate ends here. Once validated continue to modify json based on status and send back.
+        if (icm_status == "Complete") {
+            let new_data = JSON.parse(return_data);
+            new_data.form_definition.readOnly = true;
+            return_data = JSON.stringify(new_data);
+        }        
+        
+        const pdfBuffer = await generatePDF(return_data); //get the pdf from the savedJson  
+
+        const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');    
+        res.status(200).json({        
+        pdf_base64: pdfBase64
+        });
+    }
+    catch (error) {
+        console.error(`Error loading data from ICM for PDF:`, error);
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("GENERIC_ERROR_MSG") });
+    }
+}
+
 module.exports.saveICMdata = saveICMdata;
 module.exports.loadICMdata = loadICMdata;
 module.exports.clearICMLockedFlag = clearICMLockedFlag;
 module.exports.getICMAttachmentStatus = getICMAttachmentStatus;
+module.exports.loadICMdataAsPDF =  loadICMdataAsPDF;
