@@ -261,8 +261,22 @@ async function getPDFFromURL(url) {
 
       await sleep(250); // avoid hot-looping
     }
+    await sleep(POST_CLICK_MS);
+    if (clickedPrint) {
 
-    if (!clickedPrint) {
+      console.log("Waiting for printable layout to finish…");
+
+      // Wait for data-form-id attribute
+      try {
+        await page.waitForFunction(
+          () => document.documentElement.getAttribute("data-form-id"),
+          { timeout: 20000 }
+        );
+        console.log("Printable layout ready (data-form-id detected)");
+      } catch {
+        console.log("Timeout waiting for data-form-id");
+      }
+    } else {
       console.log("Could not click on print button");
     }
 
