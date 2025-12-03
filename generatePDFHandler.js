@@ -184,7 +184,7 @@ async function getPDFFromURL(url) {
     await page.setViewport({ width: 1280, height: 800 });
 
     // Set the HTML content of the page
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 150000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 150000 });
 
     // Let app hydrate
     await sleep(HYDRATE_MS);
@@ -234,11 +234,37 @@ async function getPDFFromURL(url) {
     // Give it time to assemble the printable view
     await sleep(POST_CLICK_MS);
     
-    // Ensure JS fully loaded. Calling this is critical as the function need to called before printing
-    await page.waitForSelector('#print',{ timeout: 200000 }); // Use the actual selector  
+    console.log("Waiting for print button...");
 
-  // Step 3: Click the button
-    await page.click('#print'); // Same selector as above
+    let clickedPrint = false;
+    const PRINT_DEADLINE = Date.now() + 20000; // up to 20 sec
+    while (!clickedPrint && Date.now() < PRINT_DEADLINE) {
+      // Try main document
+      try {
+        await page.waitForSelector("#print", { visible: true, timeout: 1000 });
+        await page.click("#print");
+        clickedPrint = true;
+        console.log("Clicked print button on main page");
+        break;
+      } catch {}
+
+      // Try every frame
+      for (const frame of page.frames()) {
+        try {
+          await frame.waitForSelector("#print", { visible: true, timeout: 1000 });
+          await frame.click("#print");
+          clickedPrint = true;
+          console.log("Clicked print button inside iframe");
+          break;
+        } catch {}
+      }
+
+      await sleep(250); // avoid hot-looping
+    }
+
+    if (!clickedPrint) {
+      console.log("Could not click on print button");
+    }
 
     await page.evaluate((t) => {
     document.title = t;
@@ -259,6 +285,7 @@ async function getPDFFromURL(url) {
 
 
     await browser.close();
+    console.log("Returning PDF");
     return pdfBuffer;
 
   } catch (error) {
