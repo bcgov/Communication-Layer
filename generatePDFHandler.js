@@ -79,8 +79,8 @@ async function generatePDF(savedJson) {
 
   const id = await storeData(savedJson);
   const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id; 
-  const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);
-  deleteData(id);
+  const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);  
+  await deleteData(id);
   return pdfBufferFromURL;
 
 }
