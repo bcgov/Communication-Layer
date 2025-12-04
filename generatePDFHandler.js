@@ -276,6 +276,29 @@ async function getPDFFromURL(url) {
       } catch {
         console.log("Timeout waiting for data-form-id");
       }
+
+       // Svelte stabilization
+  console.log("Waiting for Svelte DOM stability…");
+  await page.waitForFunction(() => {
+    const now = performance.now();
+    if (!window.__lastMutationTime) window.__lastMutationTime = now;
+
+    if (!window.__mutationObserverInstalled) {
+      const observer = new MutationObserver(() => {
+        window.__lastMutationTime = performance.now();
+      });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        characterData: true
+      });
+      window.__mutationObserverInstalled = true;
+    }
+
+      return performance.now() - window.__lastMutationTime > 600;
+     }, { timeout: 20000 });
+     console.log("Svelte DOM stabilized");
     } else {
       console.log("Could not click on print button");
     }
