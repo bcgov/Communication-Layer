@@ -7,10 +7,7 @@ const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 
 async function generatePDFFromJSON(req, res) {
   try {
-    let attachment = req.body.attachment ?? req.body[0];
-
-    // console.log("PDF Request:",req);
-    // console.log("PDF Request body:",req.body);
+    let attachment = req.body.attachment ?? req.body[0];    
 
     // Validate attachment is present in incoming message
     if (!attachment) {
@@ -23,11 +20,10 @@ async function generatePDFFromJSON(req, res) {
 
     const savedJsonString = Buffer.from(attachment, 'base64').toString('utf-8');
     let savedJson;
-    // console.log("Saved JSON String:",savedJsonString);
+    
     try {
       
-      savedJson = JSON.parse(savedJsonString);
-      // console.log("Saved Parsed JSON:",savedJson);
+      savedJson = JSON.parse(savedJsonString);      
       const { valid, errors } = validateJson(savedJson);
 
       if (valid) {
@@ -61,8 +57,7 @@ async function generatePDFFromJSON(req, res) {
 
     // Generate PDF buffer
     const pdfBuffer = await generatePDF(savedJsonString); //get the pdf from the savedJson
-    const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');
-    // console.log("PDF Base64:",pdfBase64);
+    const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');    
     
     res.status(200).json({
       errorCode: 0,
@@ -83,10 +78,9 @@ async function generatePDFFromJSON(req, res) {
 async function generatePDF(savedJson) {
 
   const id = await storeData(savedJson);
-  const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
-  // console.log("PDF Endpoint:",endPointForPDF);
-  const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);
-  deleteData(id);
+  const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id; 
+  const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);  
+  await deleteData(id);
   return pdfBufferFromURL;
 
 }
@@ -146,8 +140,7 @@ async function generatePDFFromHTML(req, res) {
 
 async function generatePDFFromURL(req, res) {
   const { path } = req.body;
-  try {
-
+  try {    
     const pdfBuffer = await getPDFFromURL(path);
 
     // Send PDF back to client
@@ -171,9 +164,7 @@ async function getPDFFromURL(url) {
   const CLICK_WINDOW_MS = Number(process.env.PDF_CLICK_WINDOW_MS ?? 3000);
   const CLICK_RETRY_EVERY_MS = Number(process.env.PDF_CLICK_INTERVAL_MS ?? 200);
   const POST_CLICK_MS = Number(process.env.PDF_POST_CLICK_MS ?? 2500);
-
-  // console.log("Puppeteer path:", process.env.PUPPETEER_EXECUTABLE_PATH);
-  // console.log("Puppeteer URL:", url);
+  
   const browser = await puppeteer.launch({
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
     args: [
@@ -193,7 +184,7 @@ async function getPDFFromURL(url) {
     await page.setViewport({ width: 1280, height: 800 });
 
     // Set the HTML content of the page
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 150000 });
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 150000 });
 
     // Let app hydrate
     await sleep(HYDRATE_MS);
@@ -242,7 +233,83 @@ async function getPDFFromURL(url) {
 
     // Give it time to assemble the printable view
     await sleep(POST_CLICK_MS);
+    
+    console.log("Waiting for print button...");
 
+    let clickedPrint = false;
+    const PRINT_DEADLINE = Date.now() + 20000; // up to 20 sec
+    while (!clickedPrint && Date.now() < PRINT_DEADLINE) {
+      // Try main document
+      try {
+        await page.waitForSelector("#print", { visible: true, timeout: 1000 });
+        await page.click("#print");
+        clickedPrint = true;
+        console.log("Clicked print button on main page");
+        break;
+      } catch {}
+
+      // Try every frame
+      for (const frame of page.frames()) {
+        try {
+          await frame.waitForSelector("#print", { visible: true, timeout: 1000 });
+          await frame.click("#print");
+          clickedPrint = true;
+          console.log("Clicked print button inside iframe");
+          break;
+        } catch {}
+      }
+
+      await sleep(250); // avoid hot-looping
+    }
+    //await sleep(POST_CLICK_MS);
+    if (clickedPrint) {
+
+      console.log("Waiting for printable layout to finish…");
+
+      // Wait for data-form-id attribute
+      try {
+        await page.waitForFunction(
+          () => document.documentElement.getAttribute("data-form-id"),
+          { timeout: 20000 }
+        );
+        console.log("Printable layout ready (data-form-id detected)");
+      } catch {
+        console.log("Timeout waiting for data-form-id");
+      }
+
+       // Svelte stabilization
+  console.log("Waiting for Svelte DOM stability…");
+  await page.waitForFunction(() => {
+    const now = performance.now();
+    if (!window.__lastMutationTime) window.__lastMutationTime = now;
+
+    if (!window.__mutationObserverInstalled) {
+      const observer = new MutationObserver(() => {
+        window.__lastMutationTime = performance.now();
+      });
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        characterData: true
+      });
+      window.__mutationObserverInstalled = true;
+    }
+
+      return performance.now() - window.__lastMutationTime > 600;
+     }, { timeout: 20000 });
+     console.log("Svelte DOM stabilized");
+    } else {
+      console.log("Could not click on print button");
+    }
+
+    await page.evaluate((t) => {
+    document.title = t;
+    const titleTag = document.querySelector("title") || 
+                     document.head.appendChild(document.createElement("title"));
+    titleTag.textContent = t;
+  }, "Untitled"); 
+    
     // Generate PDF with print CSS applied
     await page.emulateMediaType('print');
     const pdfBuffer = await page.pdf({
@@ -255,6 +322,7 @@ async function getPDFFromURL(url) {
 
 
     await browser.close();
+    console.log("Returning PDF");
     return pdfBuffer;
 
   } catch (error) {
@@ -296,4 +364,4 @@ async function loadSavedJson(req, res) {
 
 
 
-module.exports = { generatePDFFromHTML, generatePDFFromURL, generatePDFFromJSON, loadSavedJson };
+module.exports = { generatePDFFromHTML, generatePDFFromURL, generatePDFFromJSON, loadSavedJson ,generatePDF };

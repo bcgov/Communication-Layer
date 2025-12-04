@@ -1,3 +1,4 @@
+{{- if contains "prod" .Release.Namespace }}
 apiVersion: autoscaling/v2
 kind: HorizontalPodAutoscaler
 metadata:
@@ -15,10 +16,11 @@ spec:
         name: cpu
         target:
           type: Utilization
-          averageUtilization: 75   
+          averageUtilization: 80
     - type: Resource
       resource:
         name: memory
         target:
           type: Utilization
-          averageUtilization: 75   
+          averageUtilization: 80   
+{{- end }}
