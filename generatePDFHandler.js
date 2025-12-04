@@ -261,7 +261,7 @@ async function getPDFFromURL(url) {
 
       await sleep(250); // avoid hot-looping
     }
-    await sleep(POST_CLICK_MS);
+    //await sleep(POST_CLICK_MS);
     if (clickedPrint) {
 
       console.log("Waiting for printable layout to finish…");
