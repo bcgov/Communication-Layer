@@ -106,7 +106,8 @@ async function generateNewTemplate(req, res) {
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
     const attachment_Id = params["attachmentId"];    
-    const rawToken = params["token"];
+    const authHeader = req.get('Authorization') || '';
+    const rawToken = authHeader.split(' ')[0] === 'Bearer'? authHeader.split(' ')[1] : authHeader || null;
     if (!template_id) {
       return res
         .status(400)
