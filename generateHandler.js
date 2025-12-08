@@ -106,6 +106,7 @@ async function generateNewTemplate(req, res) {
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
     const attachment_Id = params["attachmentId"];    
+    const rawToken = params["token"];
     if (!template_id) {
       return res
         .status(400)
@@ -180,7 +181,7 @@ async function generateNewTemplate(req, res) {
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
       const endPointForGenerate = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
-      const isGenerateSuccess = await performGenerateFunction(endPointForGenerate);
+      const isGenerateSuccess = await performGenerateFunction(endPointForGenerate,rawToken,username);
       deleteData(id);
 
       //if successfully generated send back response 
@@ -209,7 +210,7 @@ async function generateNewTemplate(req, res) {
   }
 }
 
-async function performGenerateFunction(url) {
+async function performGenerateFunction(url,token,username) {
  
   try {
   const browser = await puppeteer.launch({
@@ -241,6 +242,14 @@ async function performGenerateFunction(url) {
     waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
     }); // Replace with your actual URL
     console.log('Page loaded.');
+
+    if (token) {
+      cookies.push({name: 'token',value: token});
+    }
+
+    if (username) {
+      cookies.push({ name: 'username', value: username});
+    }
 
   // Step 2: Wait for the button to be available
   await page.waitForSelector('#generate',{ timeout: 200000 }); // Use the actual selector
