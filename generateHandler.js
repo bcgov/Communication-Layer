@@ -227,6 +227,14 @@ async function performGenerateFunction(url) {
     //const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
+    page.on('console', msg => {
+      console.log('Browser logs:', msg.type(), msg.text());
+    });
+    
+    page.on('request', req => {
+      console.log('Request:', req.url(), req.failure());
+    });
+
     // Set the HTML content of the page
      await page.goto(url,{
     timeout: 200000,         // 60 seconds
