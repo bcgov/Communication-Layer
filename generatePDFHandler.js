@@ -104,6 +104,14 @@ async function generatePDFFromHTML(req, res) {
       ],
     });
     const page = await browser.newPage();
+    
+    page.on('console', msg => {
+      console.log('Browser logs:', msg.type(), msg.text());
+    });
+    
+    page.on('request', req => {
+      console.log('Request:', req.url(), req.failure());
+    });
 
     // Set the HTML content of the page
     await page.setContent(htmlContent, { waitUntil: 'load' });
