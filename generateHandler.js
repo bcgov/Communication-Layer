@@ -170,12 +170,15 @@ async function generateNewTemplate(req, res) {
         return res.status(400).send({ error: getErrorMessage("INVALID_AREA") });
       }
     }
-    
+      
     const icmOfficeName = icm_metadata?.["Office Name"];    
     const requestOfficeName = typeof params.OfficeName === "string" ? params.OfficeName.trim() : "";
+    console.log('RequestOfficeName:', requestOfficeName);
+    console.log('IcmOfficeName:', icmOfficeName);
     if (!requestOfficeName && icmOfficeName) {
       params.OfficeName = icmOfficeName;
     }
+    console.log("Params:",params);
     
     const formJson = await constructFormJson(template_id, params);
 
