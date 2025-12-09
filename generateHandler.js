@@ -246,11 +246,19 @@ async function performGenerateFunction(url,token,username) {
     const cookies = [];
 
     if (token) {
-      cookies.push({name: 'token',value: token});
+      cookies.push({
+        name: 'token',
+        value: token,
+        url: appUrl.origin
+      });
     }
 
     if (username) {
-      cookies.push({ name: 'username', value: username});
+      cookies.push({ 
+        name: 'username', 
+        value: username,
+        url: appUrl.origin
+    });
     }
     if (cookies.length) {
       await browser.setCookie(...cookies);
