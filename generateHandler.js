@@ -243,6 +243,7 @@ async function performGenerateFunction(url,token,username) {
     waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
     }); // Replace with your actual URL
     console.log('Page loaded.');
+    const appUrl = new URL(url);
     const cookies = [];
 
     if (token) {
