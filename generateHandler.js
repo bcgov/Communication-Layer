@@ -249,8 +249,7 @@ async function performGenerateFunction(url,token,username) {
       cookies.push({
         name: 'token',
         value: token,
-        domain: appUrl.hostname, 
-        path: '/'
+        url: appUrl.origin
       });
     }
 
@@ -258,8 +257,7 @@ async function performGenerateFunction(url,token,username) {
       cookies.push({ 
         name: 'username', 
         value: username,
-        domain: appUrl.hostname, 
-        path: '/'
+        url: appUrl.origin
     });
     }
     if (cookies.length) {
