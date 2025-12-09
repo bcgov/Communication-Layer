@@ -188,6 +188,14 @@ async function getPDFFromURL(url) {
     //const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
+    page.on('console', msg => {
+      console.log('Browser logs:', msg.type(), msg.text());
+    });
+    
+    page.on('request', req => {
+      console.log('Request:', req.url(), req.failure());
+    });
+
     // Optional: Adjust the page's viewport for better PDF layout
     await page.setViewport({ width: 1280, height: 800 });
 
