@@ -243,6 +243,7 @@ async function performGenerateFunction(url,token,username) {
     waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
     }); // Replace with your actual URL
     console.log('Page loaded.');
+    const cookies = [];
 
     if (token) {
       cookies.push({name: 'token',value: token});
@@ -250,6 +251,9 @@ async function performGenerateFunction(url,token,username) {
 
     if (username) {
       cookies.push({ name: 'username', value: username});
+    }
+    if (cookies.length) {
+      await browser.setCookie(...cookies);
     }
 
   // Step 2: Wait for the button to be available
