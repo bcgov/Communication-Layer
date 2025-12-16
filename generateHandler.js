@@ -190,7 +190,10 @@ async function generateNewTemplate(req, res) {
       }     
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
-      const endPointForGenerate = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
+      const rawGenerateEndpoint = params?.generateEndpoint;
+      const generateEndpoint = rawGenerateEndpoint?.trim() || process.env.GENERATE_KILN_URL;
+      console.log("Generate APP config:",generateEndpoint);
+      const endPointForGenerate = generateEndpoint + "?jsonId=" + id;
       const isGenerateSuccess = await performGenerateFunction(endPointForGenerate,rawToken,username);
       deleteData(id);
 
