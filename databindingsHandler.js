@@ -139,13 +139,50 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
     });
   }
 
+  //helper function to bind Containers
+  function bindRowsToContainer(field, rows) {
+    return rows.map((rowObj) => {
+      const row = {};
+      const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+      const localDatabindings = binding ? { ...fetchedData, [binding.source]: rowObj } : { ...fetchedData };
+
+      const items = field.containerItems || field.children || [];
+        items.forEach(containerField => {
+          if (!containerField.databindings) return;
+          const containerId = containerField.uuid;
+          const subVal = getBindingValue(containerField.databindings,localDatabindings,params);
+          row[containerId] = transformValueToBindIfNeeded(containerField, subVal) || '';
+        });
+      return row;
+    });
+  }
+
   function processItemsForDatabinding(items) {
     items.forEach(field => {
       const fieldId = field?.id ? field.id : field?.uuid;
       // containers
       if (field.type === 'container' && (field.containerItems || field.children)) {
-        return field.containerItems ? processItemsForDatabinding(field.containerItems) : processItemsForDatabinding(field.children);
-      }
+        const isRepeatable = !!(field.repeater || field?.attributes?.isRepeatable);
+        if (field.databindings) {
+          if (isRepeatable) {
+            // repeatable container
+            const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+            const sourceData = binding ? (fetchedData[binding.source] || {}) : {};
+            const rows = binding ? JSONPath({ path: binding.path, json: sourceData }) || [] : [];
+            formData[fieldId] = bindRowsToContainer(field, rows); 
+          } else {
+            // single-instance container
+            const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+            const sourceData = binding ? (fetchedData[binding.source] || {}) : {};
+            const rows = binding ? (JSONPath({ path: binding.path, json: sourceData }) || []).slice(0, 1) : [{}];
+            formData[fieldId] = bindRowsToContainer(field, rows); //
+          }
+          return;
+        }
+        return field.containerItems
+        ? processItemsForDatabinding(field.containerItems)
+        : processItemsForDatabinding(field.children);
+    }
 
       // groups 
       if (field.type === 'group' && field.groupItems) {
@@ -176,7 +213,7 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
   } else if (Array.isArray(formJson?.elements)) { // Kilnv2
     processItemsForDatabinding(formJson.elements);
   }
-  // console.dir(formData, { depth: null, colors: true });
+  console.dir(formData, { depth: null, colors: true });
   return formData;
 }
 
