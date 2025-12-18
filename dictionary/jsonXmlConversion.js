@@ -972,6 +972,152 @@ const formExceptions = {
             }
         }
     },
+    "HR0080R": {
+        "rootName": "Replacement", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "addFields": {
+            "FormInstanceId": null,
+            "CaseWorkerId": null,
+            "SRNum": null,
+            "CaseId": null,
+            "Category": null,
+            "CaseOfficeAddrCity": null,
+            "CaseOfficeAddrCountry": null,
+            "CaseOfficeAddrLine1": null,
+            "CaseOfficeAddrLine2": null,
+            "CaseOfficeAddrLine3": null,
+            "CaseOfficeAddrPostalCode": null,
+            "CaseOfficeAddrProvince": null,
+            "CaseType": null,
+            "SRId": null,
+            "Template": null,
+            "TemplateLocation": null,
+            "CaseName": null,
+            "CaseOfficeAddrComplete": null,
+            "CaseOfficeAddrCompleteCity": null,
+            "ListOfContact": {
+                "Contact":{
+                    "CaseRelTypeCode": null,
+                    "EmailAddress": null,
+                    "PHN": null,
+                    "PersonUId": null
+                }
+            },
+            "ListOfCase": {
+                "Case": {
+                    "ListOfICMSSAAExpenseVBC": {
+                        "ICMSSAAExpenseVBC": {
+                            "CaseId": null,
+                            "CaseRelTypeCode": null,
+                            "PhoneBasicRate": null,
+                            "RoomandBoardpaidtofamily": null
+                        }
+                    },
+                    "CaseNum": null,
+                    "ClosedDate": null,
+                    "Name": null,
+                    "Status": null,
+                    "Type": null,
+                    "LastName2": null,
+                    "CloseReason": null,
+                    "LegacyFileNumber": null,
+                    "ReopenedDate": null,
+                    "ListOfApplicant": {
+                        "Applicant": {
+                            "ListOfICMSSAAApplicantAdditionalIncome": {
+                                "ICMSSAAApplicantAdditionalIncome": {
+                                }
+                            },
+                            "ListOfICMSSAAApplicantIncome": {
+                                "ICMSSAAApplicantIncome": {
+                                    "Boarder": null,
+                                    "SupportMaintenance": null,
+                                    "WorkersCompensation": null,
+                                    "EmploymentInsurance": null,
+                                    "ExtendedSpousesAllowance": null,
+                                    "CPPQPPOverride": null,
+                                    "CaseId": null,
+                                    "InterestDividends": null
+
+                                }
+                            }
+
+                        },
+                        "ContactFullName": null,
+                    "Age": null,
+                    "Role": null,
+                    "PHN": null,
+                    "MovedFrmProvince": null,
+                    "SelfIdentified": null,
+                    "YRIndMet": null,
+                    "DateSeparated": null,
+                    "PossiblyAboriginal": null,
+                    "AboriginalOriginCode": null,
+                    "AboriginBand": null,
+                    "DivorcedDate": null,
+                    "ContactFullNameMiddle": null
+                    },
+                    "ListOfSpouse": {
+                        "Spouse": {
+                            "ListOfICMSSAASpouseAdditionalIncome": {
+                                "ICMSSAASpouseAdditionalIncome": {
+
+                                }
+                            },
+                            "ListOfICMSSAASpouseIncome": {
+                                "ICMSSAASpouseIncome": {
+                                    "WorkersCompensation": null,
+                                    "ExtendedSpousesAllowance": null,
+                                    "CPPQPPOverride": null,
+                                    "CaseId": null,
+                                    "InterestDividends": null
+                                    
+                                }
+                            },
+                            "ContactFullName": null,
+                            "Gender": null,
+                            "Age": null,
+                            "Role": null,
+                            "PHN": null,
+                            "HomePhone": null,
+                            "MovedFrmProvince": null,
+                            "SelfIdentified": null,
+                            "AboriginBand": null,
+                            "AboriginalOriginCode": null,
+                            "WorkPhone": null,
+                            "ImmigrationEntryType": null,
+                            "CurrentImmigrationType": null,
+                            "YRIndMet": null,
+                            "DateSeparated": null,
+                            "PossiblyAboriginal": null,
+                            "ContactFullNameMiddle": null,
+
+                        }
+                    },
+                    "ListOfDependent": null,
+                    "ListOfOccupant": null,
+                    "ListOfICMCaseAddress": {
+                        "ICMCaseAddress": {
+                            "Country": null,
+                            "CompleteAddressCity": null,
+
+                        }
+                    }
+                }
+            }
+        },
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
     "HR3687E": {
         "rootName": "ListOfDtFormInstanceLw", 
         "subRoots": ["FormInstance"],
