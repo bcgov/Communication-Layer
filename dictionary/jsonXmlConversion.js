@@ -1004,7 +1004,6 @@ const formExceptions = {
                     "EmailAddress": null,
                     "PHN": null,
                     "PersonUId": null
-                    //Reminging fields
                 }
             },
             "ListOfCase": {
@@ -1028,11 +1027,8 @@ const formExceptions = {
                     "ReopenedDate": null,
                     "ListOfApplicant": {
                         "Applicant": {
-                            //Only hierarchy neeed to be added
                             "ListOfICMSSAAApplicantAdditionalIncome": {
                                 "ICMSSAAApplicantAdditionalIncome": {
-                                    // "additional-income-amount-87fd69aa" 
-                                    // "additional-income-type-c915324e"
                                 }
                             },
                             "ListOfICMSSAAApplicantIncome": {
@@ -1066,11 +1062,8 @@ const formExceptions = {
                     },
                     "ListOfSpouse": {
                         "Spouse": {
-                            //Only hierarchy neeed to be added
                             "ListOfICMSSAASpouseAdditionalIncome": {
                                 "ICMSSAASpouseAdditionalIncome": {
-                                    // "additional-income-fa18c691"
-                                    // "additional-income-type-f4d77833"
 
                                 }
                             },
