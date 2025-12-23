@@ -5,7 +5,29 @@ const axios = require("axios");
 const { getUsername, isUsernameValid } = require('./usernameHandler.js');
 const { parse, format } = require("date-fns");
 
+/**
+ * Custom Axios params serializer that encodes whitespace as %20
+ */
+function customParamsSerializer(params) {
+  const queryParts = [];
+  for (const key in params) {
+    if (!Object.prototype.hasOwnProperty.call(params, key)) continue;
 
+    const value = params[key];
+
+    if (value === null || typeof value === 'undefined') continue;
+
+    // Handle arrays by repeating the key for each value
+    if (Array.isArray(value)) {
+      value.forEach((val) => {
+        queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(val)}`);
+      });
+    } else {
+      queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
+    }
+  }
+  return queryParts.join('&');
+}
 async function populateDatabindings(formJson, params) {
   //start code here
   try {
@@ -119,9 +141,10 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
 
   function processItemsForDatabinding(items) {
     items.forEach(field => {
+      const fieldId = field?.id ? field.id : field?.uuid;
       // containers
-      if (field.type === 'container' && field.containerItems) {
-        return processItemsForDatabinding(field.containerItems);
+      if (field.type === 'container' && (field.containerItems || field.children)) {
+        return field.containerItems ? processItemsForDatabinding(field.containerItems) : processItemsForDatabinding(field.children);
       }
 
       // groups 
@@ -130,12 +153,12 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
           // repeatable group
           const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
           const rows = binding ? JSONPath({ path: binding.path, json: fetchedData }) || [] : [];
-          formData[field.id] = bindRowsToGroup(field, rows);
+          formData[fieldId] = bindRowsToGroup(field, rows);
         } else {
           // single-instance group
           const binding = Array.isArray(field.databindings) ? field.databindings[0]: field.databindings || null;
           const rows = binding? (JSONPath({ path: binding.path, json: fetchedData }) || []).slice(0, 1) : [{}];
-          formData[field.id] = bindRowsToGroup(field, rows);
+          formData[fieldId] = bindRowsToGroup(field, rows);
         }
         return;
       }
@@ -143,13 +166,15 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
       //Single fields
       if (field.databindings) {
         const raw = getBindingValue(field.databindings, fetchedData, params);
-        formData[field.id] = raw != null ? transformValueToBindIfNeeded(field, raw) : null;
+        formData[fieldId] = raw != null ? transformValueToBindIfNeeded(field, raw) : null;
       }
     });
   };
 
-  if (Array.isArray(formJson?.data?.items)) {
+  if (Array.isArray(formJson?.data?.items)) { // Kiln-v1
     processItemsForDatabinding(formJson.data.items);
+  } else if (Array.isArray(formJson?.elements)) { // Kilnv2
+    processItemsForDatabinding(formJson.elements);
   }
   // console.dir(formData, { depth: null, colors: true });
   return formData;
@@ -192,12 +217,12 @@ async function readJsonFormApi(datasource, pathParams) {
     }
     if (type.toUpperCase() === 'GET') {
       // For GET requests, add params directly in axios config      
-      response = await axios.get(url, { params: pathParams, headers }
+      response = await axios.get(url, { params: pathParams, headers, paramsSerializer: customParamsSerializer}
       );
     } else if (type.toUpperCase() === 'POST') {
       // For POST requests, pass params in the body if applicable
       const bodyForPost = buildBodyWithParams(body, pathParams);
-      response = await axios.post(url, bodyForPost, { params: pathParams, headers });
+      response = await axios.post(url, bodyForPost, { params: pathParams, headers, paramsSerializer: customParamsSerializer});
     }
 
     // Store response data
@@ -266,6 +291,16 @@ function transformValueToBindIfNeeded(field, valueToBind) {
       const transformedValue = format(parsedDate, "yyyy-MM-dd");
       return transformedValue;
     }
+    if (field && field.type == "checkbox" && valueToBind){
+      if (valueToBind == "Yes" || valueToBind=="yes")
+      {
+        return (true);
+      }
+      if (valueToBind == "No"|| valueToBind=="no")
+      {
+        return (false);
+      }
+    }
   } catch (error) {
     console.error('Error processing date value:', error);
   }
@@ -302,7 +337,7 @@ function updateParams(params, pathParams = {}, allFetchedData = {}) {
       });
     }
 
-    // 2. Replace all !!.[Source]=jsonpath in the string
+    // 2. Replace all '!!.[Source]=jsonpath' in the string
     if (typeof val === 'string') {
       val = val.replace(/'!!\.\[([^\]]+)\]=(.+\])'/g, (match, sourceName, jsonPath) => {
         const sourceData = allFetchedData[sourceName.trim()];

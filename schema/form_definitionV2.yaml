@@ -1,0 +1,327 @@
+type: object
+required:
+  - id
+  - version
+  - ministry_id
+  - data
+properties:
+  version:
+    anyOf:
+      - type: string
+      - type: number
+  ministry_id:
+    anyOf:
+      - type: string
+      - type: number
+  id:
+    type: string
+  lastModified:
+    type: string
+  title:
+    type: string
+  readOnly:
+    type: boolean
+  form_id:
+    type: string
+  deployed_to:
+    anyOf:
+      - type: string
+      - type: "null"
+  dataSources:
+    type: array
+    items:
+      type: object
+    default: []
+  data:
+    type: array
+  form_data:
+    type: object
+    properties:
+      form_id:
+        anyOf:
+          - type: number
+          - type: string
+      form_developer:
+        type: object
+      comments: 
+        anyOf:
+          - type: string
+          - type: "null"
+      created_at: 
+        type: string
+      updated_at: 
+        type: string
+  interface:
+    type: array
+  styles:
+    type: array
+  scripts:
+    type: array
+  elements: 
+    type: array
+    items:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            $ref: "#/definitions/Item"
+
+definitions:
+  Item:
+    required:
+      - uuid
+      - type
+    type: object
+    properties:
+      type:
+        type: string
+      name: 
+        type: string
+      description: 
+        anyOf:
+          - type: string
+          - type: "null"
+      help_text:
+          anyOf:
+          - type: string
+          - type: "null"
+      is_required:
+        type: boolean
+      visible_web:
+        type: boolean
+      visible_pdf:
+        type: boolean
+      custom_visibility:
+        anyOf:
+          - type: string
+          - type: "null"
+      is_read_only:
+        type: boolean
+      save_on_submit:
+        type: boolean
+      order:
+        type: number
+      options:
+        type: array
+      parent_id:
+        anyOf:
+          - type: number
+          - type: "null"
+      attributes:
+        type: array
+        items:
+          type: object
+          properties:
+            hideLabel:
+              type: boolean
+            defaultChecked:
+              type: boolean
+            deletedAt: 
+                anyOf:
+                - type: string
+                - type: "null"
+            text:
+              type: string
+            kind: 
+              type: string
+            placeholder:
+              type: string
+            minDate:
+              type: string
+            maxDate: 
+              type: string
+            dateFormat: 
+              type: string
+            formatStyle:
+              type: string
+            max:
+              type: string
+            min:
+              type: string
+            step:
+              type: string
+            value:
+              type: string
+      label:
+        anyOf:
+          - type: string
+          - type: "null"
+      placeholder:
+        anyOf:
+          - type: string
+          - type: "null"
+      id:
+        type: string
+      mask:
+        anyOf:
+          - type: string
+          - type: "null"
+      codeContext:
+        type: object
+        properties:
+          name:
+            type: string
+      header:
+        type: string
+      offText:
+        type: string
+      onText:
+        type: string
+      size:
+        type: string
+      listItems:
+        type: array
+        items:
+          type: object
+          properties:
+            value:
+              type: string
+            text:
+              type: string
+          required:
+            - text
+            - value
+      groupItems:
+        type: array
+        items:
+          type: object
+          properties:
+            fields:
+              type: array
+              items:
+                $ref: "#/definitions/Item"
+      repeater:
+        type: boolean
+      helperText:
+        anyOf:
+          - type: string
+          - type: "null"
+      value:
+        anyOf:
+          - type: string
+          - type: "null"
+      filenameStatus:
+        type: string
+      labelDescription:
+        type: string
+      initialRows:
+        type: string
+      initialColumns:
+        type: string
+      initialHeaderNames:
+        type: string
+      repeaterItemLabel:
+        type: string
+      validation:
+        type: array
+        items:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - required
+                - pattern
+                - minLength
+                - maxLength
+                - minDate
+                - maxDate
+                - minValue
+                - maxValue
+                - javascript
+            value:
+              anyOf:
+                - type: string
+                - type: number
+                - type: boolean
+            errorMessage:
+              anyOf:
+                - type: string
+                - type: "null"
+          required:
+            - type
+            - value
+            - errorMessage
+      conditions:
+        type: array
+        items:
+          type: object
+          properties:
+            type:
+              type: string
+              enum:
+                - visibility
+                - readOnly
+                - calculatedValue
+                - saveOnSubmit
+            value:
+              type: string
+          required:
+            - type
+            - value
+          additionalProperties: false
+      webStyles:
+        anyOf:
+          - type: "null"
+          - type: object
+            additionalProperties:
+              anyOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: object
+                - type: array
+                - type: "null"
+      pdfStyles:
+        anyOf:
+          - type: "null"
+          - type: object
+            additionalProperties:
+              anyOf:
+                - type: string
+                - type: number
+                - type: boolean
+                - type: object
+                - type: array
+                - type: "null"
+      databindings:
+        oneOf:
+          - type: array
+            items:
+              type: object
+              properties:
+                path:
+                  type: string
+                source:
+                  type: string
+                order:
+                  type: number
+                condition:
+                  anyOf:
+                    - type: string
+                    - type: "null"
+              required:
+                - path
+                - source
+              additionalProperties: false
+          - type: object
+            properties:
+              path:
+                type: string
+              source:
+                type: string
+              order:
+                type: number
+              condition:
+                anyOf:
+                  - type: string
+                  - type: "null"
+            required:
+              - path
+              - source
+            additionalProperties: false
+      containerItems:
+        type: array
+        items:
+          $ref: "#/definitions/Item"       

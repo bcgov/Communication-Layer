@@ -9,7 +9,6 @@ async function loadPortalIntegratedForm(req, res) {
   try {
     const params = req.body;
     const token = params["id"]; 
-    const userId = "test";   
     if (!token ) {
       return res
         .status(400)
@@ -22,13 +21,14 @@ async function loadPortalIntegratedForm(req, res) {
     if(!targetApp) {
         return res.status(400).send({ error: getErrorMessage("UNKNOWN_ORIGIN_SERVER") });
     }     
-    const formJson = await getSavedFormFromPortal(targetApp,token,userId); 
+    const formJson = await getSavedFormFromPortal(targetApp,token); 
 
     if(!formJson) {
         return res.status(400).send({ error: getErrorMessage("FORM_NOT_FOUND", { templateId: template_id }) });
     }  
     //the formJson is a base64 string . Converting to json here.  
-    const savedJson = Buffer.from(formJson["form"], 'base64').toString('utf-8');      
+    console.log("Form Json:",formJson);
+    const savedJson = Buffer.from(formJson["formJson"], 'base64').toString('utf-8');      
     const data = JSON.parse(savedJson);      
     res.status(200).send(data);    
     

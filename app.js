@@ -31,6 +31,7 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
+
 app.use(cors(corsOptions));
 
 // Use the routes defined in routes.js

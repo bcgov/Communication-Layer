@@ -1,4 +1,4 @@
-replicaCount: 2
+replicaCount: 1
 
 image:
   repository: ghcr.io/bcgov/communication-layer
@@ -13,8 +13,8 @@ configMapName: commlayer
 
 resources:
   requests:
-    memory: "128Mi"
-    cpu: "50m"       
+    memory: "256Mi"
+    cpu: "20m"       
   limits:
     memory: "512Mi"
     cpu: "250m"      
