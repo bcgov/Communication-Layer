@@ -972,13 +972,368 @@ const formExceptions = {
             }
         }
     },
+    "HR0080R": {
+        "rootName": "Replacement", 
+        "subRoots": ["FormInstance"],
+        "wrapperTags": [],
+        "allowCheckboxWithNoChange": [],
+        "omitFields": [],
+        "addFields": {
+            "FormInstanceId": null,
+            "CaseWorkerId": null,
+            "SRNum": null,
+            "CaseId": null,
+            "Category": null,
+            "CaseOfficeAddrCity": null,
+            "CaseOfficeAddrCountry": null,
+            "CaseOfficeAddrLine1": null,
+            "CaseOfficeAddrLine2": null,
+            "CaseOfficeAddrLine3": null,
+            "CaseOfficeAddrPostalCode": null,
+            "CaseOfficeAddrProvince": null,
+            "CaseType": null,
+            "SRId": null,
+            "Template": null,
+            "TemplateLocation": null,
+            "CaseName": null,
+            "CaseOfficeAddrComplete": null,
+            "CaseOfficeAddrCompleteCity": null,
+            "ListOfContact": {
+                "Contact":{
+                    "CaseRelTypeCode": null,
+                    "EmailAddress": null,
+                    "PHN": null,
+                    "PersonUId": null
+                }
+            },
+            "ListOfCase": {
+                "Case": {
+                    "ListOfICMSSAAExpenseVBC": {
+                        "ICMSSAAExpenseVBC": {
+                            "CaseId": null,
+                            "CaseRelTypeCode": null,
+                            "PhoneBasicRate": null,
+                            "RoomandBoardpaidtofamily": null
+                        }
+                    },
+                    "CaseNum": null,
+                    "ClosedDate": null,
+                    "Name": null,
+                    "Status": null,
+                    "Type": null,
+                    "LastName2": null,
+                    "CloseReason": null,
+                    "LegacyFileNumber": null,
+                    "ReopenedDate": null,
+                    "ListOfApplicant": {
+                        "Applicant": {
+                            "ListOfICMSSAAApplicantAdditionalIncome": {
+                                "ICMSSAAApplicantAdditionalIncome": {
+                                }
+                            },
+                            "ListOfICMSSAAApplicantIncome": {
+                                "ICMSSAAApplicantIncome": {
+                                    "Boarder": null,
+                                    "SupportMaintenance": null,
+                                    "WorkersCompensation": null,
+                                    "EmploymentInsurance": null,
+                                    "ExtendedSpousesAllowance": null,
+                                    "CPPQPPOverride": null,
+                                    "CaseId": null,
+                                    "InterestDividends": null
+
+                                }
+                            }
+
+                        },
+                        "ContactFullName": null,
+                    "Age": null,
+                    "Role": null,
+                    "PHN": null,
+                    "MovedFrmProvince": null,
+                    "SelfIdentified": null,
+                    "YRIndMet": null,
+                    "DateSeparated": null,
+                    "PossiblyAboriginal": null,
+                    "AboriginalOriginCode": null,
+                    "AboriginBand": null,
+                    "DivorcedDate": null,
+                    "ContactFullNameMiddle": null
+                    },
+                    "ListOfSpouse": {
+                        "Spouse": {
+                            "ListOfICMSSAASpouseAdditionalIncome": {
+                                "ICMSSAASpouseAdditionalIncome": {
+
+                                }
+                            },
+                            "ListOfICMSSAASpouseIncome": {
+                                "ICMSSAASpouseIncome": {
+                                    "WorkersCompensation": null,
+                                    "ExtendedSpousesAllowance": null,
+                                    "CPPQPPOverride": null,
+                                    "CaseId": null,
+                                    "InterestDividends": null
+                                    
+                                }
+                            },
+                            "ContactFullName": null,
+                            "Gender": null,
+                            "Age": null,
+                            "Role": null,
+                            "PHN": null,
+                            "HomePhone": null,
+                            "MovedFrmProvince": null,
+                            "SelfIdentified": null,
+                            "AboriginBand": null,
+                            "AboriginalOriginCode": null,
+                            "WorkPhone": null,
+                            "ImmigrationEntryType": null,
+                            "CurrentImmigrationType": null,
+                            "YRIndMet": null,
+                            "DateSeparated": null,
+                            "PossiblyAboriginal": null,
+                            "ContactFullNameMiddle": null,
+
+                        }
+                    },
+                    "ListOfDependent": null,
+                    "ListOfOccupant": null,
+                    "ListOfICMCaseAddress": {
+                        "ICMCaseAddress": {
+                            "Country": null,
+                            "CompleteAddressCity": null,
+
+                        }
+                    }
+                }
+            }
+        },
+        "versions": {
+            "1": {
+                "omitFields": []
+            },
+            "2": {
+                "omitFields": []
+            }
+        }
+    },
     "HR3687E": {
         "rootName": "ListOfDtFormInstanceLw", 
         "subRoots": ["FormInstance"],
         "wrapperTags": [],
         "allowCheckboxWithNoChange": [],
         "omitFields": [],
-        "addFields": {},
+        "addFields": {
+            "FormInstanceId": null,
+            "CreatedBy": null,
+            "SRNum": null,
+            "BenefitPlanId": null,
+            "CaseId": null,
+            "Category": null,
+            "ContactId": null,
+            "DocFileName": null,
+            "DocFileSize": null,
+            "DocFileSrcType": null,
+            "FinalFlag": null,
+            "ICPId": null,
+            "MISCaseNum": null,
+            "SRId": null,
+            "SubCategory": null,
+            "Template": null,
+            "RenderFlatFlag": null,
+            "Bool01": null,
+            "Bool02": null,
+            "Bool03": null,
+            "Bool04": null,
+            "Bool05": null,
+            "TemplateLocation": null,
+            "Date01": null,
+            "Date02": null,
+            "Date03": null,
+            "Date04": null,
+            "Date05": null,
+            "String01": null,
+            "String02": null,
+            "String03": null,
+            "String04": null,
+            "String05": null,
+            "String06": null,
+            "String07": null,
+            "String08": null,
+            "String09": null,
+            "String10": null,
+            "String11": null,
+            "String12": null,
+            "AuxName": null,
+            "AuxType": null,
+            "Number01": null,
+            "Number02": null,
+            "Number03": null,
+            "Number04": null,
+            "Number05": null,
+            "Bool06": null,
+            "Bool07": null,
+            "Bool08": null,
+            "Bool09": null,
+            "Bool10": null,
+            "Date06": null,
+            "Date07": null,
+            "Bool11": null,
+            "Bool12": null,
+            "Bool13": null,
+            "Bool14": null,
+            "Bool15": null,
+            "Bool16": null,
+            "Bool17": null,
+            "Bool18": null,
+            "Bool19": null,
+            "Bool20": null,
+            "Bool21": null,
+            "Bool22": null,
+            "Bool23": null,
+            "Bool24": null,
+            "Bool25": null,
+            "Bool26": null,
+            "Bool27": null,
+            "Bool28": null,
+            "Bool29": null,
+            "Bool30": null,
+            "Bool31": null,
+            "Bool32": null,
+            "Bool33": null,
+            "Bool34": null,
+            "Bool35": null,
+            "Bool36": null,
+            "Bool37": null,
+            "Bool38": null,
+            "Bool39": null,
+            "Bool40": null,
+            "Bool41": null,
+            "Bool42": null,
+            "Bool43": null,
+            "Bool44": null,
+            "Bool45": null,
+            "Bool46": null,
+            "Bool47": null,
+            "Bool48": null,
+            "Bool49": null,
+            "Bool50": null,
+            "String13": null,
+            "String14": null,
+            "String15": null,
+            "String16": null,
+            "String17": null,
+            "String18": null,
+            "String19": null,
+            "String20": null,
+            "String21": null,
+            "String22": null,
+            "String23": null,
+            "String24": null,
+            "String25": null,
+            "String26": null,
+            "String27": null,
+            "String28": null,
+            "String29": null,
+            "String30": null,
+            "String31": null,
+            "String32": null,
+            "String33": null,
+            "String34": null,
+            "String35": null,
+            "String36": null,
+            "String37": null,
+            "String38": null,
+            "String39": null,
+            "String40": null,
+            "String41": null,
+            "String42": null,
+            "String43": null,
+            "String44": null,
+            "String45": null,
+            "String46": null,
+            "String47": null,
+            "String48": null,
+            "String49": null,
+            "String50": null,
+            "String51": null,
+            "String52": null,
+            "String53": null,
+            "String54": null,
+            "String55": null,
+            "String56": null,
+            "String57": null,
+            "String58": null,
+            "String59": null,
+            "String60": null,
+            "String61": null,
+            "String62": null,
+            "String63": null,
+            "String64": null,
+            "String65": null,
+            "ListOfContact": {
+                "Contact": {
+                    "BirthDate": null,
+                    "CaseRelTypeCode": null,
+                    "ClientIDNumber": null,
+                    "FullName": null,
+                    "FullNameMiddle": null,
+                    "MF": null,
+                    "MiddleName": null,
+                    "MiddleNameInitial": null,
+                    "SIN": null,
+                    "WorkPhone": null,
+                    "ListOfContactAddresses": null
+                },
+                "ListOfCase": {
+                    "Case": {
+                        "PrimaryOrganizationName": null,
+                        "Name": null,
+                        "Status": null,
+                        "AssignToFN": null,
+                        "AssignToLN": null,
+                        "ListOfICMCaseAddress": null
+                    }
+                },
+                "ListOfEmployee": {
+                    "Employee": {
+                        "EMailAddr": null,
+                        "Emp": null,
+                        "Fax": null,
+                        "FirstName": null,
+                        "Login": null,
+                        "FullName": null,
+                        "FullNameMiddle": null,
+                        "JobTitle": null,
+                        "LastName": null,
+                        "MiddleName": null,
+                        "MiddleNameInitial": null,
+                        "WorkPhoneNumber": null
+                    }
+                },
+                "ListOfAttCreatedBy": {
+                    "AttCreatedBy": {
+                        "Id": null,
+                        "Emp": null,
+                        "FullName": null,
+                        "JobTitle": null
+                    }
+                },
+                "ListOfOffice": {
+                    "Office": {
+                        "OfficeRegion": null,
+                        "OfficeAddressLine2": null,
+                        "OfficeAddressLine3": null,
+                        "OfficeAddressCountry": null,
+                        "OfficeAddressUnit": null,
+                        "OfficePhone": null,
+                        "OfficeFax": null,
+                        "OfficeAddressCompleteCity": null
+                    }
+                }
+            }
+        },
         "versions": {
             "1": {
                 "omitFields": []

@@ -104,6 +104,14 @@ async function generatePDFFromHTML(req, res) {
       ],
     });
     const page = await browser.newPage();
+    
+    page.on('console', msg => {
+      console.log('Browser logs:', msg.type(), msg.text());
+    });
+    
+    page.on('request', req => {
+      console.log('Request:', req.url(), req.failure());
+    });
 
     // Set the HTML content of the page
     await page.setContent(htmlContent, { waitUntil: 'load' });
@@ -160,10 +168,10 @@ async function generatePDFFromURL(req, res) {
 
 async function getPDFFromURL(url) {
   // Increases to 5000 seemed to be working well (could also set the params in env file if needed)
-  const HYDRATE_MS = Number(process.env.PDF_HYDRATE_MS ?? 5000);      
+  /* const HYDRATE_MS = Number(process.env.PDF_HYDRATE_MS ?? 5000);      
   const CLICK_WINDOW_MS = Number(process.env.PDF_CLICK_WINDOW_MS ?? 3000);
   const CLICK_RETRY_EVERY_MS = Number(process.env.PDF_CLICK_INTERVAL_MS ?? 200);
-  const POST_CLICK_MS = Number(process.env.PDF_POST_CLICK_MS ?? 2500);
+  const POST_CLICK_MS = Number(process.env.PDF_POST_CLICK_MS ?? 2500); */
   
   const browser = await puppeteer.launch({
     executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || "/usr/bin/chromium",
@@ -180,13 +188,25 @@ async function getPDFFromURL(url) {
     //const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
+    page.on('console', msg => {
+      console.log('Browser logs:', msg.type(), msg.text());
+    });
+    
+    page.on('request', req => {
+      console.log('Request:', req.url(), req.failure());
+    });
+
     // Optional: Adjust the page's viewport for better PDF layout
     await page.setViewport({ width: 1280, height: 800 });
 
     // Set the HTML content of the page
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 150000 });
 
-    // Let app hydrate
+    //The below code block clicks the show letter button on the UI. This functionality is not needed any more
+    // as the PRINT directly should show the letter setting/resetting visible_pdf and visbile_web flags
+    // in the form definition. This below code takes a lot of await times and is making the process delayed as a whole
+    // Until confirmed the commenting out doesnt pose any issues, leave this here just in case to put it back.
+    /* // Let app hydrate
     await sleep(HYDRATE_MS);
     
     // Click “Show Letter” with a short retry window
@@ -229,10 +249,12 @@ async function getPDFFromURL(url) {
           try { clicked = await f.evaluate(clickScript); if (clicked) break; } catch {}
         }
       }
-    }
+    }  */
+    //here
 
     // Give it time to assemble the printable view
-    await sleep(POST_CLICK_MS);
+    //await sleep(POST_CLICK_MS);
+    
     
     console.log("Waiting for print button...");
 
@@ -242,6 +264,19 @@ async function getPDFFromURL(url) {
       // Try main document
       try {
         await page.waitForSelector("#print", { visible: true, timeout: 1000 });
+        // Wait until enabled
+        await page.waitForFunction(
+          sel => {
+            const el = document.querySelector(sel);
+            if (!el) return false;
+            if (el.disabled) return false;
+            if (el.getAttribute("aria-disabled") === "true") return false;
+            if (el.classList.contains("disabled")) return false;
+            return true;
+          },
+          { timeout: 5000 },
+          "#print"
+        );
         await page.click("#print");
         clickedPrint = true;
         console.log("Clicked print button on main page");
@@ -252,6 +287,18 @@ async function getPDFFromURL(url) {
       for (const frame of page.frames()) {
         try {
           await frame.waitForSelector("#print", { visible: true, timeout: 1000 });
+          await frame.waitForFunction(
+            sel => {
+              const el = document.querySelector(sel);
+              if (!el) return false;
+              if (el.disabled) return false;
+              if (el.getAttribute("aria-disabled") === "true") return false;
+              if (el.classList.contains("disabled")) return false;
+              return true;
+            },
+            { timeout: 5000 },
+            "#print"
+          );
           await frame.click("#print");
           clickedPrint = true;
           console.log("Clicked print button inside iframe");
@@ -261,7 +308,7 @@ async function getPDFFromURL(url) {
 
       await sleep(250); // avoid hot-looping
     }
-    //await sleep(POST_CLICK_MS);
+    
     if (clickedPrint) {
 
       console.log("Waiting for printable layout to finish…");
@@ -278,23 +325,23 @@ async function getPDFFromURL(url) {
       }
 
        // Svelte stabilization
-  console.log("Waiting for Svelte DOM stability…");
-  await page.waitForFunction(() => {
-    const now = performance.now();
-    if (!window.__lastMutationTime) window.__lastMutationTime = now;
+      console.log("Waiting for Svelte DOM stability…");
+      await page.waitForFunction(() => {
+        const now = performance.now();
+        if (!window.__lastMutationTime) window.__lastMutationTime = now;
 
-    if (!window.__mutationObserverInstalled) {
-      const observer = new MutationObserver(() => {
-        window.__lastMutationTime = performance.now();
-      });
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        characterData: true
-      });
-      window.__mutationObserverInstalled = true;
-    }
+        if (!window.__mutationObserverInstalled) {
+          const observer = new MutationObserver(() => {
+            window.__lastMutationTime = performance.now();
+          });
+          observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            characterData: true
+          });
+          window.__mutationObserverInstalled = true;
+        }
 
       return performance.now() - window.__lastMutationTime > 600;
      }, { timeout: 20000 });

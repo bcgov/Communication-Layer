@@ -106,6 +106,8 @@ async function generateNewTemplate(req, res) {
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
     const attachment_Id = params["attachmentId"];    
+    const authHeader = req.get('Authorization') || '';
+    const rawToken = authHeader.split(' ')[0] === 'Bearer'? authHeader.split(' ')[1] : authHeader || null;
     if (!template_id) {
       return res
         .status(400)
@@ -168,7 +170,16 @@ async function generateNewTemplate(req, res) {
         return res.status(400).send({ error: getErrorMessage("INVALID_AREA") });
       }
     }
-
+      
+    const icmOfficeName = icm_metadata?.["Office Name"];    
+    const requestOfficeName = typeof params.OfficeName === "string" ? params.OfficeName.trim() : "";
+    console.log('RequestOfficeName:', requestOfficeName);
+    console.log('IcmOfficeName:', icmOfficeName);
+    if (!requestOfficeName && icmOfficeName) {
+      params.OfficeName = icmOfficeName;
+    }
+    console.log("Params:",params);
+    
     const formJson = await constructFormJson(template_id, params);
 
     if (formJson != null) {
@@ -180,7 +191,7 @@ async function generateNewTemplate(req, res) {
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
       const endPointForGenerate = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
-      const isGenerateSuccess = await performGenerateFunction(endPointForGenerate);
+      const isGenerateSuccess = await performGenerateFunction(endPointForGenerate,rawToken,username);
       deleteData(id);
 
       //if successfully generated send back response 
@@ -209,7 +220,7 @@ async function generateNewTemplate(req, res) {
   }
 }
 
-async function performGenerateFunction(url) {
+async function performGenerateFunction(url,token,username) {
  
   try {
   const browser = await puppeteer.launch({
@@ -227,12 +238,41 @@ async function performGenerateFunction(url) {
     //const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
+    page.on('console', msg => {
+      console.log('Browser logs:', msg.type(), msg.text());
+    });
+    
+    page.on('request', req => {
+      console.log('Request:', req.url(), req.failure());
+    });
+
     // Set the HTML content of the page
      await page.goto(url,{
     timeout: 200000,         // 60 seconds
     waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
     }); // Replace with your actual URL
     console.log('Page loaded.');
+    const appUrl = new URL(url);
+    const cookies = [];
+
+    if (token) {
+      cookies.push({
+        name: 'token',
+        value: token,
+        url: appUrl.origin
+      });
+    }
+
+    if (username) {
+      cookies.push({ 
+        name: 'username', 
+        value: username,
+        url: appUrl.origin
+    });
+    }
+    if (cookies.length) {
+      await browser.setCookie(...cookies);
+    }
 
   // Step 2: Wait for the button to be available
   await page.waitForSelector('#generate',{ timeout: 200000 }); // Use the actual selector
