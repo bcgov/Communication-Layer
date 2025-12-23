@@ -4,9 +4,12 @@ const fs = require('fs');
 const { validateJson } = require('./validate');
 const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler');
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
+const appCfg = require('./appConfig.js');
 
 async function generatePDFFromJSON(req, res) {
   try {
+    const rawHost = (req.get("X-Original-Server") || req.hostname);
+    const configOpt = appCfg[rawHost];
     let attachment = req.body.attachment ?? req.body[0];    
 
     // Validate attachment is present in incoming message
@@ -56,7 +59,7 @@ async function generatePDFFromJSON(req, res) {
     }
 
     // Generate PDF buffer
-    const pdfBuffer = await generatePDF(savedJsonString); //get the pdf from the savedJson
+    const pdfBuffer = await generatePDF(savedJsonString,configOpt); //get the pdf from the savedJson
     const pdfBase64 = Buffer.from(pdfBuffer).toString('base64');    
     
     res.status(200).json({
@@ -75,10 +78,13 @@ async function generatePDFFromJSON(req, res) {
   }
 }
 
-async function generatePDF(savedJson) {
+async function generatePDF(savedJson, params) {
 
   const id = await storeData(savedJson);
-  const endPointForPDF = process.env.GENERATE_KILN_URL + "?jsonId=" + id; 
+  const rawGenerateEndpoint = params?.generateEndpoint;
+  const generateEndpoint = rawGenerateEndpoint?.trim() || process.env.GENERATE_KILN_URL;
+  console.log("Generate APP config:",generateEndpoint);
+  const endPointForPDF = generateEndpoint + "?jsonId=" + id; 
   const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);  
   await deleteData(id);
   return pdfBufferFromURL;
