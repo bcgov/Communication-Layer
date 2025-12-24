@@ -104,9 +104,9 @@ async function saveICMdata(req, res) {
 
     const usernameInParams = params?.username || params?.SessionParams?.username || null;
     const tokenInParams = params?.token || params?.SessionParams?.token || null;
-    
-    console.log("Params - token:",params["token"]);
-    console.log("Params - username:",params["username"]);
+
+    console.log("Params - token:",tokenInParams);
+    console.log("Params - username:",usernameInParams);
 
     if (usernameInParams) {
         valid = await isUsernameValid(usernameInParams, params["employeeEndpoint"]);
