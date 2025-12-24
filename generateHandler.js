@@ -120,14 +120,17 @@ async function generateNewTemplate(req, res) {
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
     let username = null;
+    let valid = false;
     console.log("Generate - token:",params["token"]);
     console.log("Generate - username:",params["username"]);
 
     if (params["username"]) {
-      username = await isUsernameValid(params["username"], params["employeeEndpoint"]);
+      valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
+      username = valid ? params["username"] : null;
     } else if (params["token"]) {
-      const valid = await isUsernameValid(params["token"], params["employeeEndpoint"]);
-      username = valid ? params["token"] : null;
+      username = await getUsername(params["token"], params["employeeEndpoint"]);
+      valid = await isUsernameValid(username, params["employeeEndpoint"]);
+      username = valid ? username : null;
     }    
 
     console.log("Generate - Final username:",username);
