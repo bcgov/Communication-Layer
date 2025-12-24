@@ -11,6 +11,7 @@ const { toICMFormat } = require("./dateConverter.js");
 const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
 const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
 const {generatePDF }= require("./generatePDFHandler.js");
+const { param } = require("./renderHandler.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 
@@ -99,7 +100,8 @@ async function saveICMdata(req, res) {
             .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
     }
     let username = null;
-
+    console.log("Params - token:",params["token"]);
+    console.log("Params - username:",params["username"]);
     if (params["token"]) {
         username = await getUsername(params["token"], params["employeeEndpoint"]);
     } else if (params["username"]) {
