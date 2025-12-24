@@ -102,8 +102,8 @@ async function saveICMdata(req, res) {
     let username = null;
     let validUsername = false;
     console.log("Params:",params);
-    const usernameInParams = params?.username || params?.SessionParams?.username || null;
-    const tokenInParams = params?.token || params?.SessionParams?.token || null;
+    const usernameInParams = params?.username || params?.sessionParams?.username || null;
+    const tokenInParams = params?.token || params?.sessionParams?.token || null;
 
     console.log("Params - token:",tokenInParams);
     console.log("Params - username:",usernameInParams);
