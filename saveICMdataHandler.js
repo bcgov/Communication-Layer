@@ -100,13 +100,21 @@ async function saveICMdata(req, res) {
             .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
     }
     let username = null;
+    let valid = false;
+
+    const usernameInParams = params?.username || params?.SessionParams?.username || null;
+    const tokenInParams = params?.token || params?.SessionParams?.token || null;
+    
     console.log("Params - token:",params["token"]);
     console.log("Params - username:",params["username"]);
-    if (params["token"]) {
-        username = await getUsername(params["token"], params["employeeEndpoint"]);
-    } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
-        username = valid ? params["username"] : null;
+
+    if (usernameInParams) {
+        valid = await isUsernameValid(usernameInParams, params["employeeEndpoint"]);
+        username = valid ? usernameInParams : null;
+    } else if (tokenInParams) {
+        username = await getUsername(tokenInParams, params["employeeEndpoint"]);
+        valid = await isUsernameValid(username, params["employeeEndpoint"]);
+        username = valid ? username : null;
     }
     
     if (!username || !isNaN(username)) {
