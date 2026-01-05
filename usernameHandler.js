@@ -43,7 +43,6 @@ async function getUsername(userToken, employeeURL) {
 
     try {
         const tokens = JSON.parse(Buffer.from(userToken.split('.')[1], 'base64').toString());
-        console.log("Username - token",tokens);
         
         if (tokens && tokens.idir_username) {
 
