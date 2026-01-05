@@ -101,19 +101,16 @@ async function saveICMdata(req, res) {
     }
     let username = null;
     let validUsername = false;
-    console.log("Params:",params);
     const usernameInParams = params?.username || params?.sessionParams?.username || null;
     const tokenInParams = params?.token || params?.sessionParams?.token || null;
 
-    console.log("Params - token:",tokenInParams);
-    console.log("Params - username:",usernameInParams);
 
     if (usernameInParams) {
         validUsername = await isUsernameValid(usernameInParams, params["employeeEndpoint"]);
         username = validUsername ? usernameInParams : null;
     } else if (tokenInParams) {
         username = await getUsername(tokenInParams, params["employeeEndpoint"]);
-        valid = await isUsernameValid(username, params["employeeEndpoint"]);
+        validUsername = await isUsernameValid(username, params["employeeEndpoint"]);
         username = validUsername ? username : null;
     }
     
