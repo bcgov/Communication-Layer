@@ -108,6 +108,7 @@ async function generateNewTemplate(req, res) {
     const attachment_Id = params["attachmentId"];    
     const authHeader = req.get('Authorization') || '';
     const rawToken = authHeader.split(' ')[0] === 'Bearer'? authHeader.split(' ')[1] : authHeader || null;
+    console.log("Raw Token:",rawToken);
     if (!template_id) {
       return res
         .status(400)
@@ -119,20 +120,23 @@ async function generateNewTemplate(req, res) {
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
     let username = null;
+    let validUsername = false;
 
-    if (params["token"]) {
+    if (params["username"]) {
+      validUsername = await isUsernameValid(params["username"], params["employeeEndpoint"]);
+      username = validUsername ? params["username"] : null;
+    } else if (params["token"]) {
       username = await getUsername(params["token"], params["employeeEndpoint"]);
-    } else if (params["username"]) {
-      const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
-      username = valid ? params["username"] : null;
+      validUsername = await isUsernameValid(username, params["employeeEndpoint"]);
+      username = validUsername ? username : null;
     }    
+
 
     if (!username || !isNaN(username)) {
       return res
         .status(401)
         .send({ error: getErrorMessage("INVALID_USER") });
     }
-
 
     let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   

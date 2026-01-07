@@ -11,6 +11,7 @@ const { toICMFormat } = require("./dateConverter.js");
 const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
 const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
 const {generatePDF }= require("./generatePDFHandler.js");
+const { param } = require("./renderHandler.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 
@@ -99,12 +100,18 @@ async function saveICMdata(req, res) {
             .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
     }
     let username = null;
+    let validUsername = false;
+    const usernameInParams = params?.username || params?.sessionParams?.username || null;
+    const tokenInParams = params?.token || params?.sessionParams?.token || null;
 
-    if (params["token"]) {
-        username = await getUsername(params["token"], params["employeeEndpoint"]);
-    } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
-        username = valid ? params["username"] : null;
+
+    if (usernameInParams) {
+        validUsername = await isUsernameValid(usernameInParams, params["employeeEndpoint"]);
+        username = validUsername ? usernameInParams : null;
+    } else if (tokenInParams) {
+        username = await getUsername(tokenInParams, params["employeeEndpoint"]);
+        validUsername = await isUsernameValid(username, params["employeeEndpoint"]);
+        username = validUsername ? username : null;
     }
     
     if (!username || !isNaN(username)) {
