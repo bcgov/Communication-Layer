@@ -204,7 +204,7 @@ const interfaces = {
       style: "",
       actions: [
         {
-          script: "if (!validateAllFields()?.isValid){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnSave\" }), \"*\");return true; }",
+          script: "if (!validateAllFields()?.isValid){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnSave\" }), \"*\");} else { window.parent.postMessage(JSON.stringify({ \"event\": \"successOnSave\" }), \"*\");} return true;",
           action_type: "javascript"
         },
         {
