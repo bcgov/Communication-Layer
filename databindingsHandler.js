@@ -213,7 +213,7 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
   } else if (Array.isArray(formJson?.elements)) { // Kilnv2
     processItemsForDatabinding(formJson.elements);
   }
-  console.dir(formData, { depth: null, colors: true });
+  // console.dir(formData, { depth: null, colors: true });
   return formData;
 }
 
