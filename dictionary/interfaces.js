@@ -84,7 +84,7 @@ const interfaces = {
           actions: [
             {
               "action_type": "javascript",
-              "script": "if (!validateAllFields()?.isValid) { setModalTitle('Validation Error'); setModalMessage('Please fix the highlighted fields.'); setModalOpen(true); return false; }"
+              "script": "if (!handleValidation()?.isValid) { setModalTitle('Validation Error'); setModalMessage('Please fix the highlighted fields.'); setModalOpen(true); return false; }"
             },
             {
               "action_type": "javascript",
@@ -204,7 +204,7 @@ const interfaces = {
       style: "",
       actions: [
         {
-          script: "if (!validateAllFields()?.isValid){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnSave\" }), \"*\");} else { window.parent.postMessage(JSON.stringify({ \"event\": \"successOnSave\" }), \"*\");} return true;",
+          script: "if (!handleValidation()?.isValid){window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnSave\" }), \"*\");} else { window.parent.postMessage(JSON.stringify({ \"event\": \"successOnSave\" }), \"*\");} return true;",
           action_type: "javascript"
         },
         {
@@ -226,7 +226,7 @@ const interfaces = {
       style: "",
       actions: [
         {
-          script: "if (!validateAllFields()?.isValid){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnComplete\" }), \"*\"); return false; }",
+          script: "if (!handleValidation()?.isValid){ window.parent.postMessage(JSON.stringify({ \"event\": \"errorOnComplete\" }), \"*\"); return false; }",
           action_type: "javascript"
         },
         {
