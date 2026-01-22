@@ -140,7 +140,7 @@ async function generateNewTemplate(req, res) {
 
     let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   
-    
+
     if (icm_status == "Complete") {
             return res
         .status(401)
@@ -245,8 +245,11 @@ async function performGenerateFunction(url,token,username) {
     //const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    page.on('console', msg => {
-      console.log('Browser logs:', msg.type(), msg.text());
+    page.on('console', async (msg) => {
+      const args = await Promise.all(
+        msg.args().map(a => a.jsonValue().catch(() => a.toString()))
+      );
+      console.log('Browser logs:', msg.type(), msg.text(), args);
     });
     
     page.on('request', req => {
