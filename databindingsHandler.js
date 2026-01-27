@@ -139,16 +139,48 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
   }
 
   //helper function to bind Containers
-  function bindRowsToContainer(field, rows) {
+  function bindRowsToContainer(field, rows, parentDatabindings = fetchedData) {
     return rows.map((rowObj) => {
       const row = {};
       const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
-      const localDatabindings = binding ? { ...fetchedData, [binding.source]: rowObj } : { ...fetchedData };
+      const localDatabindings = binding ? { ...parentDatabindings, [binding.source]: rowObj } : { ...parentDatabindings };
 
       const items = field.containerItems || field.children || [];
         items.forEach(containerField => {
-          if (!containerField.databindings) return;
           const containerId = containerField.uuid;
+          if (containerField.type === "container" && (containerField.containerItems || containerField.children)) {
+            const isRepeatable = !!(containerField.repeater || containerField?.attributes?.isRepeatable);
+            const childBinding = Array.isArray(containerField.databindings) ? containerField.databindings[0] : containerField.databindings || null;
+    
+            // Wrapper containers (no databindings + not repeatable) 
+            if (!childBinding && !isRepeatable) {
+              const wrapped = bindRowsToContainer(containerField, [{}], localDatabindings);
+              if (Array.isArray(wrapped) && wrapped[0] && typeof wrapped[0] === "object") {
+                Object.assign(row, wrapped[0]); 
+              }
+              return;
+            }
+    
+            // Resolve nested rows relative to the current context
+            let nestedRows = [];
+            if (childBinding) {
+              const sourceJson = localDatabindings[childBinding.source] ?? {};
+              nestedRows = JSONPath({ path: childBinding.path, json: sourceJson }) || [];
+            } else {
+              // Wrapper container with no databindings: bind one "instance" so we can reach its children
+              nestedRows = [{}];
+            }
+    
+            // If not repeatable, keep existing “single instance” behavior
+            if (!isRepeatable) {
+              nestedRows = (nestedRows && nestedRows.length > 0) ? nestedRows.slice(0, 1) : [{}];
+            }
+            row[containerId] = bindRowsToContainer(containerField, nestedRows, localDatabindings);
+            return;
+          }
+
+          if (!containerField.databindings) return;
+    
           const subVal = getBindingValue(containerField.databindings,localDatabindings,params);
           row[containerId] = transformValueToBindIfNeeded(containerField, subVal) || '';
         });
@@ -168,13 +200,13 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
             const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
             const sourceData = binding ? (fetchedData[binding.source] || {}) : {};
             const rows = binding ? JSONPath({ path: binding.path, json: sourceData }) || [] : [];
-            formData[fieldId] = bindRowsToContainer(field, rows); 
+            formData[fieldId] = bindRowsToContainer(field, rows, fetchedData); 
           } else {
             // single-instance container
             const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
             const sourceData = binding ? (fetchedData[binding.source] || {}) : {};
             const rows = binding ? (JSONPath({ path: binding.path, json: sourceData }) || []).slice(0, 1) : [{}];
-            formData[fieldId] = bindRowsToContainer(field, rows); //
+            formData[fieldId] = bindRowsToContainer(field, rows, fetchedData); //
           }
           return;
         }
