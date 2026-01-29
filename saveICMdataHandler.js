@@ -443,9 +443,9 @@ function getFormIds (formDefinitionItems) {
     formDefinitionItems.forEach(item => { // Add the field types found in this loop into their specific item id arrays
         if (item.containerItems) { // Check for fields in containers (currently, there can be up to 5 container levels)
             item.containerItems.forEach(subItem => {
-                if (subItem.type === "date") dateItemsId.push(subItem.id);
-                else if (subItem.type === "checkbox") checkboxItemsId.push(subItem.id);
-                else if (subItem.type === "text-info") textInfoFields.push(subItem.id);
+                if (subItem.type === "date") dateItemsId.push(subItem.id || subItem.uuid);
+                else if (subItem.type === "checkbox-input") checkboxItemsId.push(subItem.id || subItem.uuid);
+                else if (subItem.type === "text-info") textInfoFields.push(subItem.id || subItem.uuid);
                 else if (subItem.type === "container") { 
                     const {dateItemsId: recursiveDateItemIds, checkboxItemsId: recursiveCheckboxItemIds, textInfoFields: recursiveTextInfoFields} = getFormIds([subItem]);
                     dateItemsId = [...dateItemsId, ...recursiveDateItemIds];
@@ -456,15 +456,15 @@ function getFormIds (formDefinitionItems) {
         } else if (item.groupItems){ // Check for fields in groups
             item.groupItems.forEach(subItem => {
                 subItem.fields.forEach(childItemData => { // Group's fields is where the fields will be in
-                    if (childItemData.type === "date") dateItemsId.push(childItemData.id);
-                    else if (childItemData.type === "checkbox") checkboxItemsId.push(childItemData.id);
-                    else if (childItemData.type === "text-info") textInfoFields.push(childItemData.id);
+                    if (childItemData.type === "date") dateItemsId.push(childItemData.id || childItemData.uuid);
+                    else if (childItemData.type === "checkbox-input") checkboxItemsId.push(childItemData.id || childItemData.uuid);
+                    else if (childItemData.type === "text-info") textInfoFields.push(childItemData.id || childItemData.uuid);
                 });
             });
         } else {
-            if (item.type === "date") dateItemsId.push(item.id);
-            else if (item.type === "checkbox") checkboxItemsId.push(item.id);
-            else if (item.type === "text-info") textInfoFields.push(item.id);
+            if (item.type === "date") dateItemsId.push(item.id || item.uuid);
+            else if (item.type === "checkbox-input") checkboxItemsId.push(item.id || item.uuid);
+            else if (item.type === "text-info") textInfoFields.push(item.id || item.uuid);
         }
     });
     return { dateItemsId, checkboxItemsId, textInfoFields };
