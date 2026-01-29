@@ -115,14 +115,15 @@ async function saveICMdata(req, res) {
       }) || {};
     params = { ...params,...configOpt  };   
     const attachment_id = params["attachmentId"];
-    const savedFormXML = params["savedForm"];
+    const savedFormJson = params["savedFormJson"];
+    const savedFormXML = params["savedFormXml"];
     
     if (!attachment_id) {
         return res
             .status(400)
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
-    if (!savedFormXML) {
+    if (!savedFormJson | !savedFormXML) {
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
@@ -164,21 +165,21 @@ async function saveICMdata(req, res) {
     }
 
     //saveForm validate before saving to ICM and determine kiln version being used
-    // const includesData = Object.keys(JSON.parse(savedFormXML)).includes("data"); // Check if data exists.
-    // if (!includesData) {
-    // console.log('JSON is  not valid ');
-    // return res
-    //     .status(400)
-    //     .send({ error: getErrorMessage("FORM_NOT_VALID") });
-    // }
+    const includesData = Object.keys(JSON.parse(savedFormJson)).includes("data"); // Check if data exists.
+    if (!includesData) {
+    console.log('JSON is  not valid ');
+    return res
+        .status(400)
+        .send({ error: getErrorMessage("FORM_NOT_VALID") });
+    }
  
-    // const valid = isJsonStringValid(savedFormXML);
-    // if (!valid) {
-    //     console.log('JSON is  not valid ');
-    //     return res
-    //         .status(400)
-    //         .send({ error: getErrorMessage("FORM_NOT_VALID") });
-    // }
+    const valid = isJsonStringValid(savedFormJson);
+    if (!valid) {
+        console.log('JSON is  not valid ');
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("FORM_NOT_VALID") });
+    }
 
     let saveJson = {};
     saveJson["Id"] = attachment_id;
@@ -186,7 +187,7 @@ async function saveICMdata(req, res) {
     saveJson["Status"] = "In Progress";
     saveJson["DocFileName"] = (form_metadata["DocFileName"] && form_metadata["DocFileName"] !== "") ? form_metadata["DocFileName"] : attachment_id.replace(/^[^-]+-/, 'Form_');
     saveJson["DocFileExt"] = "json";
-    saveJson["Doc Attachment Id"] = Buffer.from(savedFormXML).toString('base64');//savedForm is saved as attachment 
+    saveJson["Doc Attachment Id"] = Buffer.from(savedFormJson).toString('base64');//savedForm is saved as attachment 
     saveJson["XML Hierarchy"] = savedFormXML;
 
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
