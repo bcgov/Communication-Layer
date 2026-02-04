@@ -190,7 +190,8 @@ async function generateNewTemplate(req, res) {
 
       //params added to json so they can be used in SaveToICM functionality call
       formJson.params ={
-        ...params
+        ...params,
+        mode: "generate"
       }     
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
