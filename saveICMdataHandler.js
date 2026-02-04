@@ -130,7 +130,7 @@ async function saveICMdata(req, res) {
     let icm_status = form_metadata["Status"];   
     let mode = params?.mode || params?.sessionParams?.mode || null;
     
-    if (icm_status === "Complete" && mode !== "generate") {
+    if (icm_status == "Complete" && mode !== "generate") {
             return res
         .status(401)
         .send({ error: getErrorMessage("FORM_ALREADY_FINALIZED") });
