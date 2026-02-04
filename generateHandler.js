@@ -108,6 +108,7 @@ async function generateNewTemplate(req, res) {
     const attachment_Id = params["attachmentId"];    
     const authHeader = req.get('Authorization') || '';
     const rawToken = authHeader.split(' ')[0] === 'Bearer'? authHeader.split(' ')[1] : authHeader || null;
+    console.log("Raw Token:",rawToken);
     if (!template_id) {
       return res
         .status(400)
@@ -119,13 +120,17 @@ async function generateNewTemplate(req, res) {
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
     let username = null;
+    let validUsername = false;
 
-    if (params["token"]) {
+    if (params["username"]) {
+      validUsername = await isUsernameValid(params["username"], params["employeeEndpoint"]);
+      username = validUsername ? params["username"] : null;
+    } else if (params["token"]) {
       username = await getUsername(params["token"], params["employeeEndpoint"]);
-    } else if (params["username"]) {
-      const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
-      username = valid ? params["username"] : null;
+      validUsername = await isUsernameValid(username, params["employeeEndpoint"]);
+      username = validUsername ? username : null;
     }    
+
 
     if (!username || !isNaN(username)) {
       return res
@@ -133,10 +138,9 @@ async function generateNewTemplate(req, res) {
         .send({ error: getErrorMessage("INVALID_USER") });
     }
 
-
     let icm_metadata = await getICMAttachmentStatus(attachment_Id, username, params);
     let icm_status = icm_metadata["Status"];   
-    
+
     if (icm_status == "Complete") {
             return res
         .status(401)
@@ -190,7 +194,10 @@ async function generateNewTemplate(req, res) {
       }     
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
-      const endPointForGenerate = process.env.GENERATE_KILN_URL + "?jsonId=" + id;
+      const rawGenerateEndpoint = params?.generateEndpoint;
+      const generateEndpoint = rawGenerateEndpoint?.trim() || process.env.GENERATE_KILN_URL;
+      console.log("Generate APP config:",generateEndpoint);
+      const endPointForGenerate = generateEndpoint + "?jsonId=" + id;
       const isGenerateSuccess = await performGenerateFunction(endPointForGenerate,rawToken,username);
       deleteData(id);
 
@@ -238,8 +245,11 @@ async function performGenerateFunction(url,token,username) {
     //const browser = await puppeteer.launch();
     const page = await browser.newPage();
 
-    page.on('console', msg => {
-      console.log('Browser logs:', msg.type(), msg.text());
+    page.on('console', async (msg) => {
+      const args = await Promise.all(
+        msg.args().map(a => a.jsonValue().catch(() => a.toString()))
+      );
+      console.log('Browser logs:', msg.type(), msg.text(), args);
     });
     
     page.on('request', req => {

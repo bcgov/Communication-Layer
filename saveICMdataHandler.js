@@ -11,6 +11,7 @@ const { toICMFormat } = require("./dateConverter.js");
 const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
 const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
 const {generatePDF }= require("./generatePDFHandler.js");
+const { param } = require("./renderHandler.js");
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 
@@ -99,12 +100,18 @@ async function saveICMdata(req, res) {
             .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
     }
     let username = null;
+    let validUsername = false;
+    const usernameInParams = params?.username || params?.sessionParams?.username || null;
+    const tokenInParams = params?.token || params?.sessionParams?.token || null;
 
-    if (params["token"]) {
-        username = await getUsername(params["token"], params["employeeEndpoint"]);
-    } else if (params["username"]) {
-        const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
-        username = valid ? params["username"] : null;
+
+    if (usernameInParams) {
+        validUsername = await isUsernameValid(usernameInParams, params["employeeEndpoint"]);
+        username = validUsername ? usernameInParams : null;
+    } else if (tokenInParams) {
+        username = await getUsername(tokenInParams, params["employeeEndpoint"]);
+        validUsername = await isUsernameValid(username, params["employeeEndpoint"]);
+        username = validUsername ? username : null;
     }
     
     if (!username || !isNaN(username)) {
@@ -566,6 +573,46 @@ function multilevelWrappers(truncatedKeysSaveData, toWrapIds, dataToWrap, oldKey
     return truncatedKeysSaveData
 }
 
+// Helper function to truncate rows in nested repeaters for KilnV2
+function truncateRowV2(rowObj, toWrapIds, dateItemsId, checkboxItemsId, textInfoFields, noCheckboxChange, omitFields) {
+    const out = {};
+    if (!rowObj || typeof rowObj !== 'object' || Array.isArray(rowObj)) return out;
+  
+    for (const oldChildKey in rowObj) {
+      if (omitFields.includes(oldChildKey) || textInfoFields.includes(oldChildKey)) continue;
+  
+      const childVal = rowObj[oldChildKey];
+      const newChildKey = oldChildKey.substring(0, oldChildKey.length - 28);
+  
+      // nested repeater inside nested repeater
+      if (Array.isArray(childVal)) {
+        const nestedRows = childVal
+          .filter(v => v && typeof v === 'object' && !Array.isArray(v))
+          .map(v => truncateRowV2(v, toWrapIds, dateItemsId, checkboxItemsId, textInfoFields, noCheckboxChange, omitFields))
+          .filter(v => Object.keys(v).length > 0);
+  
+        if (nestedRows.length > 0) {
+          const wrapperKey = {};
+          wrapperKey[newChildKey] = nestedRows;
+          out[`${newChildKey}-List`] = wrapperKey;
+        }
+        continue;
+      }
+  
+      // Previous XML rules
+      if (dateItemsId.includes(oldChildKey)) {
+        const newDateFormat = toICMFormat(childVal);
+        if (newDateFormat === "-1") throw new Error("Invalid date. Was unable to convert to ICM format!");
+        out[newChildKey] = newDateFormat;
+      } else if (checkboxItemsId.includes(oldChildKey) && !noCheckboxChange.includes(oldChildKey)) {
+        out[newChildKey] = convertCheckboxFormatToICM(childVal);
+      } else {
+        out[newChildKey] = childVal;
+      }
+    }
+    return out;
+}
+
 /** Take the saveData JSON values and update them to new layout. Changes include:
  * Shorten UUID. 
  * Wrap values with children inside a List. 
@@ -617,6 +664,18 @@ function fixJSONValuesForXML (saveData, truncatedKeysSaveData, toWrapIds, dateIt
                             const childStringLength = oldChildKey.length;
                             const newChildKey = oldChildKey.substring(0, childStringLength-28);
                             if (!omitFields.includes(oldChildKey.substring(0, childStringLength)) && !textInfoFields.includes(oldChildKey.substring(0, childStringLength))) {
+                                const nested = saveData[oldKey][i][oldChildKey];
+                                if (Array.isArray(nested)) {
+                                    const nestedRows = nested
+                                        .filter(v => v && typeof v === 'object' && !Array.isArray(v))
+                                        .map(v => truncateRowV2(v, toWrapIds, dateItemsId, checkboxItemsId, textInfoFields, noCheckboxChange, omitFields))
+                                        .filter(v => Object.keys(v).length > 0);
+
+                                    const wrapperKey = {};
+                                    wrapperKey[newChildKey] = nestedRows;
+                                    truncatedChildrenKeys[`${newChildKey}-List`] = wrapperKey;
+                                    continue;
+                                }
                                 if (dateItemsId.includes(oldChildKey.substring(0, childStringLength))) { // If child data is in a date field, change date format from YYYY-MM-DD to MM/DD/YYYY
                                     const newDateFormat = toICMFormat(saveData[oldKey][i][oldChildKey]); 
                                     if (newDateFormat === "-1") {

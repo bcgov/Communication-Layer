@@ -28,14 +28,14 @@ function customParamsSerializer(params) {
   }
   return queryParts.join('&');
 }
-async function populateDatabindings(formJson, params) {
+async function populateDatabindings(formJson, params, isPortal = false ) {
   //start code here
   try {
     // Extract dataSources from the form JSON
-    const dataSources = formJson.dataSources;
+    const dataSources = formJson.dataSources;    
 
     // Fetch data from all sources
-    const apiData = await fetchDataFromSources(dataSources, params);
+    const apiData = await fetchDataFromSources(dataSources, params, isPortal);
 
     if (!apiData) {
       console.error('No Data found from datsources');
@@ -54,15 +54,14 @@ async function populateDatabindings(formJson, params) {
 
 }
 
-async function fetchDataFromSources(dataSources, params) {
+async function fetchDataFromSources(dataSources, params ,isPortal = false ) {
   let data = {};
   if (dataSources != null) {
     for (const source of dataSources) {
       try {
 
         let updatedParams = updateParams(source.params || {}, params, data);
-        const response = await readJsonFormApi(source, { ...params, ...updatedParams });
-        //console.log("Response:",response);
+        const response = await readJsonFormApi(source, { ...params, ...updatedParams },isPortal);
         data[source.name] = response;
 
       } catch (error) {
@@ -139,13 +138,82 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
     });
   }
 
+  //helper function to bind Containers
+  function bindRowsToContainer(field, rows, parentDatabindings = fetchedData) {
+    return rows.map((rowObj) => {
+      const row = {};
+      const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+      const localDatabindings = binding ? { ...parentDatabindings, [binding.source]: rowObj } : { ...parentDatabindings };
+
+      const items = field.containerItems || field.children || [];
+        items.forEach(containerField => {
+          const containerId = containerField.uuid;
+          if (containerField.type === "container" && (containerField.containerItems || containerField.children)) {
+            const isRepeatable = !!(containerField.repeater || containerField?.attributes?.isRepeatable);
+            const childBinding = Array.isArray(containerField.databindings) ? containerField.databindings[0] : containerField.databindings || null;
+    
+            // Wrapper containers (no databindings + not repeatable) 
+            if (!childBinding && !isRepeatable) {
+              const wrapped = bindRowsToContainer(containerField, [{}], localDatabindings);
+              if (Array.isArray(wrapped) && wrapped[0] && typeof wrapped[0] === "object") {
+                Object.assign(row, wrapped[0]); 
+              }
+              return;
+            }
+    
+            // Resolve nested rows relative to the current context
+            let nestedRows = [];
+            if (childBinding) {
+              const sourceJson = localDatabindings[childBinding.source] ?? {};
+              nestedRows = JSONPath({ path: childBinding.path, json: sourceJson }) || [];
+            } else {
+              // Wrapper container with no databindings: bind one "instance" so we can reach its children
+              nestedRows = [{}];
+            }
+    
+            // If not repeatable, keep existing “single instance” behavior
+            if (!isRepeatable) {
+              nestedRows = (nestedRows && nestedRows.length > 0) ? nestedRows.slice(0, 1) : [{}];
+            }
+            row[containerId] = bindRowsToContainer(containerField, nestedRows, localDatabindings);
+            return;
+          }
+
+          if (!containerField.databindings) return;
+    
+          const subVal = getBindingValue(containerField.databindings,localDatabindings,params);
+          row[containerId] = transformValueToBindIfNeeded(containerField, subVal) || '';
+        });
+      return row;
+    });
+  }
+
   function processItemsForDatabinding(items) {
     items.forEach(field => {
       const fieldId = field?.id ? field.id : field?.uuid;
       // containers
       if (field.type === 'container' && (field.containerItems || field.children)) {
-        return field.containerItems ? processItemsForDatabinding(field.containerItems) : processItemsForDatabinding(field.children);
-      }
+        const isRepeatable = !!(field.repeater || field?.attributes?.isRepeatable);
+        if (field.databindings) {
+          if (isRepeatable) {
+            // repeatable container
+            const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+            const sourceData = binding ? (fetchedData[binding.source] || {}) : {};
+            const rows = binding ? JSONPath({ path: binding.path, json: sourceData }) || [] : [];
+            formData[fieldId] = bindRowsToContainer(field, rows, fetchedData); 
+          } else {
+            // single-instance container
+            const binding = Array.isArray(field.databindings) ? field.databindings[0] : field.databindings || null;
+            const sourceData = binding ? (fetchedData[binding.source] || {}) : {};
+            const rows = binding ? (JSONPath({ path: binding.path, json: sourceData }) || []).slice(0, 1) : [{}];
+            formData[fieldId] = bindRowsToContainer(field, rows, fetchedData); //
+          }
+          return;
+        }
+        return field.containerItems
+        ? processItemsForDatabinding(field.containerItems)
+        : processItemsForDatabinding(field.children);
+    }
 
       // groups 
       if (field.type === 'group' && field.groupItems) {
@@ -180,25 +248,25 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
   return formData;
 }
 
-async function readJsonFormApi(datasource, pathParams) {
-  console.log("readJsonFormApi>>pathParams", pathParams);
+async function readJsonFormApi(datasource, pathParams , isPortal) {
   const { name, type, host, endpoint, body } = datasource;
 
   let username = null;
 
-  if (pathParams["token"]) {
-    username = await getUsername(pathParams["token"],pathParams["employeeEndpoint"]);
-  } else if (pathParams["username"]) {
-    const valid = await isUsernameValid(pathParams["username"],pathParams["employeeEndpoint"]);
-    username = valid ? pathParams["username"] : null;
-  }
+  if (!isPortal) {    
+    if (pathParams["token"]) {
+      username = await getUsername(pathParams["token"],pathParams["employeeEndpoint"]);
+    } else if (pathParams["username"]) {
+      const valid = await isUsernameValid(pathParams["username"],pathParams["employeeEndpoint"]);
+      username = valid ? pathParams["username"] : null;
+    }
 
-  if (!username || !isNaN(username)) {
-    return res
-      .status(401)
-      .send({ error: "Username is not valid" });
+    if (!username || !isNaN(username)) {
+      return res
+        .status(401)
+        .send({ error: "Username is not valid" });
+    }
   }
-
   let apiHost = pathParams["apiHost"];
   if (!apiHost || !isNaN(apiHost)) {
     return res
@@ -207,13 +275,18 @@ async function readJsonFormApi(datasource, pathParams) {
   }
   try {
     const url = buildUrlWithParams(host, endpoint, pathParams);
+    
     let response;
-    const grant =
-      await keycloakForSiebel.grantManager.obtainFromClientCredentials();
-    const headers = {
-      Authorization: `Bearer ${grant.id_token.token}`,
-      "X-ICM-TrustedUsername": username,
-      "X-API-Host": apiHost,
+    let headers;
+
+    if (!isPortal) { 
+      const grant =
+        await keycloakForSiebel.grantManager.obtainFromClientCredentials();
+      headers = {
+        Authorization: `Bearer ${grant.id_token.token}`,
+        "X-ICM-TrustedUsername": username,
+        "X-API-Host": apiHost,
+      }
     }
     if (type.toUpperCase() === 'GET') {
       // For GET requests, add params directly in axios config      
@@ -221,8 +294,9 @@ async function readJsonFormApi(datasource, pathParams) {
       );
     } else if (type.toUpperCase() === 'POST') {
       // For POST requests, pass params in the body if applicable
+      //SV: removed the code for passing params in POST request.the params are passed as part of body
       const bodyForPost = buildBodyWithParams(body, pathParams);
-      response = await axios.post(url, bodyForPost, { params: pathParams, headers, paramsSerializer: customParamsSerializer});
+      response = await axios.post(url, bodyForPost, { headers});
     }
 
     // Store response data
@@ -285,7 +359,7 @@ function buildBodyWithParams(bodyFromJson, pathVariables) {
 function transformValueToBindIfNeeded(field, valueToBind) {
 
   try {
-    if (field && (field.type == "date" || field.type == "date-picker") && valueToBind) {
+    if (field && (field.type == "date" || field.type == "date-picker" || field.type == "date-select-input") && valueToBind) {
       const formatToBind = field.inputFormat ? field.inputFormat : "MM/dd/yyyy";
       const parsedDate = parse(valueToBind, formatToBind, new Date());
       const transformedValue = format(parsedDate, "yyyy-MM-dd");

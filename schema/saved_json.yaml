@@ -16,13 +16,17 @@ properties:
         - type: array
           items:
             type: object
-            additionalProperties:
+            additionalProperties: 
               anyOf:
                 - type: string
                 - type: boolean
                 - type: number
                 - type: object
                 - type: "null"
+                - type: array          
+                  items:
+                    type: object
+                    additionalProperties: true
         - type: "null"
   form_definition:
     $ref: "form_definition_schema"
