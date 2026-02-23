@@ -12,6 +12,7 @@ const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
 const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
 const {generatePDF }= require("./generatePDFHandler.js");
 const { param } = require("./renderHandler.js");
+const { createTwoFilesPatch } = require('diff');
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 
@@ -72,6 +73,33 @@ async function getICMAttachmentStatus(attachment_id, username, params, authHeade
     }
 }
 
+async function compareSaveICMdata(req, res) {
+    // const attachment_id = req.body["attachmentId"];
+    const savedFormJson = req.body["savedFormJson"];
+    const savedFormXml = req.body["savedFormXml"];
+    if (!savedFormJson) {
+        return res
+            .status(400)
+            .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
+    }
+    // console.log(savedFormParam)
+    const xml = buildICMXML(savedFormJson);
+    // console.log(xml);
+    
+    const patch = createTwoFilesPatch(
+        'comm layer xml',
+        'kiln api xml',
+        xml,
+        savedFormXml,
+        '', // old header
+        '', // new header
+        { context: 3 }
+    );
+    console.log(patch);
+
+    return res.status(200).send({patch});
+}
+
 //method to save the form (data, template and metadata) as a JSON file in ICM, and update form 
 //  instance metadata with In Progress status, filename and extracted form data as an XML hierarchy
 async function saveICMdata(req, res) {
@@ -87,14 +115,15 @@ async function saveICMdata(req, res) {
       }) || {};
     params = { ...params,...configOpt  };   
     const attachment_id = params["attachmentId"];
-    const savedFormParam = params["savedForm"];
+    const savedFormJson = params["savedFormJson"];
+    const savedFormXML = params["savedFormXml"];
     
     if (!attachment_id) {
         return res
             .status(400)
             .send({ error: getErrorMessage("ATTACHMENT_ID_REQUIRED") });
     }
-    if (!savedFormParam) {
+    if (!savedFormJson | !savedFormXML) {
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_NOT_FOUND_IN_REQUEST") });
@@ -137,7 +166,7 @@ async function saveICMdata(req, res) {
     }
 
     //saveForm validate before saving to ICM and determine kiln version being used
-    const includesData = Object.keys(JSON.parse(savedFormParam)).includes("data"); // Check if data exists.
+    const includesData = Object.keys(JSON.parse(savedFormJson)).includes("data"); // Check if data exists.
     if (!includesData) {
     console.log('JSON is  not valid ');
     return res
@@ -145,7 +174,7 @@ async function saveICMdata(req, res) {
         .send({ error: getErrorMessage("FORM_NOT_VALID") });
     }
  
-    const valid = isJsonStringValid(savedFormParam);
+    const valid = isJsonStringValid(savedFormJson);
     if (!valid) {
         console.log('JSON is  not valid ');
         return res
@@ -159,79 +188,14 @@ async function saveICMdata(req, res) {
     saveJson["Status"] = "In Progress";
     saveJson["DocFileName"] = (form_metadata["DocFileName"] && form_metadata["DocFileName"] !== "") ? form_metadata["DocFileName"] : attachment_id.replace(/^[^-]+-/, 'Form_');
     saveJson["DocFileExt"] = "json";
-    saveJson["Doc Attachment Id"] = Buffer.from(savedFormParam).toString('base64');//savedForm is saved as attachment 
-    let saveData = JSON.parse(savedFormParam)["data"];// This is the data part of the savedJson  
-    
-    /**
-     * Apply Kiln Version
-     * Kiln V1 uses data: { items: []}
-     * Kiln V2 uses dataSources []
-     */
-    const kilnVersion = Object.keys(JSON.parse(savedFormParam)["form_definition"]["data"]).includes("items") ? 1 : 2;
-    const formDefinitionItems = kilnVersion === 1 ? JSON.parse(savedFormParam)["form_definition"]["data"]["items"] : JSON.parse(savedFormParam)["form_definition"]["elements"];// This is the field info for form items
-    
-    // dateItemsId : This will contain all of the IDs of the date fields
-    // checkboxItemsId : This will contain all of the IDs of the checkbox fields
-    const { dateItemsId, checkboxItemsId, textInfoFields } = getFormIds(formDefinitionItems);
+    saveJson["Doc Attachment Id"] = Buffer.from(savedFormJson).toString('base64');//savedForm is saved as attachment 
+    saveJson["XML Hierarchy"] = savedFormXML;
 
-    const dictionary = formExceptions;
-    const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
-    const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
-    const isFormException = keyExists(dictionary, formId); // If true, then this form will have its exceptions formatted
-    let toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
-    const noCheckboxChange = (isFormException && propertyExists(dictionary, formId, "allowCheckboxWithNoChange")) ? dictionary[formId].allowCheckboxWithNoChange : [];
-    const omitFields = (isFormException && propertyExists(dictionary, formId, "omitFields")) ? dictionary[formId].omitFields : [];
-    const addFields = (isFormException && propertyExists(dictionary, formId, "addFields")) ? dictionary[formId].addFields : {};
-
-    if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
-        dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
-            const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
-            if (wrapperTag[tagKey].length != 0) { // If there are any wrappers with no fields, ignore. Otherwise, keep a list of UUID and the wrapper to put it in.
-                toWrapIds = {...toWrapIds, ...getWrapperIds(wrapperTag[tagKey], [tagKey])};
-            }
-        });
-    }
-
-    // The updated JSON values required for XML creation
-    const truncatedKeysSaveData = fixJSONValuesForXML(saveData, {}, toWrapIds, dateItemsId, checkboxItemsId, textInfoFields, noCheckboxChange, omitFields, addFields, kilnVersion);
-    
-    let builder; // This will be for building the XML
-    if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
-        // If the root needs a differernt name, apply it here. Otherwise use the default "root"
-        if (propertyExists(dictionary, formId, "rootName") && propertyNotEmpty(dictionary, formId, "rootName")) {
-            builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: false }, rootName: dictionary[formId]["rootName"]});
-        } else {
-            builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: false }});
-        }
-
-        let wrapperJson = truncatedKeysSaveData;
-        // If subRoots exist, wrap the sub-roots around the JSON where the last array object will be closest to JSON and first array object will be closest to root/rootName
-        if (propertyExists(dictionary, formId, "subRoots") && propertyNotEmpty(dictionary, formId, "subRoots")) {
-            wrapperJson = {};
-            let tempJson = {};
-            const subRootLength = dictionary[formId]["subRoots"].length;
-            for (i = subRootLength; i > 0; i= i -1) {
-                if (i === subRootLength) {
-                    tempJson[dictionary[formId]["subRoots"][i-1]] = truncatedKeysSaveData;
-                } else {
-                    wrapperJson[dictionary[formId]["subRoots"][i-1]] = tempJson;
-                    tempJson = wrapperJson;
-                    wrapperJson = {};
-                }
-            }
-            wrapperJson = tempJson;
-        }
-        saveJson["XML Hierarchy"] = builder.buildObject(wrapperJson);
-    } else {
-        builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: false }});
-        saveJson["XML Hierarchy"] = builder.buildObject(truncatedKeysSaveData);
-    } 
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
-    const xml = saveJson["XML Hierarchy"];
-    const xmlSize = Buffer.byteLength(xml, 'utf8'); // size in bytes
+    const xmlSize = Buffer.byteLength(savedFormXML, 'utf8'); // size in bytes
 
     // console.log("XML Hierarchy:", xml);
-    console.log("XML Hierarchy length (chars):", xml.length);
+    console.log("XML Hierarchy length (chars):", savedFormXML.length);
     console.log("XML Hierarchy size (bytes):", xmlSize);
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
@@ -431,6 +395,75 @@ async function clearICMLockedFlag(req, res) {
 
 }
 
+function buildICMXML(savedFormParam) {
+    /**
+     * Apply Kiln Version
+     * Kiln V1 uses data: { items: []}
+     * Kiln V2 uses dataSources []
+     */
+    const kilnVersion = Object.keys(JSON.parse(savedFormParam)["form_definition"]["data"]).includes("items") ? 1 : 2;
+    const formDefinitionItems = kilnVersion === 1 ? JSON.parse(savedFormParam)["form_definition"]["data"]["items"] : JSON.parse(savedFormParam)["form_definition"]["elements"];// This is the field info for form items
+    
+    // dateItemsId : This will contain all of the IDs of the date fields
+    // checkboxItemsId : This will contain all of the IDs of the checkbox fields
+    const { dateItemsId, checkboxItemsId, textInfoFields } = getFormIds(formDefinitionItems);
+
+    const dictionary = formExceptions;
+    const formId = JSON.parse(savedFormParam)["form_definition"]["form_id"]; // Get the form ID
+    const formVersion = JSON.parse(savedFormParam)["form_definition"]["version"]; // Get the form version
+    const isFormException = keyExists(dictionary, formId); // If true, then this form will have its exceptions formatted
+    let toWrapIds = {}; //List of ids that will need to be placed in a wrapper. This only happens if form exception is true and wrapperTags exists
+    const noCheckboxChange = (isFormException && propertyExists(dictionary, formId, "allowCheckboxWithNoChange")) ? dictionary[formId].allowCheckboxWithNoChange : [];
+    const omitFields = (isFormException && propertyExists(dictionary, formId, "omitFields")) ? dictionary[formId].omitFields : [];
+    const addFields = (isFormException && propertyExists(dictionary, formId, "addFields")) ? dictionary[formId].addFields : {};
+
+    if (isFormException && propertyExists(dictionary, formId, "wrapperTags")) { 
+        dictionary[formId]["wrapperTags"].forEach((wrapperTag, index) => {
+            const tagKey = Object.keys(dictionary[formId]["wrapperTags"][index])[0];
+            if (wrapperTag[tagKey].length != 0) { // If there are any wrappers with no fields, ignore. Otherwise, keep a list of UUID and the wrapper to put it in.
+                toWrapIds = {...toWrapIds, ...getWrapperIds(wrapperTag[tagKey], [tagKey])};
+            }
+        });
+    }
+
+    console.log(toWrapIds);
+
+    // The updated JSON values required for XML creation
+    const truncatedKeysSaveData = fixJSONValuesForXML(JSON.parse(savedFormParam)["data"], {}, toWrapIds, dateItemsId, checkboxItemsId, textInfoFields, noCheckboxChange, omitFields, addFields, kilnVersion);
+    
+    let builder; // This will be for building the XML
+    if (isFormException) { // If any forms with the correct version (TODO) have been listed as exceptions, then proceed with their form exceptions
+        // If the root needs a differernt name, apply it here. Otherwise use the default "root"
+        if (propertyExists(dictionary, formId, "rootName") && propertyNotEmpty(dictionary, formId, "rootName")) {
+            builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: true }, rootName: dictionary[formId]["rootName"]});
+        } else {
+            builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: true }});
+        }
+
+        let wrapperJson = truncatedKeysSaveData;
+        // If subRoots exist, wrap the sub-roots around the JSON where the last array object will be closest to JSON and first array object will be closest to root/rootName
+        if (propertyExists(dictionary, formId, "subRoots") && propertyNotEmpty(dictionary, formId, "subRoots")) {
+            wrapperJson = {};
+            let tempJson = {};
+            const subRootLength = dictionary[formId]["subRoots"].length;
+            for (i = subRootLength; i > 0; i= i -1) {
+                if (i === subRootLength) {
+                    tempJson[dictionary[formId]["subRoots"][i-1]] = truncatedKeysSaveData;
+                } else {
+                    wrapperJson[dictionary[formId]["subRoots"][i-1]] = tempJson;
+                    tempJson = wrapperJson;
+                    wrapperJson = {};
+                }
+            }
+            wrapperJson = tempJson;
+        }
+        return builder.buildObject(wrapperJson);
+    } else {
+        builder = new xml2js.Builder({xmldec: { version: '1.0' }, renderOpts: { pretty: true }});
+        return builder.buildObject(truncatedKeysSaveData);
+    }
+}
+
 /** Get the UUIDs (data.items "id"s) from the form for specific field types
  * @params formDefinitionItems  = JSON.parse(savedFormParam)["form_definition"]["data"]["items"]
  * @returns dateItemsId : This will contain all of the IDs of the date fields
@@ -444,9 +477,9 @@ function getFormIds (formDefinitionItems) {
     formDefinitionItems.forEach(item => { // Add the field types found in this loop into their specific item id arrays
         if (item.containerItems) { // Check for fields in containers (currently, there can be up to 5 container levels)
             item.containerItems.forEach(subItem => {
-                if (subItem.type === "date") dateItemsId.push(subItem.id);
-                else if (subItem.type === "checkbox") checkboxItemsId.push(subItem.id);
-                else if (subItem.type === "text-info") textInfoFields.push(subItem.id);
+                if (subItem.type === "date") dateItemsId.push(subItem.id || subItem.uuid);
+                else if (subItem.type === "checkbox-input") checkboxItemsId.push(subItem.id || subItem.uuid);
+                else if (subItem.type === "text-info") textInfoFields.push(subItem.id || subItem.uuid);
                 else if (subItem.type === "container") { 
                     const {dateItemsId: recursiveDateItemIds, checkboxItemsId: recursiveCheckboxItemIds, textInfoFields: recursiveTextInfoFields} = getFormIds([subItem]);
                     dateItemsId = [...dateItemsId, ...recursiveDateItemIds];
@@ -457,15 +490,15 @@ function getFormIds (formDefinitionItems) {
         } else if (item.groupItems){ // Check for fields in groups
             item.groupItems.forEach(subItem => {
                 subItem.fields.forEach(childItemData => { // Group's fields is where the fields will be in
-                    if (childItemData.type === "date") dateItemsId.push(childItemData.id);
-                    else if (childItemData.type === "checkbox") checkboxItemsId.push(childItemData.id);
-                    else if (childItemData.type === "text-info") textInfoFields.push(childItemData.id);
+                    if (childItemData.type === "date") dateItemsId.push(childItemData.id || childItemData.uuid);
+                    else if (childItemData.type === "checkbox-input") checkboxItemsId.push(childItemData.id || childItemData.uuid);
+                    else if (childItemData.type === "text-info") textInfoFields.push(childItemData.id || childItemData.uuid);
                 });
             });
         } else {
-            if (item.type === "date") dateItemsId.push(item.id);
-            else if (item.type === "checkbox") checkboxItemsId.push(item.id);
-            else if (item.type === "text-info") textInfoFields.push(item.id);
+            if (item.type === "date") dateItemsId.push(item.id || item.uuid);
+            else if (item.type === "checkbox-input") checkboxItemsId.push(item.id || item.uuid);
+            else if (item.type === "text-info") textInfoFields.push(item.id || item.uuid);
         }
     });
     return { dateItemsId, checkboxItemsId, textInfoFields };
@@ -953,6 +986,7 @@ async function loadICMdataAsPDF(req,res) {
     }
 }
 
+module.exports.compareSaveICMdata = compareSaveICMdata;
 module.exports.saveICMdata = saveICMdata;
 module.exports.loadICMdata = loadICMdata;
 module.exports.clearICMLockedFlag = clearICMLockedFlag;
