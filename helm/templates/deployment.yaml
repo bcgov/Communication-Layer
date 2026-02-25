@@ -13,6 +13,8 @@ spec:
     metadata:
       labels:
         app.kubernetes.io/name: communication-layer
+      annotations:
+        rollme: {{ randAlphaNum 8 | quote }}
     spec:
       containers:
         - name: communication-layer
