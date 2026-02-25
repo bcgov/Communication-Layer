@@ -26,4 +26,4 @@ spec:
           resources: {{- toYaml .Values.resources | nindent 12 }}
       restartPolicy: Always
   strategy:
-    type: Recreate
+    type: RollingUpdate
