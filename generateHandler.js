@@ -190,7 +190,8 @@ async function generateNewTemplate(req, res) {
 
       //params added to json so they can be used in SaveToICM functionality call
       formJson.params ={
-        ...params
+        ...params,
+        mode: "generate"
       }     
       const saveDataForLater = JSON.stringify(formJson)
       const id = await storeData(saveDataForLater);
@@ -310,7 +311,17 @@ async function performGenerateFunction(url,token,username) {
     console.error('Error performing generate function:', error);    
     return false;
   }
+  finally {
+    // Close Chromium process
+    try { if (page && !page.isClosed()) await page.close({ runBeforeUnload: true }); } catch {}
+    try { if (browser) await browser.close(); } catch {}
 
+    // kill process if Chromium is stuck
+    try {
+      const browserProcess = browser?.process?.();
+      if (browserProcess && !browserProcess.killed) browserProcess.kill("SIGKILL");
+    } catch {}
+  }
 }
 
 
