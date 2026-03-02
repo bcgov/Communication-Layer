@@ -4,10 +4,11 @@ const getFormFromFormTemplate = require("../formRepoHandler.js");
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const appConfig = require('../appConfig.js');
 const {getParametersFromPortal ,  expireTokenInPortal} = require("./loadPortalDataHandler.js");
+const {populateDatabindings }= require("../databindingsHandler.js");
 
 async function generatePortalIntegratedTemplate(req, res) { 
   try {
-    const params = req.body;
+    let params = req.body;
     const token = params["id"]; 
     const userId = "test";   
     if (!token ) {
@@ -27,7 +28,9 @@ async function generatePortalIntegratedTemplate(req, res) {
     if(!paramsFromPortal) {
         return res.status(400).send({ error: getErrorMessage("PARAMS_NOT_FOUND") });
     } 
-    const formJson = await constructFormJson(paramsFromPortal);
+    params = { ...params, ...paramsFromPortal,...targetApp };    
+    //concatenate params , paramsFromPortal and configOpt to be passed to constructJson
+    const formJson = await constructFormJson(params);
 
     if (formJson != null) {
       
@@ -55,8 +58,15 @@ async function constructFormJson(params) {
   if (!formDefinition || formDefinition === null) {
     return null;
   }
+
+  //TODO- populate databinding
+  const formData = await populateDatabindings(formDefinition, params, true);
+
+
+  //below , use formData as the data with databound value 
+  //todo - ends here
   const fullJSON = {
-    data: {},
+    data: formData || {},
     form_definition: formDefinition || {}, // Providing default empty object if missing
     metadata: {
       created_at: new Date().toISOString(),
