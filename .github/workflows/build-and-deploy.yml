@@ -3,10 +3,11 @@ name: Build and Deploy
 on:
   push:
     branches:
-      - main
       - dev
+      - staging
       - test
-    workflow_dispatch:
+      - main
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -38,17 +39,21 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=ref,event=branch,ref=${{ github.ref_name }}
+      
+      - name: Set branch tag for image
+        id: branch_tag
+        run: echo "image_tag=${GITHUB_REF##*/}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.branch_tag.outputs.image_tag }}
           labels: ${{ steps.meta.outputs.labels }}
 
     outputs:
-      image_tag: ${{ steps.meta.outputs.tags }}
+      image_tag: ${{ steps.branch_tag.outputs.image_tag }}
 
   deploy:
     needs: build_and_push
@@ -65,8 +70,8 @@ jobs:
         uses: redhat-actions/oc-login@v1
         with:
           openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
-          namespace: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_NAMESPACE || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_NAMESPACE) || secrets.OPENSHIFT_TEST_NAMESPACE }}
-          openshift_token: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_TOKEN || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_TOKEN) || secrets.OPENSHIFT_TEST_TOKEN }}
+          namespace: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_NAMESPACE || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_NAMESPACE) || (github.ref == 'refs/heads/staging' && secrets.OPENSHIFT_TOOLS_NAMESPACE) || secrets.OPENSHIFT_TEST_NAMESPACE }}
+          openshift_token: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_TOKEN || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_TOKEN) || (github.ref == 'refs/heads/staging' && secrets.OPENSHIFT_TOOLS_TOKEN) || secrets.OPENSHIFT_TEST_TOKEN }}
           insecure_skip_tls_verify: true
 
       - name: Deploy with Helm
@@ -75,30 +80,6 @@ jobs:
       - name: Trigger OpenShift Rollout
         run: |
          oc rollout restart deployment/communication-layer
-      
-       # Deploy to Tools only if branch = dev
-      - name: Authenticate with OpenShift (tools env)
-        if: github.ref == 'refs/heads/dev'
-        uses: redhat-actions/oc-login@v1
-        with:
-          openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
-          namespace: ${{ secrets.OPENSHIFT_TOOLS_NAMESPACE }}
-          openshift_token: ${{ secrets.OPENSHIFT_TOOLS_TOKEN }}
-          insecure_skip_tls_verify: true
-
-      - name: Deploy with Helm (tools env)
-        if: github.ref == 'refs/heads/dev'
-        run: |
-          helm upgrade --install communication-layer ./helm \
-            --namespace "${{ secrets.OPENSHIFT_TOOLS_NAMESPACE }}" \
-            --set image.repository=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
-            --set image.tag=${{ needs.build_and_push.outputs.image_tag }}
-
-      - name: Trigger OpenShift Rollout (tools env)
-        if: github.ref == 'refs/heads/dev'
-        run: |
-          oc rollout restart deployment/communication-layer \
-            -n "${{ secrets.OPENSHIFT_TOOLS_NAMESPACE }}"
   
   deploy_to_portal:
     needs: build_and_push
@@ -115,8 +96,8 @@ jobs:
         uses: redhat-actions/oc-login@v1
         with:
           openshift_server_url: ${{ secrets.OPENSHIFT_SERVER }}
-          namespace: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_PORTAL_NAMESPACE || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_PORTAL_NAMESPACE) || secrets.OPENSHIFT_TEST_PORTAL_NAMESPACE }}
-          openshift_token: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_PORTAL_TOKEN || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_PORTAL_TOKEN) || secrets.OPENSHIFT_TEST_PORTAL_TOKEN }}
+          namespace: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_PORTAL_NAMESPACE || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_PORTAL_NAMESPACE) || (github.ref == 'refs/heads/staging' && secrets.OPENSHIFT_TOOLS_PORTAL_NAMESPACE) || secrets.OPENSHIFT_TEST_PORTAL_NAMESPACE }}
+          openshift_token: ${{ github.ref == 'refs/heads/main' && secrets.OPENSHIFT_PROD_PORTAL_TOKEN || (github.ref == 'refs/heads/dev' && secrets.OPENSHIFT_DEV_PORTAL_TOKEN) || (github.ref == 'refs/heads/staging' && secrets.OPENSHIFT_TOOLS_PORTAL_TOKEN) || secrets.OPENSHIFT_TEST_PORTAL_TOKEN }}
           insecure_skip_tls_verify: true
 
       - name: Deploy with Helm
