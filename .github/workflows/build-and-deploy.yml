@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: bcgov/communication-layer
 
 jobs:
 
@@ -38,7 +38,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch,ref=${{ github.ref_name }}
+            type=ref,event=branch
       
       - name: Set branch tag for image
         id: branch_tag
