@@ -11,13 +11,16 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: bcgov/communication-layer
 
 jobs:
 
   build_and_push:
     runs-on: ubuntu-latest
-
+    
+    outputs:
+      image_tag: ${{ steps.branch_tag.outputs.image_tag }}
+    
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -38,7 +41,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=ref,event=branch,ref=${{ github.ref_name }}
+            type=ref,event=branch
       
       - name: Set branch tag for image
         id: branch_tag
@@ -51,9 +54,6 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.branch_tag.outputs.image_tag }}
           labels: ${{ steps.meta.outputs.labels }}
-
-    outputs:
-      image_tag: ${{ steps.branch_tag.outputs.image_tag }}
 
   deploy:
     needs: build_and_push
