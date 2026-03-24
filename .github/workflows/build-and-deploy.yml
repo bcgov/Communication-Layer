@@ -17,7 +17,10 @@ jobs:
 
   build_and_push:
     runs-on: ubuntu-latest
-
+    
+    outputs:
+      image_tag: ${{ steps.branch_tag.outputs.image_tag }}
+    
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v4
@@ -51,9 +54,6 @@ jobs:
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.branch_tag.outputs.image_tag }}
           labels: ${{ steps.meta.outputs.labels }}
-
-    outputs:
-      image_tag: ${{ steps.branch_tag.outputs.image_tag }}
 
   deploy:
     needs: build_and_push
