@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: communication-layer
-          image: "{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: "{{ .Values.image.pullPolicy }}"
           envFrom:
             - configMapRef:
