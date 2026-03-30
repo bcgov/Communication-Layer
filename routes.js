@@ -3,7 +3,7 @@ const axios = require("axios");
 const xmlparser = require("express-xml-bodyparser");
 const { keycloakForSiebel, keycloakForFormRepo } = require("./keycloak.js");
 const { generateTemplate,generateNewTemplate } = require("./generateHandler");
-const { saveICMdata, loadICMdata, clearICMLockedFlag, loadICMdataAsPDF } = require("./saveICMdataHandler");
+const { saveICMdata, loadICMdata, clearICMLockedFlag, loadICMdataAsPDF, compareSaveICMdata } = require("./saveICMdataHandler");
 const { getUsername } = require("./usernameHandler.js");
 const renderRouter = require("./renderHandler");
 const appCfg = require('./appConfig.js');
@@ -129,7 +129,7 @@ router.post("/saveData", async (request, response) => {
 
 // ICM save data route
 router.post("/saveICMData", saveICMdata);
-
+router.post("/compareICMData", compareSaveICMdata);
 // ICM load data rout
 router.post("/loadICMData", loadICMdata);
 
