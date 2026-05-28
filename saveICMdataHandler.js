@@ -53,7 +53,8 @@ async function getICMAttachmentStatus(attachment_id, username, params, authHeade
         }
         if (params.icmWorkspace) {
             query.workspace = params.icmWorkspace;
-        }
+        }        
+
         response = await axios.get(url, { params: query, headers });
         return_data["Status"] = response.data["Status"];
         return_data["Locked by User"] = response.data["Locked by User"];
@@ -313,19 +314,21 @@ async function loadICMdata(req, res) {
             .status(400)
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
     }
+
+    const useAttachment = params["useAttachment"] === "true";    
+    const icmLoadConfig = getIcmLoadConfig(params, useAttachment);    
+    
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT FormFoundry Upsert/DT Form Instance Orbeon Revise/'+attachment_id+'/','');
-    let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
-    try {
-        let response;
-        const query = {
-            viewMode: "Catalog",
-            inlineattachment: true
-        }
-        if (params.icmWorkspace) {
-            query.workspace = params.icmWorkspace;
-        }
-        response = await axios.get(url, { params: query, headers: authHeaders });
-        let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
+    //let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
+    const url = buildUrlWithParams(
+        params["apiHost"],
+        icmLoadConfig.endpoint + attachment_id + "/",
+        params
+    );
+    try {       
+
+       const response = await axios.get(url, { params: icmLoadConfig.query, headers: authHeaders });
+        let return_data = Buffer.from(response.data[icmLoadConfig.responseField], 'base64').toString('utf-8');
         //validate the returned data to be of the expected format
         const valid = isJsonStringValid(return_data);
         if (!valid) {
@@ -881,7 +884,7 @@ async function loadICMdataAsPDF(req,res) {
     } else if (params["username"]) {
         const valid = await isUsernameValid(params["username"], params["employeeEndpoint"]);
         username = valid ? params["username"] : null;
-    }
+    } 
 
     if (!username || !isNaN(username)) {
         return res
@@ -910,19 +913,21 @@ async function loadICMdataAsPDF(req,res) {
             .status(400)
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
     }
+
+    const useAttachment = params["useAttachment"] === "true";    
+    const icmLoadConfig = getIcmLoadConfig(params, useAttachment);    
+   
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT FormFoundry Upsert/DT Form Instance Orbeon Revise/'+attachment_id+'/','');
-    let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
-    try {
-        let response;
-        const query = {
-            viewMode: "Catalog",
-            inlineattachment: true
-        }
-        if (params.icmWorkspace) {
-            query.workspace = params.icmWorkspace;
-        }
-        response = await axios.get(url, { params: query, headers: authHeaders });
-        let return_data = Buffer.from(response.data["Doc Attachment Id"], 'base64').toString('utf-8');
+    //let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
+    const url = buildUrlWithParams(
+        params["apiHost"],
+        icmLoadConfig.endpoint + attachment_id + "/",
+        params
+    );
+    
+    try {        
+        const response = await axios.get(url, { params: icmLoadConfig.query, headers: authHeaders });
+        let return_data = Buffer.from(response.data[icmLoadConfig.responseField], 'base64').toString('utf-8');
         //validate the returned data to be of the expected format
         const valid = isJsonStringValid(return_data);
         if (!valid) {
@@ -951,6 +956,32 @@ async function loadICMdataAsPDF(req,res) {
             .status(400)
             .send({ error: getErrorMessage("GENERIC_ERROR_MSG") });
     }
+}
+
+function getIcmLoadConfig(params, useAttachment) {
+    const config = useAttachment
+        ? {
+              endpoint: params["attachmentEndpoint"],
+              query: {
+                  inlineattachment: true,
+              },
+              responseField: "Attachment Id",
+          }
+        : {
+              endpoint: params["saveEndpoint"],
+              query: {
+                  viewMode: "Catalog",
+                  inlineattachment: true,
+              },
+              responseField: "Doc Attachment Id",
+          };
+
+    // optional workspace support
+    if (params.icmWorkspace) {
+        config.query.workspace = params.icmWorkspace;
+    }
+
+    return config;
 }
 
 module.exports.saveICMdata = saveICMdata;
