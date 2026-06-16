@@ -87,7 +87,10 @@ definitions:
           - type: string
           - type: "null"
       is_required:
-        type: boolean
+        anyOf:
+          - type: boolean
+          - type: "null"
+          - type: string
       visible_web:
         type: boolean
       visible_pdf:
@@ -97,7 +100,10 @@ definitions:
           - type: string
           - type: "null"
       is_read_only:
-        type: boolean
+        anyOf:
+          - type: boolean
+          - type: "null"
+          - type: string
       save_on_submit:
         type: boolean
       order:
