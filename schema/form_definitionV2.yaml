@@ -92,9 +92,15 @@ definitions:
           - type: "null"
           - type: string
       visible_web:
-        type: boolean
+        anyOf:
+          - type: boolean
+          - type: "null"
+          - type: string
       visible_pdf:
-        type: boolean
+        anyOf:
+          - type: boolean
+          - type: "null"
+          - type: string
       custom_visibility:
         anyOf:
           - type: string
