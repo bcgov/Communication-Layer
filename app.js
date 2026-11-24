@@ -8,6 +8,7 @@ const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const logger = require('./helper/logger');
 
 app.use(express.json({ limit: '50mb' }));
 app.use(bodyParser.json());
@@ -38,5 +39,5 @@ app.use(cors(corsOptions));
 app.use("/", routes);
 
 app.listen(PORT, () => {
-  console.log("Server Listening on PORT:", PORT);
+  logger.info(`Server Listening on PORT ${PORT}`);
 });

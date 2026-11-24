@@ -3,6 +3,7 @@ const express = require("express");
 const router  = express.Router();
 const axios   = require("axios");
 const { keycloakForFormRepo } = require("./keycloak.js");
+const logger = require('./helper/logger');
 
 const FORMREPO_BASE = process.env.FORMREPO_URL; 
 
@@ -13,7 +14,7 @@ router.post("/:id", async (req, res, next) => {
 
     // call template-repo’s pdfRender/:id
     const url = `${FORMREPO_BASE}/pdfRender/${id}`;
-    console.info("Proxy PDF Render to:", url);
+    logger.debug(`Proxy PDF Render to: ${url}`);
 
     const pdfRes = await axios.post(url,
       // forward the incoming JSON (data elements from KILN)
@@ -36,7 +37,7 @@ router.post("/:id", async (req, res, next) => {
     // pipe the PDF stream back to the browser
     pdfRes.data.pipe(res);
   } catch (err) {
-    console.error("Error proxying PDF render:", err.message);
+    logger.error(`Error proxying PDF render: ${err.message}`);
     if (err.response) {
       const status = err.response.status;
       const data = err.response.data;

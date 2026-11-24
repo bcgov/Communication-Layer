@@ -12,6 +12,7 @@ const { formExceptions } = require("./dictionary/jsonXmlConversion.js");
 const { propertyExists, propertyNotEmpty, keyExists } = require("./dictionary/dictionaryUtils.js");
 const {generatePDF }= require("./generatePDFHandler.js");
 const { param } = require("./renderHandler.js");
+const logger = require('./helper/logger');
 
 const SIEBEL_ICM_API_FORMS_ENDPOINT = process.env.SIEBEL_ICM_API_FORMS_ENDPOINT;
 
@@ -68,7 +69,7 @@ async function getICMAttachmentStatus(attachment_id, username, params, authHeade
         return return_data;
     }
     catch (error) {
-        console.log(error);
+        logger.log(error);
         return null;
     }
 }
@@ -140,7 +141,7 @@ async function saveICMdata(req, res) {
     //saveForm validate before saving to ICM and determine kiln version being used
     const includesData = Object.keys(JSON.parse(savedFormParam)).includes("data"); // Check if data exists.
     if (!includesData) {
-    console.log('JSON is  not valid ');
+    logger.info('JSON is  not valid ');
     return res
         .status(400)
         .send({ error: getErrorMessage("FORM_NOT_VALID") });
@@ -148,7 +149,7 @@ async function saveICMdata(req, res) {
  
     const valid = isJsonStringValid(savedFormParam);
     if (!valid) {
-        console.log('JSON is  not valid ');
+        logger.info('JSON is  not valid ');
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_NOT_VALID") });
@@ -230,10 +231,9 @@ async function saveICMdata(req, res) {
     //let url = buildUrlWithParams('SIEBEL_ICM_API_HOST', 'fwd/v1.0/data/DT Form Instance Thin/DT Form Instance Thin/' + attachment_id + '/', '');
     const xml = saveJson["XML Hierarchy"];
     const xmlSize = Buffer.byteLength(xml, 'utf8'); // size in bytes
-
-    // console.log("XML Hierarchy:", xml);
-    console.log("XML Hierarchy length (chars):", xml.length);
-    console.log("XML Hierarchy size (bytes):", xmlSize);
+        
+    logger.info(`XML Hierarchy length (chars):${xml.length}`);
+    logger.info(`XML Hierarchy size (bytes): ${xmlSize}`);
     let url = buildUrlWithParams(params["apiHost"], params["saveEndpoint"] + attachment_id + '/', params);
     try {
         let response;
@@ -253,12 +253,12 @@ async function saveICMdata(req, res) {
         return res.status(200).send({});
     }
     catch (error) {
-        console.error(`Error updating ICM:`, error);
+        logger.error(`Error updating ICM: ${error}`);
         return null; // Handle missing data source or error
     }
     }
     catch (error) {
-            console.error(`Error saving the form to ICM:`, error);
+            logger.error(`Error saving the form to ICM: ${error}`);
             return null; // Handle missing data source or error
     }
 }
@@ -272,7 +272,7 @@ async function loadICMdata(req, res) {
     params = { ...params,...configOpt  };
     const attachment_id = params["attachmentId"];
     const office_name = params["OfficeName"];
-    console.log("attachment_id>>", attachment_id);
+    logger.debug(`attachment_id>> ${attachment_id}`);
     if (!attachment_id) {
         return res
             .status(400)
@@ -302,14 +302,14 @@ async function loadICMdata(req, res) {
             "X-ICM-TrustedUsername": username,
         };
     } catch (error) {
-        console.error("Failed to acquire Keycloak token:", error);
+        logger.error(`Failed to acquire Keycloak token: ${error}`);
         return res.status(500).send({ error: getErrorMessage("GENERIC_ERROR_MSG") });
     }
 
     let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params, authHeaders);
     let icm_status = icm_metadata["Status"];
     if (!icm_status || icm_status == "") {
-        console.log("Error fetching Form Instance Thin data for ", attachment_id);
+        logger.log(`Error fetching Form Instance Thin data for ${attachment_id}`);
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
@@ -332,7 +332,7 @@ async function loadICMdata(req, res) {
         //validate the returned data to be of the expected format
         const valid = isJsonStringValid(return_data);
         if (!valid) {
-            console.log('JSON is  not valid ');
+            logger.info('JSON is  not valid ');
             return res
                 .status(400)
                 .send({ error: getErrorMessage("FORM_NOT_VALID") });
@@ -346,7 +346,7 @@ async function loadICMdata(req, res) {
         return res.status(200).send(return_data);
     }
     catch (error) {
-        console.error(`Error loading data from ICM:`, error);
+        logger.error(`Error loading data from ICM: ${error}`);
         return res
             .status(400)
             .send({ error: getErrorMessage("GENERIC_ERROR_MSG") });
@@ -380,18 +380,18 @@ async function clearICMLockedFlag(req, res) {
     }
 
     try {
-        console.log("Clearing....");
+        logger.info("Clearing....");
         //check that attachment ID exists and that the form is locked
         let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params);
         let icm_status = icm_metadata["Status"];
         if (!icm_status || icm_status == "") {
-            console.log("Bad status!");
+            logger.info("Bad status!");
             return res
                 .status(400)
                 .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
         }
         if (icm_metadata["Locked by Id"] == "") {
-            console.log("not locked?");
+            logger.info("not locked?");
             return res
                 .status(200)
                 .send({});
@@ -428,7 +428,7 @@ async function clearICMLockedFlag(req, res) {
     }
 
     catch (error) {
-        console.log("Error clearing the locked metadata");
+        logger.info("Error clearing the locked metadata");
         return res.status(400).send({ error: getErrorMessage("FAILED_TO_UNLOCK_FORM") });
     }
 
@@ -871,7 +871,7 @@ async function loadICMdataAsPDF(req,res) {
     params = { ...params,...configOpt  };
     const attachment_id = params["attachmentId"];
     const office_name = params["OfficeName"];
-    console.log("attachment_id>>", attachment_id);
+    logger.debug(`attachment_id>> ${attachment_id}`);
     if (!attachment_id) {
         return res
             .status(400)
@@ -901,14 +901,14 @@ async function loadICMdataAsPDF(req,res) {
             "X-ICM-TrustedUsername": username,
         };
     } catch (error) {
-        console.error("Failed to acquire Keycloak token:", error);
+        logger.error(`Failed to acquire Keycloak token: ${error}`);
         return res.status(500).send({ error: getErrorMessage("GENERIC_ERROR_MSG") });
     }
 
     let icm_metadata = await getICMAttachmentStatus(attachment_id, username, params, authHeaders);
     let icm_status = icm_metadata["Status"];
     if (!icm_status || icm_status == "") {
-        console.log("Error fetching Form Instance Thin data for ", attachment_id);
+        logger.error(`Error fetching Form Instance Thin data for ${attachment_id}`);
         return res
             .status(400)
             .send({ error: getErrorMessage("FORM_STATUS_NOT_FOUND") });
@@ -931,7 +931,7 @@ async function loadICMdataAsPDF(req,res) {
         //validate the returned data to be of the expected format
         const valid = isJsonStringValid(return_data);
         if (!valid) {
-            console.log('JSON is  not valid ');
+            logger.info('JSON is  not valid ');
             return res
                 .status(400)
                 .send({ error: getErrorMessage("FORM_NOT_VALID") });
@@ -951,7 +951,7 @@ async function loadICMdataAsPDF(req,res) {
         });
     }
     catch (error) {
-        console.error(`Error loading data from ICM for PDF:`, error);
+        logger.error(`Error loading data from ICM for PDF: ${error}`);
         return res
             .status(400)
             .send({ error: getErrorMessage("GENERIC_ERROR_MSG") });

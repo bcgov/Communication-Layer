@@ -5,6 +5,7 @@ const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const appConfig = require('../appConfig.js');
 const {getParametersFromPortal ,  expireTokenInPortal} = require("./loadPortalDataHandler.js");
 const {populateDatabindings }= require("../databindingsHandler.js");
+const logger = require('../helper/logger');
 
 async function generatePortalIntegratedTemplate(req, res) { 
   try {
@@ -43,7 +44,7 @@ async function generatePortalIntegratedTemplate(req, res) {
         .send({ error: getErrorMessage("FORM_NOT_FOUND", { templateId: template_id }) });
     }
   } catch (error) {
-    console.error(`Error generating the form:`, error);
+    logger.error(`Error generating the form: ${error}`);
     
     return res
       .status(400)

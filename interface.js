@@ -1,5 +1,6 @@
 const appConfig = require('./appConfig.js');
 const { interfaces } = require("./dictionary/interfaces.js");
+const logger = require('./helper/logger');
 async function interface(req, res) {
   try {
     const rawHost = (req.get("X-Original-Server") || req.hostname);
@@ -35,7 +36,7 @@ async function interface(req, res) {
   } 
   
   catch (err) {
-    console.error("interfaceRoute error:", err);
+    logger.error(`interfaceRoute error: ${err}`);
     return res.status(500).json({
       error: "INTERNAL_ERROR",
       message: "Failed to build interface for this host"

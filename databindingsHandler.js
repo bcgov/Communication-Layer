@@ -4,6 +4,7 @@ const { keycloakForSiebel } = require("./keycloak.js");
 const axios = require("axios");
 const { getUsername, isUsernameValid } = require('./usernameHandler.js');
 const { parse, format } = require("date-fns");
+const logger = require('./helper/logger');
 
 /**
  * Custom Axios params serializer that encodes whitespace as %20
@@ -38,7 +39,7 @@ async function populateDatabindings(formJson, params, isPortal = false ) {
     const apiData = await fetchDataFromSources(dataSources, params, isPortal);
 
     if (!apiData) {
-      console.error('No Data found from datsources');
+      logger.error('No Data found from datsources');
       return null;
     }
 
@@ -47,7 +48,7 @@ async function populateDatabindings(formJson, params, isPortal = false ) {
 
     return boundData;
   } catch (error) {
-    console.error('Error processing form data:', error);
+    logger.error(`Error processing form data: ${error}`);
     return null;
   }
   //end code here
@@ -65,7 +66,7 @@ async function fetchDataFromSources(dataSources, params ,isPortal = false ) {
         data[source.name] = response;
 
       } catch (error) {
-        console.error(`Error fetching data from ${source.name}:`, error);
+        logger.error(`Error fetching data from ${source.name}:`, error);
         data[source.name] = null; // Handle missing data source
       }
     }
@@ -243,8 +244,7 @@ function bindDataToFields(formJson, fetchedData, params = {}) {
     processItemsForDatabinding(formJson.data.items);
   } else if (Array.isArray(formJson?.elements)) { // Kilnv2
     processItemsForDatabinding(formJson.elements);
-  }
-  // console.dir(formData, { depth: null, colors: true });
+  }  
   return formData;
 }
 
@@ -299,12 +299,11 @@ async function readJsonFormApi(datasource, pathParams , isPortal) {
       response = await axios.post(url, bodyForPost, { headers});
     }
 
-    // Store response data
-    //console.log("Response:",response);
+    // Store response data    
     return ensureObjectOrArray(response.data);
 
   } catch (error) {
-    console.error(`Error fetching data from ${name}:`, error);
+    logger.error(`Error fetching data from ${name}:`, error);
     return null; // Handle missing data source or error
   }
 }
@@ -376,7 +375,7 @@ function transformValueToBindIfNeeded(field, valueToBind) {
       }
     }
   } catch (error) {
-    console.error('Error processing date value:', error);
+    logger.error(`Error processing date value:${error}`);
   }
   return valueToBind;
 }
