@@ -1,8 +1,9 @@
+const logger = require('./helper/logger');
 let appCfg
 try {
   appCfg = JSON.parse(process.env.APP_CONFIG)
 } catch (err) {
-  console.error("Failed to parse APP_CONFIG:", err)
+  logger.error(`Failed to parse APP_CONFIG: ${err}`)
   appCfg = {}
 }
 module.exports = appCfg

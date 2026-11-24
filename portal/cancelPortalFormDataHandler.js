@@ -2,13 +2,14 @@
 const appConfig = require('../appConfig.js');
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const buildPortalAuthHeader = require('./authHandler.js');
+const logger = require('../helper/logger');
 
 async function cancelPortalAction(req, res) {
   const { tokenId} = req.body || {};
 
-  console.log('expireNETPortal:', {
+  logger.debug({
     tokenId: req.body?.tokenId
-  });
+  },`expireNETPortal:`);
 
   try {
     if (!tokenId) {
@@ -44,11 +45,11 @@ async function cancelPortalAction(req, res) {
 
     const savedJson = { token: tokenId };
 
-    console.log('CancelForPortalAction ->', {
+    logger.debug({
       url,
       interfaceMethod,
       savedJson
-    });
+    },`CancelForPortalAction`);
 
     const response = await fetch(url, {
       method: interfaceMethod,
@@ -60,7 +61,7 @@ async function cancelPortalAction(req, res) {
       body: JSON.stringify(savedJson),
     });
 
-    console.log("Fetch status:", response.status);
+    logger.info(`Fetch status: ${response.status}`);
 
     if (!response.ok) {
       const text = await response.text();
@@ -72,7 +73,7 @@ async function cancelPortalAction(req, res) {
     return res.json({ status: 'success', expired: true });
 
   } catch (err) {
-    console.error('expireNETPortal error:', err);
+    logger.error(`expireNETPortal error: ${err}`);
     return res
       .status(500)
       .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") || (err?.message || 'Unhandled error') });

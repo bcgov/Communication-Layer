@@ -1,5 +1,6 @@
 const { keycloakForFormRepo } = require("./keycloak.js");
 const axios = require("axios");
+const logger = require('./helper/logger');
 
 async function getFormFromFormTemplate(formId) {  
   try {
@@ -13,16 +14,15 @@ async function getFormFromFormTemplate(formId) {
     }
     
     let endpointUrl = `${FORMREPO_GETFORMURL}/${formId}`;
-    console.error("request: " + endpointUrl);
+    logger.debug(`request : ${endpointUrl}`);
     const formDefinition = await axios.get(endpointUrl, {
       headers: {
         Authorization: `Bearer ${grant.access_token.token}`,
       },
-    });
-
+    });    
     return formDefinition.data;
   } catch (err) {
-    console.error("API error: " + err.message);
+    logger.error(`API error: ${err.message}`);
     return null;
   }
 

@@ -5,6 +5,7 @@ const { validateJson } = require('./validate');
 const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler');
 const sleep = (ms) => new Promise(res => setTimeout(res, ms));
 const appCfg = require('./appConfig.js');
+const logger = require('./helper/logger');
 
 async function generatePDFFromJSON(req, res) {
   try {
@@ -30,9 +31,9 @@ async function generatePDFFromJSON(req, res) {
       const { valid, errors } = validateJson(savedJson);
 
       if (valid) {
-        console.log('JSON is valid ✅');
+        logger.info('JSON is valid ✅');
       } else {
-        console.error('Validation errors ❌:', errors);
+        logger.error(`Validation errors ❌: ${errors}`);
         return res.status(400).json({
           errorCode: 3,
           errorMessage: "JSON does not match the schema expected.",
@@ -41,7 +42,7 @@ async function generatePDFFromJSON(req, res) {
       }
     }
     catch (error) {
-      console.error("Error converting incoming json:", error);
+      logger.error(`Error converting incoming json: ${error}`);
 
       return res.status(400).json({
         errorCode: 2,
@@ -68,7 +69,7 @@ async function generatePDFFromJSON(req, res) {
       pdf: pdfBase64
     });
   } catch (error) {
-    console.error("Error generating PDF:", error);
+    logger.error(`Error generating PDF: ${error}`);
 
     res.status(500).json({
       errorCode: 3,
@@ -83,7 +84,7 @@ async function generatePDF(savedJson, params) {
   const id = await storeData(savedJson);
   const rawGenerateEndpoint = params?.generateEndpoint;
   const generateEndpoint = rawGenerateEndpoint?.trim() || process.env.GENERATE_KILN_URL;
-  console.log("Generate APP config:",generateEndpoint);
+  logger.debug(`Generate APP config: ${generateEndpoint}`);
   const endPointForPDF = generateEndpoint + "?jsonId=" + id; 
   const pdfBufferFromURL = await getPDFFromURL(endPointForPDF);  
   await deleteData(id);
@@ -112,11 +113,19 @@ async function generatePDFFromHTML(req, res) {
     const page = await browser.newPage();
     
     page.on('console', msg => {
-      console.log('Browser logs:', msg.type(), msg.text());
+      logger.debug({
+        type: msg.type(),
+        text: msg.text()
+        },`Browser logs`);
     });
     
     page.on('request', req => {
-      console.log('Request:', req.url(), req.failure());
+      logger.debug({
+          url: req.url(),
+          failure: req.failure()
+        },
+        `Browser request`
+      );
     });
 
     // Set the HTML content of the page
@@ -146,7 +155,7 @@ async function generatePDFFromHTML(req, res) {
 
     res.end(pdfBuffer);
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    logger.error(`Error generating PDF:${error}`);
     res.status(500).send('Failed to generate PDF');
   }
 
@@ -166,7 +175,7 @@ async function generatePDFFromURL(req, res) {
 
     res.end(pdfBuffer);
   } catch (error) {
-    console.error('Error generating PDF:', error);
+    logger.error(`Error generating PDF: ${error}`);
     res.status(500).send('Failed to generate PDF');
   }
 
@@ -195,11 +204,19 @@ async function getPDFFromURL(url) {
     const page = await browser.newPage();
 
     page.on('console', msg => {
-      console.log('Browser logs:', msg.type(), msg.text());
-    });
+      logger.debug({
+        type: msg.type(),
+        text: msg.text()        
+        },`Browser logs`);
+    });    
     
     page.on('request', req => {
-      console.log('Request:', req.url(), req.failure());
+      logger.debug({
+          url: req.url(),
+          failure: req.failure()
+        },
+        `Browser request`
+      );
     });
 
     // Optional: Adjust the page's viewport for better PDF layout
@@ -262,7 +279,7 @@ async function getPDFFromURL(url) {
     //await sleep(POST_CLICK_MS);
     
     
-    console.log("Waiting for print button...");
+    logger.info("Waiting for print button...");
 
     let clickedPrint = false;
     const PRINT_DEADLINE = Date.now() + 20000; // up to 20 sec
@@ -285,7 +302,7 @@ async function getPDFFromURL(url) {
         );
         await page.click("#print");
         clickedPrint = true;
-        console.log("Clicked print button on main page");
+        logger.info("Clicked print button on main page");
         break;
       } catch {}
 
@@ -307,7 +324,7 @@ async function getPDFFromURL(url) {
           );
           await frame.click("#print");
           clickedPrint = true;
-          console.log("Clicked print button inside iframe");
+          logger.info("Clicked print button inside iframe");
           break;
         } catch {}
       }
@@ -317,7 +334,7 @@ async function getPDFFromURL(url) {
     
     if (clickedPrint) {
 
-      console.log("Waiting for printable layout to finish…");
+      logger.info("Waiting for printable layout to finish…");
 
       // Wait for data-form-id attribute
       try {
@@ -325,13 +342,13 @@ async function getPDFFromURL(url) {
           () => document.documentElement.getAttribute("data-form-id"),
           { timeout: 20000 }
         );
-        console.log("Printable layout ready (data-form-id detected)");
+        logger.info("Printable layout ready (data-form-id detected)");
       } catch {
-        console.log("Timeout waiting for data-form-id");
+        logger.info("Timeout waiting for data-form-id");
       }
 
        // Svelte stabilization
-      console.log("Waiting for Svelte DOM stability…");
+      logger.info("Waiting for Svelte DOM stability…");
       await page.waitForFunction(() => {
         const now = performance.now();
         if (!window.__lastMutationTime) window.__lastMutationTime = now;
@@ -351,9 +368,9 @@ async function getPDFFromURL(url) {
 
       return performance.now() - window.__lastMutationTime > 600;
      }, { timeout: 20000 });
-     console.log("Svelte DOM stabilized");
+     logger.info("Svelte DOM stabilized");
     } else {
-      console.log("Could not click on print button");
+      logger.info("Could not click on print button");
     }
 
     await page.evaluate((t) => {
@@ -375,11 +392,11 @@ async function getPDFFromURL(url) {
 
 
     await browser.close();
-    console.log("Returning PDF");
+    logger.info("Returning PDF");
     return pdfBuffer;
 
   } catch (error) {
-    console.error('Error generating PDF opening the url:', error);
+    logger.error(`Error generating PDF opening the url: ${error}`);
     await browser.close();
     return null;
   }
@@ -402,13 +419,13 @@ async function loadSavedJson(req, res) {
     //const data = jsonStore.get(jsonId);
 
     if (!savedJson) {
-      console.log("Error fetching Saved Json from temp storage for  ", jsonId);
+      logger.info(`Error fetching Saved Json from temp storage for : ${jsonId}`);
       return res.status(500).send('Failed to fetch savedJson');
     }
     return res.status(200).send(JSON.parse(savedJson));
   }
   catch (error) {
-    console.error(`Error loading savedJson:`, error);
+    logger.error(`Error loading savedJson: ${error}`);
     return res.status(500).send('Failed to fetch savedJson');
   }
 }

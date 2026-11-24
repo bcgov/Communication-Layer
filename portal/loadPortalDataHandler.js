@@ -1,13 +1,14 @@
 const axios = require("axios");
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const buildPortalAuthHeader = require('./authHandler.js');
+const logger = require('../helper/logger');
 
 async function getParametersFromPortal(portal,token) {  
   let parametersForForm = "";  
 
   try {
     const urlForValidateTokenAndGetParams= portal.apiHost+ (portal.getParametersEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
-    console.log("urlForValidateTokenAndGetParams >>",urlForValidateTokenAndGetParams);
+    logger.debug(`urlForValidateTokenAndGetParams >> ${urlForValidateTokenAndGetParams}`);
     const response = await axios.post(`${urlForValidateTokenAndGetParams}`,
       {
         token
@@ -23,7 +24,7 @@ async function getParametersFromPortal(portal,token) {
     
     
   } catch (err) {
-    console.log( 'Failed to contact target app', err ); 
+    logger.error(`Failed to contact target app  ${err}`); 
 
     throw err;
   }
@@ -35,7 +36,7 @@ async function getSavedFormFromPortal(portal,token) {
 
   try {
     const urlForValidateTokenAndGetJson= portal.apiHost+ (portal.getSavedJsonEndpoint || process.env.PORTAL_VALIDATE_TOKEN_ENDPOINT);
-    console.log("urlForValidateTokenAndGetJson >>",urlForValidateTokenAndGetJson);
+    logger.debug(`urlForValidateTokenAndGetJson >> ${urlForValidateTokenAndGetJson}`);
 
     const headers = {
       "Content-Type": "application/json",
@@ -47,7 +48,7 @@ async function getSavedFormFromPortal(portal,token) {
     return response.data;
   
   } catch (err) {
-    console.log( 'Failed to contact target app', err ); 
+    logger.error( `Failed to contact target app ${err}` ); 
 
     throw err;
   }

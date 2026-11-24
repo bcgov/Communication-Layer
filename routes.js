@@ -7,6 +7,7 @@ const { saveICMdata, loadICMdata, clearICMLockedFlag, loadICMdataAsPDF } = requi
 const { getUsername } = require("./usernameHandler.js");
 const renderRouter = require("./renderHandler");
 const appCfg = require('./appConfig.js');
+const logger = require('./helper/logger');
 
 const {generatePDFFromHTML,generatePDFFromURL,generatePDFFromJSON,loadSavedJson } = require("./generatePDFHandler");
 const generatePortalIntegratedTemplate = require("./portal/generatePortalIntegratedHandler.js");
@@ -87,7 +88,6 @@ router.get("/api*", async (req, res) => {
 
 // XML form post route
 router.post("/form1", xmlparser(), async (req, res) => {
-  console.log(req.body);
   res.status(200).json("{success!}");
 });
 
@@ -99,8 +99,6 @@ router.post("/xmlPush/:formId", xmlparser(), async (req, res) => {
       return res.status(404).send({ error: "Form not found" });
     }
     const forwardAddress = `${FORM_SERVER_URL}/${response_path}`;
-    console.log(forwardAddress);
-
     res.redirect(307, forwardAddress);
   } catch (err) {
     res.status(500).send({ error: err.message });
@@ -115,7 +113,7 @@ router.get("/xml", async (req, res) => {
 
   res.sendFile("data.xml", options, (err) => {
     if (err) {
-      console.error(`XML Error: ${err.message}`);
+      logger.error(`XML Error: ${err.message}`);
       res.status(500).send({ error: "Internal server error." });
     }
   });
@@ -123,7 +121,6 @@ router.get("/xml", async (req, res) => {
 
 // Save data route
 router.post("/saveData", async (request, response) => {
-  //console.log(request.body);
   response.status(200).json("{success!}");
 });
 
@@ -146,11 +143,10 @@ router.get("/getAllForms", async (request, response) => {
         Authorization: `Bearer ${grant.access_token.token}`,
       },
     });
-    //console.log("forms", forms);
     response.json(forms.data);
 
   } catch (err) {
-    console.error("API error: " + err.message);
+    logger.error(`API error:  ${err.message}`);
     response.status(500).send({ error: err.message });
   }
 
@@ -167,7 +163,7 @@ router.get("/processIcmJsonClob", localhostOnlyMiddleware, async (req, res) => {
       res.status(500).json({ error: "Error." });
     }
   } catch (error) {
-    console.error("Error:", error.message);
+    logger.error(`Error: ${error.message}`);
     res.status(500).json({ error: "Internal server error", message: error.message });
   }
 });
@@ -183,7 +179,7 @@ router.get("/processIcmJsonClobAnswers", localhostOnlyMiddleware, async (req, re
             res.status(500).json({ error: "Error." });
         }
     } catch (error) {
-        console.error("Error:", error.message);
+        logger.error(`Error: ${error.message}`);
         res.status(500).json({ error: "Internal server error", message: error.message });
     }
 });

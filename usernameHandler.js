@@ -1,12 +1,13 @@
 const axios = require("axios");
 const { keycloakForSiebel } = require("./keycloak.js");
+const logger = require('./helper/logger');
 
 async function isUsernameValid(username,employeeURL) {
     try {
-        console.log("Username:", username);
-        console.log("Username URL:",employeeURL);        
+        logger.debug(`Username: ${username}`);
+        logger.debug(`Username URL ${employeeURL}`);        
         if(!employeeURL){
-            console.error("No Employeee URL provided");
+            logger.error("No Employeee URL provided");
             return false;
         }
         
@@ -27,17 +28,17 @@ async function isUsernameValid(username,employeeURL) {
 
     } catch (error) {
         if (error.response) {
-            console.error(`Siebel API Error (${error.response.status}): ${error.response.data?.ERROR || "Unknown error"}`);
-            throw new Error(`${error.response.status}`);
+            logger.error(`Siebel API Error (${error.response.status}): ${error.response.data?.ERROR || "Unknown error"}`);
+            return false;
         }
-        console.error("Error connecting to Siebel API:", error);
-        throw new Error("500 - Internal Server Error");
+        logger.error(`Error connecting to Siebel API: ${error}`);
+        return false;
     }
 }
 
 async function getUsername(userToken, employeeURL) {
     if (!userToken) {
-        console.warn("No user token provided.");
+        logger.warn("No user token provided.");
         return null;
     }
 
@@ -55,10 +56,10 @@ async function getUsername(userToken, employeeURL) {
                 return error.message;
             }
         } else {
-            console.warn("Username not found.");
+            logger.warn("Username not found.");
         }
     } catch (error) {
-        console.error("Error fetching username from Keycloak:", error);
+        logger.error(`Error fetching username from Keycloak: ${error}`);
     }
 
     return null; // No username should be returned if not valid

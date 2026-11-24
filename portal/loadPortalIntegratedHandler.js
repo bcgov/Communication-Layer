@@ -4,6 +4,7 @@ const getFormFromFormTemplate = require("../formRepoHandler.js");
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const appConfig = require('../appConfig.js');
 const {getSavedFormFromPortal} = require("./loadPortalDataHandler.js");
+const logger = require('../helper/logger');
 
 async function loadPortalIntegratedForm(req, res) { 
   try {
@@ -32,7 +33,7 @@ async function loadPortalIntegratedForm(req, res) {
     res.status(200).send(data);    
     
   } catch (error) { 
-    console.error(`Error generating the form:`, error);
+    logger.error(`Error generating the form: ${error}`);
     
     return res
       .status(400)

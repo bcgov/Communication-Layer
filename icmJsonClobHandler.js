@@ -1,5 +1,6 @@
 const axios = require("axios");
 const { keycloakForSiebel } = require("./keycloak.js");
+const logger = require('./helper/logger');
 
 function parseIcmJsonClob(item) {
     if (item.ICMJsonClob && typeof item.ICMJsonClob === 'string') {
@@ -7,7 +8,7 @@ function parseIcmJsonClob(item) {
             item.ICMJsonClobParsed = JSON.parse(item.ICMJsonClob);
             delete item.ICMJsonClob;
         } catch (error) {
-            console.warn(`Failed to parse ICMJsonClob for item ${item.Id || 'unknown'}: ${error.message}`);
+            logger.warn(`Failed to parse ICMJsonClob for item ${item.Id || 'unknown'}: ${error.message}`);
             item.ICMJsonClobParsed = null;
         }
     }
@@ -85,7 +86,7 @@ async function getProcessedData(attachmentId, apiHost, returnAnswersOnly = true)
             data: processedResult
         };
     } catch (error) {
-        console.error("API call failed:", error.message);
+        logger.error(`API call failed: ${error.message}`);
 
         return {
             success: false,

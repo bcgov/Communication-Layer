@@ -9,17 +9,18 @@ const { getICMAttachmentStatus } = require("./saveICMdataHandler");
 const puppeteer = require('puppeteer');
 const {storeData,retrieveData,deleteData} = require('./helper/redisHelperHandler.js');
 const appCfg = require('./appConfig.js');
+const logger = require('./helper/logger');
 
 async function generateTemplate(req, res) {
   try {
     let params = req.body;
     const rawHost = (req.get("X-Original-Server") || req.hostname);
-    console.log("HOST",rawHost)
+    logger.debug(`HOST ${rawHost}`);
     const configOpt = appCfg[rawHost];
     params = { ...params, ...configOpt };
     const template_id = params["formId"];
-    console.log("template_id>>", template_id);
-    console.log("Parameters:",params)
+    logger.debug(`template_id  : ${template_id}`);
+    logger.debug(`Parameters: ${params}`);
     const attachment_Id = params["attachmentId"];    
     if (!template_id) {
       return res
@@ -66,7 +67,7 @@ async function generateTemplate(req, res) {
         .send({ error: getErrorMessage("FORM_NOT_FOUND", { templateId: template_id }) });
     }
   } catch (error) {
-    console.error(`Error generating the form:`, error);
+    logger.error({ err: error }, 'Error generating the form');
     return res
       .status(400)
       .send({ error: getErrorMessage("GENERATE_ERROR_MSG") });
@@ -80,7 +81,8 @@ async function constructFormJson(formId, params) {
   if (!formDefinition || formDefinition === null) {
     return null;
   }
-
+  logger.info(`Successfully retrieved template id ${formId} from Template repository`);
+  
   const formData = await populateDatabindings(formDefinition, params);
 
   const fullJSON = {
@@ -108,7 +110,7 @@ async function generateNewTemplate(req, res) {
     const attachment_Id = params["attachmentId"];    
     const authHeader = req.get('Authorization') || '';
     const rawToken = authHeader.split(' ')[0] === 'Bearer'? authHeader.split(' ')[1] : authHeader || null;
-    console.log("Raw Token:",rawToken);
+    logger.debug(`Raw Token: ${rawToken}`);
     if (!template_id) {
       return res
         .status(400)
@@ -177,12 +179,12 @@ async function generateNewTemplate(req, res) {
       
     const icmOfficeName = icm_metadata?.["Office Name"];    
     const requestOfficeName = typeof params.OfficeName === "string" ? params.OfficeName.trim() : "";
-    console.log('RequestOfficeName:', requestOfficeName);
-    console.log('IcmOfficeName:', icmOfficeName);
+    logger.debug(`RequestOfficeName:${requestOfficeName}`);
+    logger.debug(`IcmOfficeName:${icmOfficeName}`);
     if (!requestOfficeName && icmOfficeName) {
       params.OfficeName = icmOfficeName;
     }
-    console.log("Params:",params);
+    logger.debug(`Params:${params}`);
     
     const formJson = await constructFormJson(template_id, params);
 
@@ -197,7 +199,7 @@ async function generateNewTemplate(req, res) {
       const id = await storeData(saveDataForLater);
       const rawGenerateEndpoint = params?.generateEndpoint;
       const generateEndpoint = rawGenerateEndpoint?.trim() || process.env.GENERATE_KILN_URL;
-      console.log("Generate APP config:",generateEndpoint);
+      logger.debug(`Generate APP config:${generateEndpoint}`);
       const endPointForGenerate = generateEndpoint + "?jsonId=" + id;
       const isGenerateSuccess = await performGenerateFunction(endPointForGenerate,rawToken,username);
       deleteData(id);
@@ -221,7 +223,7 @@ async function generateNewTemplate(req, res) {
         .send({ error: getErrorMessage("FORM_NOT_FOUND", { templateId: template_id }) });
     }
   } catch (error) {
-    console.error(`Error generating the form:`, error);
+    logger.error({ err: error }, `Error generating the form`);
     return res
       .status(400)
       .send({ error: getErrorMessage("FORM_CANNOT_BE_GENERATED") });
@@ -250,11 +252,20 @@ async function performGenerateFunction(url,token,username) {
       const args = await Promise.all(
         msg.args().map(a => a.jsonValue().catch(() => a.toString()))
       );
-      console.log('Browser logs:', msg.type(), msg.text(), args);
+      logger.debug({
+        type: msg.type(),
+        text: msg.text(),
+        args
+        },'Browser logs');
     });
     
     page.on('request', req => {
-      console.log('Request:', req.url(), req.failure());
+      logger.debug({
+          url: req.url(),
+          failure: req.failure()
+        },
+        'Browser request'
+      );
     });
 
     // Set the HTML content of the page
@@ -262,7 +273,7 @@ async function performGenerateFunction(url,token,username) {
     timeout: 200000,         // 60 seconds
     waitUntil: 'domcontentloaded',      // You can also use 'networkidle2' or 'domcontentloaded'
     }); // Replace with your actual URL
-    console.log('Page loaded.');
+    logger.info('Page loaded.');
     const appUrl = new URL(url);
     const cookies = [];
 
@@ -303,12 +314,12 @@ async function performGenerateFunction(url,token,username) {
       );
     }, { timeout: 60000 });
 
-    console.log('✅ Success modal appeared.');
+    logger.info('✅ Success modal appeared.');
     await browser.close();
     return true; 
 
   } catch (error) {
-    console.error('Error performing generate function:', error);    
+    logger.error(`Error performing generate function: ${error.message}`);    
     return false;
   }
   finally {

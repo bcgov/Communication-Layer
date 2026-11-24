@@ -1,14 +1,10 @@
 const appConfig = require('../appConfig.js');
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const buildPortalAuthHeader = require('./authHandler.js');
+const logger = require('../helper/logger');
 
 async function saveForPortalAction(req, res) {
   const { tokenId, savedForm } = req.body;
-
-  console.log('saveForPortalAction:', {
-    tokenId: req.body?.tokenId,
-    savedForm: typeof req.body?.savedForm,
-  });
 
   try {
     if (!tokenId || !savedForm) {
@@ -44,11 +40,12 @@ async function saveForPortalAction(req, res) {
     const base64EncodedJson = Buffer.from(savedForm, "utf8").toString("base64");
     const savedJson = { token: tokenId, jsonToSave: base64EncodedJson };
 
-    console.log('SaveForPortalAction ->', {
+    logger.debug({
+      tokenId,
       url,
       interfaceMethod,
       savedJson
-    });
+    },`SaveForPortalAction`);
 
     const response = await fetch(url, {
       method: interfaceMethod,
@@ -60,7 +57,7 @@ async function saveForPortalAction(req, res) {
       body: JSON.stringify(savedJson),
     });
 
-    console.log("Fetch status:", response.status);
+    logger.info(`Fetch status: ${response.status}`);
 
     if (!response.ok) {
       const text = await response.text();
@@ -71,7 +68,7 @@ async function saveForPortalAction(req, res) {
 
     res.json({ status: "success" });
   } catch (error) {
-    console.error("saveForPortalAction error:", error);
+    logger.error(`saveForPortalAction error: ${error}`);
     return res
       .status(400)
       .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") });

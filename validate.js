@@ -2,6 +2,7 @@ const fs = require('fs');
 const yaml = require('yaml');
 const Ajv = require('ajv');
 const addFormats = require('ajv-formats');
+const logger = require('./helper/logger');
 
 // Function to load and parse YAML schema
 function loadSchema(schemaPath) {
@@ -41,7 +42,7 @@ function isJsonStringValid(jsonDataString) {
         return isJsonValid(jsonData)
       }
       catch (error) {
-        console.error("Error converting incoming json:", error);  
+        logger.error(`Error converting incoming json: ${error}`);  
         return false;
       }      
 }
@@ -52,16 +53,16 @@ function isJsonValid(jsonData) {
             if(jsonData) {        
                 const { valid, errors } = validateJson(jsonData);  
                 if (valid) {
-                console.log('JSON is valid ✅');
+                    logger.info('JSON is valid ✅');
                 } else {
-                console.error('Validation errors ❌:', errors);          
+                    logger.error(`Validation errors ❌:  ${errors}`);          
                 }
                 return valid;
                 }
             return false;
         }
       catch (error) {
-        console.error("Error converting incoming json:", error);  
+        logger.error(`Error converting incoming json:  ${error}`);  
         return false;
       }
 }

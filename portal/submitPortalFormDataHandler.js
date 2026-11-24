@@ -1,6 +1,7 @@
 const appConfig = require('../appConfig.js');
 const { getErrorMessage } = require("../errorHandling/errorHandler.js");
 const buildPortalAuthHeader = require('./authHandler.js');
+const logger = require('../helper/logger');
 
 async function submitForPortalAction(req, res) {
   const { tokenId } = req.body;
@@ -36,7 +37,7 @@ async function submitForPortalAction(req, res) {
 
     const submitUrl =  interfaceHost+submitPath;
 
-    console.log("SUBMIT URL",submitUrl);
+    logger.debug(`SUBMIT URL ${submitUrl}`);
 
     const headers = {
       'Content-Type': 'application/json',
@@ -55,7 +56,7 @@ async function submitForPortalAction(req, res) {
       body: JSON.stringify(savePayload) 
     });
 
-    console.log("SUBMIT RESPONSE",submitResp);
+    logger.debug(`SUBMIT RESPONSE  ${submitResp}`);
 
     if (!submitResp.ok) {
       const text = await submitResp.text();
@@ -66,7 +67,7 @@ async function submitForPortalAction(req, res) {
 
     return res.json({ status: 'success' });
   } catch (err) {
-    console.error('submitNETPortal error:', err);
+    logger.error(`submitNETPortal error: ${err}`);
     return res
       .status(500)
       .send({ error: getErrorMessage("ERROR_IN_EXECUTING_ACTION") || (err?.message || 'Unhandled error') });
